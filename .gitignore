@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# Project builded files
+build/
+.vscode/
+
+# MAC OS system files
+.DS_Store
+
