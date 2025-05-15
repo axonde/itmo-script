@@ -1,5 +1,9 @@
+#pragma once
 #include <cstdint>
 #include <iostream>
+#include <string>
+
+#include "utils.h"
 
 namespace Lexer {
 
@@ -69,6 +73,25 @@ enum Tokens : uint16_t {
     T_NOT,                          // `not`
     T_BOOL_FALSE,                   // `false`
     T_BOOL_TRUE                     // `true`
+};
+
+
+// Lexical Analyzer
+class Tokenizer {
+public:
+    Tokenizer(const std::string& str) : line(str) {}
+
+    void Error();
+    void Advance();
+    void SkipWhiteSpaces();
+
+    uint16_t GetNextToken();
+
+    double Number();
+
+private:
+    size_t pos = 0;
+    std::string line;
 };
 
 
