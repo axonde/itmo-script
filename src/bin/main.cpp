@@ -1,9 +1,9 @@
 #include <iostream>
-
-#include "../interpreter/lexer/lexer.h"
+#include <interpreter>
 
 int main(int argc, char** argv) {
     std::cout << "Hello, world!" << std::endl;
-    hello();
+
+    std::cout << Lexer::Tokens::T_EOF << '\n';
     return 0;
 }
