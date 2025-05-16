@@ -6,26 +6,20 @@
 #include <optional>
 #include <regex>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
 
 #include "utils.h"
 
 namespace Lexer {
 
 enum Tokens : uint16_t {
+    // BASE
     T_EOF,                          // END OF LINE
     T_VAR,                          // `var`, `Var_Var`, `var__0`, `_var_`
     T_NUMBER,                       // 12, -123, 1.2e-12
     T_STRING,                       // "string"
     T_NULL,                         // `nil`
-    T_COMMENT,                      // `//{line}`, `/*{block}*/`
-
-    // SYNTAX SYMBOLS
-    T_COLON,                        // `:`
-    T_QUOTES,                       // `""`
-    T_LEFT_BRACKET,                 // `(`
-    T_RIGHT_BRACKET,                // `)`
-    T_LEFT_SQUARE_BRACKET,          // `[`
-    T_RIGHT_SQUARE_BRACKET,         // `]`
 
     // STATEMENTS
     T_THEN,                         // `then`
@@ -46,14 +40,20 @@ enum Tokens : uint16_t {
     T_RETURN,                       // `return`
     T_END_FUNC,                     // `end function`
 
-    // OPERATORS
-    T_COMMA,                        // `,`
-    T_PLUS,                         // `+`
-    T_MINUS,                        // `-`
-    T_DIV,                          // `/`
-    T_MULT,                         // `*`
-    T_MOD,                          // `%`
-    T_XOR,                          // `^`
+    // LOGICS
+    T_AND,                          // `and`
+    T_OR,                           // `or`
+    T_NOT,                          // `not`
+    T_BOOL_FALSE,                   // `false`
+    T_BOOL_TRUE,                    // `true`
+
+    // COMPARATORS
+    T_COMP_EQUAL,                   // `==`
+    T_COMP_NON_EQUAL,               // `!=`
+    T_COMP_SMALLER,                 // `<`
+    T_COMP_GREATER,                 // `>`
+    T_COMP_SMALLER_OR_EQ,           // `<=`
+    T_COMP_GREATER_OR_EQ,           // `>=`
 
     // EQUALS
     T_EQUAL,                        // `=`
@@ -64,23 +64,24 @@ enum Tokens : uint16_t {
     T_EQUAL_MOD,                    // `%=`
     T_EQUAL_XOR,                    // `^=`
 
-    // COMPARATORS
-    T_COMP_EQUAL,                   // `==`
-    T_COMP_NON_EQUAL,               // `!=`
-    T_COMP_SMALLER,                 // `<`
-    T_COMP_GREATER,                 // `>`
-    T_COMP_SMALLER_OR_EQ,           // `<=`
-    T_COMP_GREATER_OR_EQ,           // `>=`
+    // OPERATORS
+    T_PLUS,                         // `+`
+    T_MINUS,                        // `-`
+    T_DIV,                          // `/`
+    T_MULT,                         // `*`
+    T_MOD,                          // `%`
+    T_XOR,                          // `^`
 
-    // LOGICS
-    T_AND,                          // `and`
-    T_OR,                           // `or`
-    T_NOT,                          // `not`
-    T_BOOL_FALSE,                   // `false`
-    T_BOOL_TRUE,                    // `true`
+    // SYNTAX SYMBOLS
+    T_COMMA,                        // `,`
+    T_COLON,                        // `:`
+    T_LEFT_BRACKET,                 // `(`
+    T_RIGHT_BRACKET,                // `)`
+    T_LEFT_SQUARE_BRACKET,          // `[`
+    T_RIGHT_SQUARE_BRACKET,         // `]`
 
-    // // ERROR
-    // T_BAD                           // ill formed token
+    // ERROR
+    T_BAD                           // ill formed token
 };
 
 template<uint16_t TToken>
@@ -140,6 +141,7 @@ public:
 
     template<uint16_t TToken>
     Tokenizer& operator>>(Lexer::Token<TToken>& token);
+
     Tokenizer& operator>>(std::any& token);
 
 private:
@@ -148,10 +150,66 @@ private:
 
     std::any Advance();
 
+    /// SKIPPERS
     void SkipWhiteSpaces();
-    std::optional<std::string> GetVar();
+    void SkipComment();
+
+    /// TRYERS
+    std::any TryLexems();   // - num literal
+                            // - str literal
+                            // - comparators
+                            // - equals
+                            // - operators
+                            // - syntaxes
+
+    std::any TryWords();    // - functions
+                            // - statements
+                            // - logics
+                            // - variables
+
+    // lexems
+    std::any TryLiterals();
+    std::any TryComparators();
+    std::any TryEquals();
+    std::any TryOperators();
+    std::any TrySyntaxes();
+
+    // words
+    std::any TryKeyWords(std::string);
+
+    /// GETERS
     std::optional<double> GetNumber();
     std::optional<std::string> GetString();
+    std::optional<std::string> GetWord();
+
+
+    std::unordered_map<std::string, uint16_t> key_words_ = {
+    // statements
+        {"then", Tokens::T_THEN},
+        {"in", Tokens::T_IN},
+        {"if", Tokens::T_IF},
+        {"else if", Tokens::T_ELSE_IF},
+        {"else", Tokens::T_ELSE},
+        {"end if", Tokens::T_END_IF},
+        {"while", Tokens::T_WHILE},
+        {"end while", Tokens::T_END_WHILE},
+        {"for", Tokens::T_FOR},
+        {"end for", Tokens::T_END_FOR},
+        {"break", Tokens::T_BREAK},
+        {"continue", Tokens::T_CONTINUE},
+
+    // functions
+        {"function", Tokens::T_FUNC},
+        {"return", Tokens::T_RETURN},
+        {"end function", Tokens::T_END_FUNC},
+
+    // logics
+        {"and", Tokens::T_AND},
+        {"or", Tokens::T_OR},
+        {"not", Tokens::T_NOT},
+        {"false", Tokens::T_BOOL_FALSE},
+        {"true", Tokens::T_BOOL_TRUE}
+    };
 };
 
 
