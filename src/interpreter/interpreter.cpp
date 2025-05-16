@@ -2,7 +2,20 @@
 
 bool interpret(std::istream& input, std::ostream& output) {
     std::string line;
-    input >> line;
+    do {
+        std::cout << Utils::Patterns::CMD;
+        std::getline(input, line);
+    } while (line.size() == 0);
+
+    std::cout << line << '\n' << line.size() << '\n';
+
+    Lexer::Tokenizer tokenizer(line);
+
+    Lexer::Token<double> token;
+
+    tokenizer >> token;
+    std::cout << token.token << '\n';
+    std::cout << token.value;
     Utils::Errors::SyntaxError();
     return false;
 }

@@ -1,4 +1,6 @@
 #pragma once
+#include <any>
+#include <cctype>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -75,6 +77,21 @@ enum Tokens : uint16_t {
     T_BOOL_TRUE                     // `true`
 };
 
+template<typename T>
+struct Token {
+    Token() = default;
+    Token(uint16_t t, const T& v) : token(t), value(v) {}
+    uint16_t token;
+    T value;
+};
+
+template<>
+struct Token<void> {
+    Token() = default;
+    Token(uint16_t t) : token(t) {}
+    uint16_t token;
+};
+
 
 // Lexical Analyzer
 class Tokenizer {
@@ -82,16 +99,19 @@ public:
     Tokenizer(const std::string& str) : line(str) {}
 
     void Error();
-    void Advance();
-    void SkipWhiteSpaces();
 
-    uint16_t GetNextToken();
-
-    double Number();
+    template<typename T>
+    Tokenizer& operator>>(Lexer::Token<T>& token);
 
 private:
     size_t pos = 0;
     std::string line;
+
+    std::any Advance();
+
+    void SkipWhiteSpaces();
+    double GetNumber();
+    std::string GetString();
 };
 
 

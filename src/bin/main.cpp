@@ -7,7 +7,6 @@ int main(int argc, char** argv) {
         std::cout << '\n';
 
         while (true) {
-            std::cout << "\e[3;34mitmo> \e[0m";
             if (!interpret(std::cin, std::cout)) {
                 return 1;
             }
