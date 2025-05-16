@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <optional>
 
 #include "utils.h"
 
@@ -74,22 +75,44 @@ enum Tokens : uint16_t {
     T_OR,                           // `or`
     T_NOT,                          // `not`
     T_BOOL_FALSE,                   // `false`
-    T_BOOL_TRUE                     // `true`
+    T_BOOL_TRUE,                    // `true`
+
+    // // ERROR
+    // T_BAD                           // ill formed token
 };
 
-template<typename T>
+template<uint16_t TToken>
 struct Token {
     Token() = default;
-    Token(uint16_t t, const T& v) : token(t), value(v) {}
-    uint16_t token;
-    T value;
 };
 
 template<>
-struct Token<void> {
+struct Token<Lexer::Tokens::T_NUMBER> {
     Token() = default;
-    Token(uint16_t t) : token(t) {}
-    uint16_t token;
+    Token(const std::optional<double>& v) {
+        if (v) value = *v;
+        else throw;
+    }
+    Token(std::optional<double>&& v) {
+        if (v) value = std::move(*v);
+        else throw;
+    }
+    double value;
+};
+
+
+template<>
+struct Token<Lexer::Tokens::T_STRING> {
+    Token() = default;
+    Token(const std::optional<std::string>& v) {
+        if (v) value = *v;
+        else throw;
+    }
+    Token(std::optional<std::string>&& v) {
+        if (v) value = std::move(*v);
+        else throw;
+    }
+    std::string value;
 };
 
 
@@ -100,8 +123,9 @@ public:
 
     void Error();
 
-    template<typename T>
-    Tokenizer& operator>>(Lexer::Token<T>& token);
+    template<uint16_t TToken>
+    Tokenizer& operator>>(Lexer::Token<TToken>& token);
+    Tokenizer& operator>>(std::any& token);
 
 private:
     size_t pos = 0;
@@ -110,8 +134,8 @@ private:
     std::any Advance();
 
     void SkipWhiteSpaces();
-    double GetNumber();
-    std::string GetString();
+    std::optional<double> GetNumber();
+    std::optional<std::string> GetString();
 };
 
 

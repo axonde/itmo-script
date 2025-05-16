@@ -8,9 +8,42 @@ void Lexer::Tokenizer::SkipWhiteSpaces() {
     while (pos < line.size() && std::isblank(line[pos])) { ++pos; }
 }
 
-double Lexer::Tokenizer::GetNumber() {
+std::optional<double> Lexer::Tokenizer::GetNumber() {
+    auto get = [&]() { return line[pos++] - '0'; };
+
     double number = 0;
-    while (pos < line.size() && std::isdigit(line[pos])) number = number * 10 + line[pos++] - '0';
+    while (pos < line.size() && std::isdigit(line[pos])) number = number * 10 + get();
+
+    if (pos < line.size() && line[pos] == '.') {
+        ++pos;
+        if (!std::isdigit(line[pos])) { return std::nullopt; }
+
+        double power_of_ten = 0.1;
+        while (pos < line.size() && std::isdigit(line[pos])) {
+            number = number + get() * power_of_ten;
+            power_of_ten *= 0.1;
+        }
+    }
+
+    if (pos < line.size() && line[pos] == 'e') {
+        ++pos;
+        if (!std::isdigit(line[pos]) && line[pos] != '+' && line[pos] != '-') { return std::nullopt; }
+
+        int power = 0;
+        if (line[pos] == '-') {
+            ++pos;
+            if (!std::isdigit(line[pos])) { return std::nullopt; }
+            while (pos < line.size() && std::isdigit(line[pos])) power = power * 10 + get();
+            power = -power;
+        } else {
+            if (line[pos] == '+') ++pos;
+            if (!std::isdigit(line[pos])) { return std::nullopt; }
+
+            while (pos < line.size() && std::isdigit(line[pos])) power = power * 10 + get();
+        }
+        number = number * std::pow(10, power);
+    }
+
     return number;
 }
 
@@ -19,17 +52,23 @@ std::any Lexer::Tokenizer::Advance() {
 
     SkipWhiteSpaces();
 
-    if (pos >= line.size()) return Token<void>(Tokens::T_EOF);
+    if (pos >= line.size()) return Token<Tokens::T_EOF>();
 
-    if (std::isdigit(line[pos])) return Token<double>(Tokens::T_NUMBER, GetNumber());
+    if (std::isdigit(line[pos])) return Token<Tokens::T_NUMBER>(GetNumber());
 
     // if ()
-    return Token<void>(Tokens::T_EOF);
+    return Token<Tokens::T_EOF>();
 }
 
-template<typename T>
-Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token<T>& token) {
-    token = std::any_cast<Lexer::Token<T>>(Advance());
+template<uint16_t TToken>
+Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token<TToken>& token) {
+    token = std::any_cast<Lexer::Token<TToken>>(Advance());
+    ++pos;
+    return *this;
+}
+
+Lexer::Tokenizer& Lexer::Tokenizer::operator>>(std::any& token) {
+    token = Advance();
     ++pos;
     return *this;
 }
