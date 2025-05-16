@@ -8,6 +8,22 @@ void Lexer::Tokenizer::SkipWhiteSpaces() {
     while (pos < line.size() && std::isblank(line[pos])) { ++pos; }
 }
 
+
+// GETTERS
+
+std::optional<std::string> Lexer::Tokenizer::GetVar() {
+    std::regex re(R"([[:alpha:]_][[:alnum:]_]*)", std::regex_constants::extended);
+    std::smatch match;
+
+    std::string remaining = line.substr(pos);
+    if (std::regex_search(remaining, match, re) && match.position() == 0) {
+        std::string str = match.str();
+        pos += str.size();
+        return str;
+    }
+    return std::nullopt;
+}
+
 std::optional<double> Lexer::Tokenizer::GetNumber() {
     auto get = [&]() { return line[pos++] - '0'; };
 
@@ -48,17 +64,6 @@ std::optional<double> Lexer::Tokenizer::GetNumber() {
 }
 
 std::optional<std::string> Lexer::Tokenizer::GetString() {
-    // std::string pattern = R"("((\\.|[^"\\])*")";
-    // std::regex re(pattern, std::regex_constants::extended);
-
-    // std::string str;
-    // while (pos < line.size() && std::regex_match(str, re)) {
-    //     str += line[pos++];
-    // }
-
-    // if (pos == line.size()) { return std::nullopt; }
-    // return str;
-
     std::string str;
     bool escape = false;
     ++pos;
@@ -87,6 +92,8 @@ std::any Lexer::Tokenizer::Advance() {
     SkipWhiteSpaces();
 
     if (pos >= line.size()) return Token<Tokens::T_EOF>();
+
+    if (std::isalpha(line[pos]) || line[pos] == '_') return Token<Tokens::T_VAR>(GetVar());
 
     if (std::isdigit(line[pos])) return Token<Tokens::T_NUMBER>(GetNumber());
 

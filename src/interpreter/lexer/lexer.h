@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <optional>
-// #include <regex>
+#include <regex>
 #include <string>
 
 #include "utils.h"

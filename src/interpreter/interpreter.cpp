@@ -11,7 +11,7 @@ bool interpret(std::istream& input, std::ostream& output) {
 
     Lexer::Tokenizer tokenizer(line);
 
-    Lexer::Token<Lexer::Tokens::T_STRING> token;
+    Lexer::Token<Lexer::Tokens::T_VAR> token;
 
     tokenizer >> token;
     std::cout << token.value;
