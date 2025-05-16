@@ -3,8 +3,9 @@
 #include <cctype>
 #include <cstdint>
 #include <iostream>
-#include <string>
 #include <optional>
+// #include <regex>
+#include <string>
 
 #include "utils.h"
 
@@ -12,8 +13,9 @@ namespace Lexer {
 
 enum Tokens : uint16_t {
     T_EOF,                          // END OF LINE
+    T_VAR,                          // `var`, `Var_Var`, `var__0`, `_var_`
     T_NUMBER,                       // 12, -123, 1.2e-12
-    T_STRING,                       // string, string_0, string0, string0string, ...
+    T_STRING,                       // "string"
     T_NULL,                         // `nil`
     T_COMMENT,                      // `//{line}`, `/*{block}*/`
 
@@ -87,6 +89,20 @@ struct Token {
 };
 
 template<>
+struct Token<Lexer::Tokens::T_VAR> {
+    Token() = default;
+    Token(const std::optional<std::string>& v) {
+        if (v) value = *v;
+        else throw;
+    }
+    Token(std::optional<std::string>&& v) {
+        if (v) value = std::move(*v);
+        else throw;
+    }
+    std::string value;
+};
+
+template<>
 struct Token<Lexer::Tokens::T_NUMBER> {
     Token() = default;
     Token(const std::optional<double>& v) {
@@ -99,7 +115,6 @@ struct Token<Lexer::Tokens::T_NUMBER> {
     }
     double value;
 };
-
 
 template<>
 struct Token<Lexer::Tokens::T_STRING> {
@@ -134,6 +149,7 @@ private:
     std::any Advance();
 
     void SkipWhiteSpaces();
+    std::optional<std::string> GetVar();
     std::optional<double> GetNumber();
     std::optional<std::string> GetString();
 };

@@ -47,6 +47,40 @@ std::optional<double> Lexer::Tokenizer::GetNumber() {
     return number;
 }
 
+std::optional<std::string> Lexer::Tokenizer::GetString() {
+    // std::string pattern = R"("((\\.|[^"\\])*")";
+    // std::regex re(pattern, std::regex_constants::extended);
+
+    // std::string str;
+    // while (pos < line.size() && std::regex_match(str, re)) {
+    //     str += line[pos++];
+    // }
+
+    // if (pos == line.size()) { return std::nullopt; }
+    // return str;
+
+    std::string str;
+    bool escape = false;
+    ++pos;
+
+    while (pos < line.size() && ((line[pos] != '"') | escape)) {
+        if (escape) {
+            escape = false;
+            if (line[pos] != '\\' && line[pos] != '"') str += '\\';
+            str += line[pos];
+        } else if (line[pos] == '\\') {
+            escape = true;
+        } else {
+            str += line[pos];
+        }
+        ++pos;
+    }
+
+    if (pos == line.size()) return std::nullopt;
+    else { ++pos; }
+    return str;
+}
+
 std::any Lexer::Tokenizer::Advance() {
     using namespace Lexer;
 
@@ -55,6 +89,8 @@ std::any Lexer::Tokenizer::Advance() {
     if (pos >= line.size()) return Token<Tokens::T_EOF>();
 
     if (std::isdigit(line[pos])) return Token<Tokens::T_NUMBER>(GetNumber());
+
+    if (line[pos] == '"') return Token<Tokens::T_STRING>(GetString());
 
     // if ()
     return Token<Tokens::T_EOF>();
