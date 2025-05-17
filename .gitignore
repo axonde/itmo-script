@@ -33,6 +33,7 @@
 
 # Project builded files
 build/
+sandbox/
 .vscode/
 
 # MAC OS system files

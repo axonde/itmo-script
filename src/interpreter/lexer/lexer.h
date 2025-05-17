@@ -1,13 +1,15 @@
 #pragma once
-#include <any>
 #include <cctype>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <regex>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
+#include <variant>
 
 #include "utils.h"
 
@@ -84,51 +86,29 @@ enum Tokens : uint16_t {
     T_BAD                           // ill formed token
 };
 
-template<uint16_t TToken>
-struct Token {
-    Token() = default;
-};
+class Token {
+public:
+    Token() : token(Tokens::T_BAD), value(std::monostate{}) {}
 
-template<>
-struct Token<Lexer::Tokens::T_VAR> {
-    Token() = default;
-    Token(const std::optional<std::string>& v) {
-        if (v) value = *v;
-        else throw;
-    }
-    Token(std::optional<std::string>&& v) {
-        if (v) value = std::move(*v);
-        else throw;
-    }
-    std::string value;
-};
+    Token(Tokens t, double v)
+    : token(t), value(v) {}
 
-template<>
-struct Token<Lexer::Tokens::T_NUMBER> {
-    Token() = default;
-    Token(const std::optional<double>& v) {
-        if (v) value = *v;
-        else throw;
-    }
-    Token(std::optional<double>&& v) {
-        if (v) value = std::move(*v);
-        else throw;
-    }
-    double value;
-};
+    Token(Tokens t, const std::string& v)
+    : token(t), value(v) {}
+    Token(Tokens t, std::string&& v)
+    : token(t), value(v) {}
 
-template<>
-struct Token<Lexer::Tokens::T_STRING> {
-    Token() = default;
-    Token(const std::optional<std::string>& v) {
-        if (v) value = *v;
-        else throw;
-    }
-    Token(std::optional<std::string>&& v) {
-        if (v) value = std::move(*v);
-        else throw;
-    }
-    std::string value;
+    // Comfy function, that give you a possibility to pass an optional object and get a throw if that is empty.
+    template<typename T>
+    Token(Tokens, const std::optional<T>&);
+
+    Token(Tokens t) : token(t), value(std::monostate{}) {}
+
+    auto Get() const;
+
+    Tokens token;
+private:
+    std::variant<std::monostate, double, std::string> value;
 };
 
 
@@ -139,43 +119,40 @@ public:
 
     void Error();
 
-    template<uint16_t TToken>
-    Tokenizer& operator>>(Lexer::Token<TToken>& token);
-
-    Tokenizer& operator>>(std::any& token);
+    Tokenizer& operator>>(Lexer::Token& token);
 
 private:
     size_t pos = 0;
     std::string line;
 
-    std::any Advance();
+    Lexer::Token Advance();
 
     /// SKIPPERS
     void SkipWhiteSpaces();
     void SkipComment();
 
     /// TRYERS
-    std::any TryLexems();   // - num literal
-                            // - str literal
-                            // - comparators
-                            // - equals
-                            // - operators
-                            // - syntaxes
+    std::optional<Lexer::Token> TryLexems(); // - num literal
+                                             // - str literal
+                                             // - comparators
+                                             // - equals
+                                             // - operators
+                                             // - syntaxes
 
-    std::any TryWords();    // - functions
-                            // - statements
-                            // - logics
-                            // - variables
+    std::optional<Lexer::Token> TryWords(); // - functions
+                                            // - statements
+                                            // - logics
+                                            // - variables
 
     // lexems
-    std::any TryLiterals();
-    std::any TryComparators();
-    std::any TryEquals();
-    std::any TryOperators();
-    std::any TrySyntaxes();
+    std::optional<Lexer::Token> TryLiterals();
+    std::optional<Lexer::Token> TryComparators();
+    std::optional<Lexer::Token> TryEquals();
+    std::optional<Lexer::Token> TryOperators();
+    std::optional<Lexer::Token> TrySyntaxes();
 
     // words
-    std::any TryKeyWords(std::string);
+    std::optional<Lexer::Token> TryKeyWords(std::string);
 
     /// GETERS
     std::optional<double> GetNumber();

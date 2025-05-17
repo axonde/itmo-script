@@ -11,10 +11,9 @@ bool interpret(std::istream& input, std::ostream& output) {
 
     Lexer::Tokenizer tokenizer(line);
 
-    Lexer::Token<Lexer::Tokens::T_VAR> token;
-
+    Lexer::Token token;
     tokenizer >> token;
-    std::cout << token.value;
+    std::cout << std::get<double>(token.Get());
     Utils::Errors::SyntaxError();
     return false;
 }
