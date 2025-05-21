@@ -110,52 +110,52 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryLiterals() {
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryComparators() {
     using namespace Lexer;
-    if (line[pos] == '<') ++pos; return Token(Tokens::T_COMP_SMALLER);
-    if (line[pos] == '>') ++pos; return Token(Tokens::T_COMP_GREATER);
+    if (line[pos] == '<') { ++pos; return Token(Tokens::T_COMP_SMALLER); }
+    if (line[pos] == '>') { ++pos; return Token(Tokens::T_COMP_GREATER); }
 
     if (pos + 1 == line.size()) return {};
 
-    if (line[pos] == '=' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_COMP_EQUAL);
-    if (line[pos] == '!' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_COMP_NON_EQUAL);
-    if (line[pos] == '<' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_COMP_SMALLER_OR_EQ);
-    if (line[pos] == '>' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_COMP_GREATER_OR_EQ);
+    if (line[pos] == '=' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_EQUAL); }
+    if (line[pos] == '!' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_NON_EQUAL); }
+    if (line[pos] == '<' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_SMALLER_OR_EQ); }
+    if (line[pos] == '>' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_GREATER_OR_EQ); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryEquals() {
     using namespace Lexer;
-    if (line[pos] == '=') ++pos; return Token(Tokens::T_EQUAL);
+    if (line[pos] == '=') { ++pos; return Token(Tokens::T_EQUAL); }
 
     if (pos + 1 == line.size()) return {};
 
-    if (line[pos] == '+' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_EQUAL_PLUS);
-    if (line[pos] == '-' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_EQUAL_MINUS);
-    if (line[pos] == '*' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_EQUAL_MULT);
-    if (line[pos] == '/' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_EQUAL_DIV);
-    if (line[pos] == '%' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_EQUAL_MOD);
-    if (line[pos] == '^' && line[pos + 1] == '=') pos += 2; return Token(Tokens::T_EQUAL_XOR);
+    if (line[pos] == '+' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_PLUS); }
+    if (line[pos] == '-' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MINUS); }
+    if (line[pos] == '*' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MULT); }
+    if (line[pos] == '/' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_DIV); }
+    if (line[pos] == '%' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MOD); }
+    if (line[pos] == '^' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_XOR); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryOperators() {
     using namespace Lexer;
-    if (line[pos] == '+') ++pos; return Token(Tokens::T_PLUS);
-    if (line[pos] == '-') ++pos; return Token(Tokens::T_MINUS);
-    if (line[pos] == '/') ++pos; return Token(Tokens::T_DIV);
-    if (line[pos] == '*') ++pos; return Token(Tokens::T_MULT);
-    if (line[pos] == '%') ++pos; return Token(Tokens::T_MOD);
-    if (line[pos] == '^') ++pos; return Token(Tokens::T_XOR);
+    if (line[pos] == '+') { ++pos; return Token(Tokens::T_PLUS); }
+    if (line[pos] == '-') { ++pos; return Token(Tokens::T_MINUS); }
+    if (line[pos] == '/') { ++pos; return Token(Tokens::T_DIV); }
+    if (line[pos] == '*') { ++pos; return Token(Tokens::T_MULT); }
+    if (line[pos] == '%') { ++pos; return Token(Tokens::T_MOD); }
+    if (line[pos] == '^') { ++pos; return Token(Tokens::T_XOR); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TrySyntaxes() {
     using namespace Lexer;
-    if (line[pos] == ',') ++pos; return Token(Tokens::T_COMMA);
-    if (line[pos] == ':') ++pos; return Token(Tokens::T_COLON);
-    if (line[pos] == '(') ++pos; return Token(Tokens::T_LEFT_BRACKET);
-    if (line[pos] == ')') ++pos; return Token(Tokens::T_RIGHT_BRACKET);
-    if (line[pos] == '[') ++pos; return Token(Tokens::T_LEFT_SQUARE_BRACKET);
-    if (line[pos] == ']') ++pos; return Token(Tokens::T_RIGHT_SQUARE_BRACKET);
+    if (line[pos] == ',') { ++pos; return Token(Tokens::T_COMMA); }
+    if (line[pos] == ':') { ++pos; return Token(Tokens::T_COLON); }
+    if (line[pos] == '(') { ++pos; return Token(Tokens::T_LEFT_BRACKET); }
+    if (line[pos] == ')') { ++pos; return Token(Tokens::T_RIGHT_BRACKET); }
+    if (line[pos] == '[') { ++pos; return Token(Tokens::T_LEFT_SQUARE_BRACKET); }
+    if (line[pos] == ']') { ++pos; return Token(Tokens::T_RIGHT_SQUARE_BRACKET); }
 
     return {};
 }

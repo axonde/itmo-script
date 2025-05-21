@@ -13,7 +13,8 @@ bool interpret(std::istream& input, std::ostream& output) {
 
     Lexer::Token token;
     tokenizer >> token;
-    std::cout << std::get<double>(token.Get());
+    std::cout << token.token << '\n';
+    std::cout << std::get<std::string>(token.Get());
     Utils::Errors::SyntaxError();
     return false;
 }
