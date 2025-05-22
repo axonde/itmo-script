@@ -1,7 +1,7 @@
 #include "lexer.h"
 
 /// ERRORS
-void Lexer::Tokenizer::Error() {
+void Lexer::Tokenizer::Error(size_t pos) {
     Utils::Errors::SyntaxError();
 }
 
@@ -212,8 +212,12 @@ Lexer::Token Lexer::Tokenizer::Advance() {
 
     if (pos >= line.size()) return Token(Tokens::T_EOF);
 
-    if (auto token = TryLexems(); token) return std::move(*token);
-    if (auto token = TryWords(); token) return std::move(*token);
+    try {
+        if (auto token = TryLexems(); token) return std::move(*token);
+        if (auto token = TryWords(); token) return std::move(*token);
+    } catch (...) {
+        return Token(Tokens::T_BAD);
+    }
 
     return Token(Tokens::T_BAD);
 }

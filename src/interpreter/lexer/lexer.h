@@ -96,9 +96,9 @@ public:
     Token(Tokens t, const std::string& v)
     : token(t), value(v) {}
     Token(Tokens t, std::string&& v)
-    : token(t), value(v) {}
+    : token(t), value(std::forward<std::string>(v)) {}
 
-    // Comfy function, that give you a possibility to pass an optional object and get a throw if that is empty.
+    // (Comfy) function, that give you a possibility to pass an optional object and get a throw if that is empty.
     template<typename T>
     Token(Tokens, const std::optional<T>&);
 
@@ -117,7 +117,7 @@ class Tokenizer {
 public:
     Tokenizer(const std::string& str) : line(str) {}
 
-    void Error();
+    void Error(size_t);
 
     Tokenizer& operator>>(Lexer::Token& token);
 
