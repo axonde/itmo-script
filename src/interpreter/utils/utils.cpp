@@ -1,9 +1,5 @@
 #include "utils.h"
 
-void Errors::SyntaxError() {
-    std::cerr << Errors::RED << "Syntax error." << Errors::WHITE;
-}
-
-void Errors::AbnormalError() {
-    std::cerr << Errors::RED << "Abnormal error." << Errors::WHITE;
-}
+// inline void PrintError(std::string header, Errors::Error* error, size_t pos) {
+//     std::cout << Patterns::RED << header << Patterns::WHITE << error->what() << " at " << pos << std::endl;
+// }

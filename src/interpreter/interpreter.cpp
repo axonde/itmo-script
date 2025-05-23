@@ -1,6 +1,6 @@
 #include "interpreter.h"
 
-bool interpret(std::istream& input, std::ostream& output) {
+bool Interpreter::Interpret(std::istream& input, std::ostream& output) {
     std::string line;
     do {
         std::cout << Patterns::CMD;
@@ -10,13 +10,14 @@ bool interpret(std::istream& input, std::ostream& output) {
     Lexer::Tokenizer tokenizer(line);
 
     Lexer::Token token;
+    tokenizer >> token;
     while (token.token != Lexer::Tokens::T_EOF) {
-        tokenizer >> token;
         std::cout << token.token << " ; ";
         if (token.token == Lexer::Tokens::T_BAD) {
-            Errors::SyntaxError();
+            SyntaxError(token);
             return false;
         }
+        tokenizer >> token;
     }
     std::cout << '\n';
 

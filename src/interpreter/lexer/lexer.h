@@ -88,27 +88,32 @@ enum Tokens : uint16_t {
 
 class Token {
 public:
-    Token() : token(Tokens::T_BAD), value(std::monostate{}) {}
+    Token() = default;
 
-    Token(Tokens t, double v)
-    : token(t), value(v) {}
-
-    Token(Tokens t, const std::string& v)
-    : token(t), value(v) {}
-    Token(Tokens t, std::string&& v)
-    : token(t), value(std::forward<std::string>(v)) {}
-
-    // (Comfy) function, that give you a possibility to pass an optional object and get a throw if that is empty.
     template<typename T>
-    Token(Tokens, const std::optional<T>&);
+    requires std::derived_from<T, Errors::Error>
+    Token(T&& e, size_t p)
+    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), pos(p) {}
 
-    Token(Tokens t) : token(t), value(std::monostate{}) {}
+    Token(Tokens t, double v, size_t p)
+    : token(t), value(v), pos(p) {}
 
-    auto Get() const;
+    Token(Tokens t, const std::string& v, size_t p)
+    : token(t), value(v), pos(p) {}
+    Token(Tokens t, std::string&& v, size_t p)
+    : token(t), value(std::forward<std::string>(v)), pos(p) {}
+
+    // (Comfy) function, that give you a possibility to pass an optional object
+    // and will return a T_BAD if that is empty.
+    template<typename T>
+    Token(Tokens, const std::optional<T>&, size_t);
+
+    Token(Tokens t, size_t p)
+    : token(t), value(std::monostate{}), pos(p) {}
 
     Tokens token;
-private:
-    std::variant<std::monostate, double, std::string> value;
+    size_t pos;
+    std::variant<std::monostate, double, std::string, std::shared_ptr<Errors::Error>> value;
 };
 
 

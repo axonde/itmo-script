@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
         std::cout << '\n';
 
         while (true) {
-            if (!interpret(std::cin, std::cout)) {
+            if (!Interpreter::Interpret(std::cin, std::cout)) {
                 return 1;
             }
         }
