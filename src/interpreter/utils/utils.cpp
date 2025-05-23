@@ -1,9 +1,9 @@
 #include "utils.h"
 
-void Utils::Errors::SyntaxError() {
-    std::cerr << Utils::Errors::RED << "Syntax error." << Utils::Errors::WHITE;
+void Errors::SyntaxError() {
+    std::cerr << Errors::RED << "Syntax error." << Errors::WHITE;
 }
 
-void Utils::Errors::AbnormalError() {
-    std::cerr << Utils::Errors::RED << "Abnormal error." << Utils::Errors::WHITE;
+void Errors::AbnormalError() {
+    std::cerr << Errors::RED << "Abnormal error." << Errors::WHITE;
 }

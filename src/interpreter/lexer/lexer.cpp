@@ -1,15 +1,14 @@
 #include "lexer.h"
 
-/// ERRORS
-void Lexer::Tokenizer::Error(size_t pos) {
-    Utils::Errors::SyntaxError();
-}
-
 /// TOKEN
 template<typename T>
 Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt) {
+    // del throw system -> instead create BAD TOKEN in place;
     token = t;
-    if (opt == std::nullopt) { throw; }
+    if (opt == std::nullopt) {
+        if (t == Lexer::Tokens::T_NUMBER) throw Errors::LexerErrors::LexerNumberError();
+        else throw Errors::LexerErrors::LexerStringError();
+    }
     value = *opt;
 }
 
@@ -168,16 +167,20 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryKeyWords(std::string str) {
     if (auto iter = key_words_.find(str); iter == key_words_.end()) {
         return {};
     }
-    /// not finished here.
-    size_t pos_save = pos;
-    Token token = Advance();
-    if (token.token == Lexer::Tokens::T_IF) str += " if"s;
-    if (token.token == Lexer::Tokens::T_WHILE) str += " while"s;
-    if (token.token == Lexer::Tokens::T_FUNC) str += " func"s;
+
+    Token next_token = Peek();
+    if (str == "end") {
+        if (next_token.token == Tokens::T_IF) { Advance(); str += " if"s; }
+        if (next_token.token == Tokens::T_WHILE) { Advance(); str += " while"s; }
+        if (next_token.token == Tokens::T_FOR) { Advance(); str += " for"s; }
+        if (next_token.token == Tokens::T_FUNC) { Advance(); str += " function"s; }
+    }
+    if (str == "else") {
+        if (next_token.token == Tokens::T_IF) { Advance(); str += " if"s; }
+    }
 
     if (auto iter = key_words_.find(str); iter == key_words_.end()) {
-        pos = pos_save;
-        return {};
+        return Token(Tokens::T_BAD);
     } else {
         return Token(static_cast<Tokens>(iter->second));
     }
@@ -222,8 +225,17 @@ Lexer::Token Lexer::Tokenizer::Advance() {
     return Token(Tokens::T_BAD);
 }
 
+Lexer::Token Lexer::Tokenizer::Peek() {
+    using namespace Lexer;
+
+    std::string str;
+    size_t pos_save = pos;
+    Token token = Advance();
+    pos = pos_save;
+    return token;
+}
+
 Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {
     token = Advance();
-    ++pos;
     return *this;
 }

@@ -10,7 +10,6 @@ int main(int argc, char** argv) {
             if (!interpret(std::cin, std::cout)) {
                 return 1;
             }
-            std::cout << std::endl;
         }
         return 0;
     }

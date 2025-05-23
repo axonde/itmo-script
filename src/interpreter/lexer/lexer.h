@@ -117,8 +117,6 @@ class Tokenizer {
 public:
     Tokenizer(const std::string& str) : line(str) {}
 
-    void Error(size_t);
-
     Tokenizer& operator>>(Lexer::Token& token);
 
 private:
@@ -126,6 +124,7 @@ private:
     std::string line;
 
     Lexer::Token Advance();
+    Lexer::Token Peek();
 
     /// SKIPPERS
     void SkipWhiteSpaces();
@@ -174,6 +173,7 @@ private:
         {"end for", Tokens::T_END_FOR},
         {"break", Tokens::T_BREAK},
         {"continue", Tokens::T_CONTINUE},
+        {"end", Tokens::T_BAD},
 
     // functions
         {"function", Tokens::T_FUNC},
