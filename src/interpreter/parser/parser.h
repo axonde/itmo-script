@@ -43,21 +43,22 @@ class Parser {
         Var(std::string&& id) : Node(Nodes::N_VAR), id(std::move(id)) {}
         std::string id;
     };
+    
     struct NoOp : Node {
         NoOp() : Node(Nodes::N_EMPTY) {}
     };
-
     struct UnaryOp : Node {
-        UnaryOp(std::unique_ptr<Node>&& node)
-        : Node(Nodes::N_UNARY_OP), child(std::move(node)) {}
+        UnaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& node)
+        : Node(Nodes::N_UNARY_OP), op(o), child(std::move(node)) {}
 
+        Lexer::Tokens op;
         std::unique_ptr<Node> child;
     };
     struct BinaryOp : Node {
         BinaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& l, std::unique_ptr<Node>&& r)
-        : Node(Nodes::N_BINARY_OP), operator(o), left(std::move(l)), right(std::move(r)) {}
+        : Node(Nodes::N_BINARY_OP), op(o), left(std::move(l)), right(std::move(r)) {}
 
-        Lexer::Tokens operator;
+        Lexer::Tokens op;
         std::unique_ptr<Node> left;
         std::unique_ptr<Node> right;
     };
