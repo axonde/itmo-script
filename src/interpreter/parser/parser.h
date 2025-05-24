@@ -1,6 +1,8 @@
 #pragma once
+#include <concepts>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <variant>
 
 #include "lexer.h"
@@ -12,84 +14,90 @@ class Parser {
         N_STRING_LITERAL,
         N_VAR,
 
-        N_NO_OP,
+        N_EMPTY,
         N_UNARY_OP,
         N_BINARY_OP,
 
-        N_ASSIGNMENT_STATE,
+        N_ASSIGNMENT_OP,
 
-        N_COMPOUND
+        N_COMPOUND,
+        N_BAD
     };
 
     struct Node {
-        Node(Nodes t) : type(t), value(std::monostate{}) {}
-        Node(Nodes t, double v) : type(t), value(v) {}
-        Node(Nodes t, const std::string& v) : type(t), value(v) {}
-        Node(Nodes t, std::string&& v) : type(t), value(std::move(v)) {}
-
+        Node(Nodes t) : type(t) {}
         Nodes type;
-        std::variant<std::monostate, double, std::string> value;
     };
 
     struct NumLiteral : Node {
-        NumLiteral(double value) : Node(Nodes::N_NUM_LITERAL, value) {}
+        NumLiteral(double v) : Node(Nodes::N_NUM_LITERAL), value(v) {}
+        double value;
     };
     struct StringLiteral : Node {
-        StringLiteral(const std::string& value) : Node(Nodes::N_STRING_LITERAL, value) {}
-        StringLiteral(std::string&& value) : Node(Nodes::N_STRING_LITERAL, std::move(value)) {}
+        StringLiteral(const std::string& str) : Node(Nodes::N_STRING_LITERAL), value(str) {}
+        StringLiteral(std::string&& str) : Node(Nodes::N_STRING_LITERAL), value(std::move(str)) {}
+        std::string value;
     };
     struct Var : Node {
-        Var(double value) : Node(Nodes::N_VAR, value) {}
+        Var(const std::string& id) : Node(Nodes::N_VAR), id(id) {}
+        Var(std::string&& id) : Node(Nodes::N_VAR), id(std::move(id)) {}
+        std::string id;
+    };
+    struct NoOp : Node {
+        NoOp() : Node(Nodes::N_EMPTY) {}
     };
 
-    struct NoOp : Node {
-        NoOp() : Node(Nodes::N_NO_OP) {}
-    };
     struct UnaryOp : Node {
-        template<typename T>
-        requires std::derived_from<T, Node>
-        UnaryOp(T&& n) : Node(Nodes::N_UNARY_OP), child(std::make_unique<T>(std::forward<T>(n))) {}
+        UnaryOp(std::unique_ptr<Node>&& node)
+        : Node(Nodes::N_UNARY_OP), child(std::move(node)) {}
 
         std::unique_ptr<Node> child;
     };
     struct BinaryOp : Node {
-        template<typename T, typename U>
-        requires std::derived_from<T, Node> && std::derived_from<U, Node>
-        BinaryOp(T&& l, U&& r)
-        : Node(Nodes::N_BINARY_OP), left(std::make_unique<T>(std::forward<T>(l))), right(std::make_unique<U>(std::forward<U>(r))) {}
+        BinaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& l, std::unique_ptr<Node>&& r)
+        : Node(Nodes::N_BINARY_OP), operator(o), left(std::move(l)), right(std::move(r)) {}
 
+        Lexer::Tokens operator;
         std::unique_ptr<Node> left;
         std::unique_ptr<Node> right;
     };
-
-    struct AssignmentStatement : Node {
-        template<typename T>
-        requires std::derived_from<T, Node>
-        AssignmentStatement(Var&& v, T&& vl)
-        : Node(Nodes::N_ASSIGNMENT_STATE), var(std::move(v)), value(std::forward<T>(vl)) {}
+    struct AssignOp : Node {
+        AssignOp(Var&& vr, std::unique_ptr<Node> vl)
+        : Node(Nodes::N_ASSIGNMENT_OP),
+          var(std::move(vr)), value(std::move(vl)) {}
 
         Var var;
         std::unique_ptr<Node> value;
     };
 
     struct Compound : Node {
-        template<typename... Args>
-        requires (std::derived_from<Args, Node> && ...)
-        Compound(Args&&... args) : Node(Nodes::N_COMPOUND), children(std::make_unique<Args>(std::forward<Args>(args))...) {}
-
+        Compound() : Node(Nodes::N_COMPOUND) {}
         std::vector<std::unique_ptr<Node>> children;
+    };
+    struct Bad : Node {
+        template<typename T>
+        requires std::same_as<T, Lexer::Token>
+        Bad(T&& t) : Node(Nodes::N_BAD), token(std::forward<T>(t)) {}
+        Lexer::Token token;
     };
 
 public:
-    bool Eat();
+    Parser(Lexer::Tokenizer&& t) : tokenizer(t) {}
 
-    Node Factor();
-    Node Term();
-    Node Expr();
-    Node Empty();
-    Node AssignStatement();
-    Node Statement();
-    Node StatementList();
+    bool Eat(Lexer::Tokens);
+    std::unique_ptr<Node> MakeBadNode();
 
+    std::unique_ptr<Node> Factor();
+    std::unique_ptr<Node> Term();
+    std::unique_ptr<Node> Expr();
+    std::unique_ptr<Node> Empty();
+    std::unique_ptr<Node> AssignmentStatement();
+    std::unique_ptr<Node> Statement();
+    std::unique_ptr<Node> StatementList();
+
+    void Parse();
+
+    std::unique_ptr<Node> root;
+    Lexer::Token token;
     Lexer::Tokenizer tokenizer;
 };

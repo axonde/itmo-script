@@ -23,3 +23,21 @@ bool Interpreter::Interpret(std::istream& input, std::ostream& output) {
 
     return true;
 }
+
+bool Interpreter::Interpret(std::string& program, std::ostream& out) {
+    Lexer::Tokenizer tokenizer(program);
+
+    Lexer::Token token;
+    tokenizer >> token;
+    while (token.token != Lexer::Tokens::T_EOF) {
+        std::cout << token.token << " ; ";
+        if (token.token == Lexer::Tokens::T_BAD) {
+            SyntaxError(token);
+            return false;
+        }
+        tokenizer >> token;
+    }
+    std::cout << '\n';
+
+    return true;
+}

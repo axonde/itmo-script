@@ -1,4 +1,5 @@
 #pragma once
+#include <concepts>
 #include <cctype>
 #include <cstdint>
 #include <iostream>
@@ -17,7 +18,7 @@ namespace Lexer {
 
 enum Tokens : uint16_t {
     // BASE
-    T_EOF,                          // END OF LINE
+    T_EOF,                          // END OF FILE
     T_VAR,                          // `var`, `Var_Var`, `var__0`, `_var_`
     T_NUMBER,                       // 12, -123, 1.2e-12
     T_STRING,                       // "string"
@@ -75,6 +76,7 @@ enum Tokens : uint16_t {
     T_XOR,                          // `^`
 
     // SYNTAX SYMBOLS
+    T_EOL,                          // END OF LINE
     T_COMMA,                        // `,`
     T_COLON,                        // `:`
     T_LEFT_BRACKET,                 // `(`
@@ -92,27 +94,28 @@ public:
 
     template<typename T>
     requires std::derived_from<T, Errors::Error>
-    Token(T&& e, size_t p)
-    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), pos(p) {}
+    Token(T&& e, size_t p, size_t l)
+    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), pos(p), line(l) {}
 
-    Token(Tokens t, double v, size_t p)
-    : token(t), value(v), pos(p) {}
+    Token(Tokens t, double v, size_t p, size_t l)
+    : token(t), value(v), pos(p), line(l) {}
 
-    Token(Tokens t, const std::string& v, size_t p)
-    : token(t), value(v), pos(p) {}
-    Token(Tokens t, std::string&& v, size_t p)
-    : token(t), value(std::forward<std::string>(v)), pos(p) {}
+    Token(Tokens t, const std::string& v, size_t p, size_t l)
+    : token(t), value(v), pos(p), line(l) {}
+    Token(Tokens t, std::string&& v, size_t p, size_t l)
+    : token(t), value(std::forward<std::string>(v)), pos(p), line(l) {}
 
     // (Comfy) function, that give you a possibility to pass an optional object
     // and will return a T_BAD if that is empty.
     template<typename T>
-    Token(Tokens, const std::optional<T>&, size_t);
+    Token(Tokens, const std::optional<T>&, size_t, size_t);
 
-    Token(Tokens t, size_t p)
-    : token(t), value(std::monostate{}), pos(p) {}
+    Token(Tokens t, size_t p, size_t l)
+    : token(t), value(std::monostate{}), pos(p), line(l) {}
 
     Tokens token;
     size_t pos;
+    size_t line;
     std::variant<std::monostate, double, std::string, std::shared_ptr<Errors::Error>> value;
 };
 
@@ -120,13 +123,16 @@ public:
 // Lexical Analyzer
 class Tokenizer {
 public:
-    Tokenizer(const std::string& str) : line(str) {}
+    Tokenizer(const std::string& str) : text(str) {}
 
     Tokenizer& operator>>(Lexer::Token& token);
 
 private:
+    size_t archived_pos = 0;
     size_t pos = 0;
-    std::string line;
+    size_t line = 1;
+    std::string text;
+    size_t DebugPos() { return pos - archived_pos + 1; }
 
     Lexer::Token Advance();
     Lexer::Token Peek();

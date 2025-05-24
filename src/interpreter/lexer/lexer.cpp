@@ -2,15 +2,14 @@
 
 /// TOKEN
 template<typename T>
-Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t p)
-: pos(p) {
-    // del throw system -> instead create BAD TOKEN in place;
+Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t p, size_t l)
+: pos(p), line(l) {
     token = t;
     if (opt == std::nullopt) {
         if (t == Lexer::Tokens::T_NUMBER)
-            *this = Token(Errors::LexerErrors::LexerNumberError{}, pos);
+            *this = Token(Errors::LexerErrors::LexerNumberError{}, pos, line);
         else
-            *this = Token(Errors::LexerErrors::LexerStringError{}, pos);
+            *this = Token(Errors::LexerErrors::LexerStringError{}, pos, line);
         return;
     }
     value = *opt;
@@ -18,47 +17,47 @@ Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t p)
 
 /// SKIPPERS
 void Lexer::Tokenizer::SkipWhiteSpaces() {
-    while (pos < line.size() && std::isblank(line[pos])) { ++pos; }
+    while (pos < text.size() && std::isblank(text[pos])) { ++pos; }
 }
 void Lexer::Tokenizer::SkipComment() {
-    if (pos < line.size() - 1 && line[pos] == '/' && line[pos + 1] == '/') {
-        pos = line.size();
+    if (pos < text.size() - 1 && text[pos] == '/' && text[pos + 1] == '/') {
+        pos = text.size();
     }
 }
 
 // GETTERS
 std::optional<double> Lexer::Tokenizer::GetNumber() {
-    auto get = [&]() { return line[pos++] - '0'; };
+    auto get = [&]() { return text[pos++] - '0'; };
 
     double number = 0;
-    while (pos < line.size() && std::isdigit(line[pos])) number = number * 10 + get();
+    while (pos < text.size() && std::isdigit(text[pos])) number = number * 10 + get();
 
-    if (pos < line.size() && line[pos] == '.') {
+    if (pos < text.size() && text[pos] == '.') {
         ++pos;
-        if (!std::isdigit(line[pos])) { return std::nullopt; }
+        if (!std::isdigit(text[pos])) { return std::nullopt; }
 
         double power_of_ten = 0.1;
-        while (pos < line.size() && std::isdigit(line[pos])) {
+        while (pos < text.size() && std::isdigit(text[pos])) {
             number = number + get() * power_of_ten;
             power_of_ten *= 0.1;
         }
     }
 
-    if (pos < line.size() && line[pos] == 'e') {
+    if (pos < text.size() && text[pos] == 'e') {
         ++pos;
-        if (!std::isdigit(line[pos]) && line[pos] != '+' && line[pos] != '-') { return std::nullopt; }
+        if (!std::isdigit(text[pos]) && text[pos] != '+' && text[pos] != '-') { return std::nullopt; }
 
         int power = 0;
-        if (line[pos] == '-') {
+        if (text[pos] == '-') {
             ++pos;
-            if (!std::isdigit(line[pos])) { return std::nullopt; }
-            while (pos < line.size() && std::isdigit(line[pos])) power = power * 10 + get();
+            if (!std::isdigit(text[pos])) { return std::nullopt; }
+            while (pos < text.size() && std::isdigit(text[pos])) power = power * 10 + get();
             power = -power;
         } else {
-            if (line[pos] == '+') ++pos;
-            if (!std::isdigit(line[pos])) { return std::nullopt; }
+            if (text[pos] == '+') ++pos;
+            if (!std::isdigit(text[pos])) { return std::nullopt; }
 
-            while (pos < line.size() && std::isdigit(line[pos])) power = power * 10 + get();
+            while (pos < text.size() && std::isdigit(text[pos])) power = power * 10 + get();
         }
         number = number * std::pow(10, power);
     }
@@ -70,20 +69,20 @@ std::optional<std::string> Lexer::Tokenizer::GetString() {
     bool escape = false;
     ++pos;
 
-    while (pos < line.size() && ((line[pos] != '"') | escape)) {
+    while (pos < text.size() && ((text[pos] != '"') | escape)) {
         if (escape) {
             escape = false;
-            if (line[pos] != '\\' && line[pos] != '"') str += '\\';
-            str += line[pos];
-        } else if (line[pos] == '\\') {
+            if (text[pos] != '\\' && text[pos] != '"') str += '\\';
+            str += text[pos];
+        } else if (text[pos] == '\\') {
             escape = true;
         } else {
-            str += line[pos];
+            str += text[pos];
         }
         ++pos;
     }
 
-    if (pos == line.size()) return std::nullopt;
+    if (pos == text.size()) return std::nullopt;
     else { ++pos; }
     return str;
 }
@@ -91,7 +90,7 @@ std::optional<std::string> Lexer::Tokenizer::GetWord() {
     std::regex re(R"([[:alpha:]_][[:alnum:]_]*)", std::regex_constants::extended);
     std::smatch match;
 
-    std::string remaining = line.substr(pos);
+    std::string remaining = text.substr(pos);
     if (std::regex_search(remaining, match, re) && match.position() == 0) {
         std::string str = match.str();
         pos += str.size();
@@ -105,58 +104,59 @@ std::optional<std::string> Lexer::Tokenizer::GetWord() {
 // lexems
 std::optional<Lexer::Token> Lexer::Tokenizer::TryLiterals() {
     using namespace Lexer;
-    if (std::isdigit(line[pos])) return Token(Tokens::T_NUMBER, GetNumber(), pos);
-    if (line[pos] == '"') return Token(Tokens::T_STRING, GetString(), pos);
+    if (std::isdigit(text[pos])) return Token(Tokens::T_NUMBER, GetNumber(), DebugPos(), line);
+    if (text[pos] == '"') return Token(Tokens::T_STRING, GetString(), DebugPos(), line);
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryComparators() {
     using namespace Lexer;
-    if (line[pos] == '<') { ++pos; return Token(Tokens::T_COMP_SMALLER, pos); }
-    if (line[pos] == '>') { ++pos; return Token(Tokens::T_COMP_GREATER, pos); }
+    if (text[pos] == '<') { ++pos; return Token(Tokens::T_COMP_SMALLER, DebugPos(), line); }
+    if (text[pos] == '>') { ++pos; return Token(Tokens::T_COMP_GREATER, DebugPos(), line); }
 
-    if (pos + 1 == line.size()) return {};
+    if (pos + 1 == text.size()) return {};
 
-    if (line[pos] == '=' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_EQUAL, pos); }
-    if (line[pos] == '!' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_NON_EQUAL, pos); }
-    if (line[pos] == '<' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_SMALLER_OR_EQ, pos); }
-    if (line[pos] == '>' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_GREATER_OR_EQ, pos); }
+    if (text[pos] == '=' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_EQUAL, DebugPos(), line); }
+    if (text[pos] == '!' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_NON_EQUAL, DebugPos(), line); }
+    if (text[pos] == '<' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_SMALLER_OR_EQ, DebugPos(), line); }
+    if (text[pos] == '>' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_COMP_GREATER_OR_EQ, DebugPos(), line); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryEquals() {
     using namespace Lexer;
-    if (line[pos] == '=') { ++pos; return Token(Tokens::T_EQUAL, pos); }
+    if (text[pos] == '=') { ++pos; return Token(Tokens::T_EQUAL, DebugPos(), line); }
 
-    if (pos + 1 == line.size()) return {};
+    if (pos + 1 == text.size()) return {};
 
-    if (line[pos] == '+' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_PLUS, pos); }
-    if (line[pos] == '-' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MINUS, pos); }
-    if (line[pos] == '*' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MULT, pos); }
-    if (line[pos] == '/' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_DIV, pos); }
-    if (line[pos] == '%' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MOD, pos); }
-    if (line[pos] == '^' && line[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_XOR, pos); }
+    if (text[pos] == '+' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_PLUS, DebugPos(), line); }
+    if (text[pos] == '-' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MINUS, DebugPos(), line); }
+    if (text[pos] == '*' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MULT, DebugPos(), line); }
+    if (text[pos] == '/' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_DIV, DebugPos(), line); }
+    if (text[pos] == '%' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_MOD, DebugPos(), line); }
+    if (text[pos] == '^' && text[pos + 1] == '=') { pos += 2; return Token(Tokens::T_EQUAL_XOR, DebugPos(), line); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryOperators() {
     using namespace Lexer;
-    if (line[pos] == '+') { ++pos; return Token(Tokens::T_PLUS, pos); }
-    if (line[pos] == '-') { ++pos; return Token(Tokens::T_MINUS, pos); }
-    if (line[pos] == '/') { ++pos; return Token(Tokens::T_DIV, pos); }
-    if (line[pos] == '*') { ++pos; return Token(Tokens::T_MULT, pos); }
-    if (line[pos] == '%') { ++pos; return Token(Tokens::T_MOD, pos); }
-    if (line[pos] == '^') { ++pos; return Token(Tokens::T_XOR, pos); }
+    if (text[pos] == '+') { ++pos; return Token(Tokens::T_PLUS, DebugPos(), line); }
+    if (text[pos] == '-') { ++pos; return Token(Tokens::T_MINUS, DebugPos(), line); }
+    if (text[pos] == '/') { ++pos; return Token(Tokens::T_DIV, DebugPos(), line); }
+    if (text[pos] == '*') { ++pos; return Token(Tokens::T_MULT, DebugPos(), line); }
+    if (text[pos] == '%') { ++pos; return Token(Tokens::T_MOD, DebugPos(), line); }
+    if (text[pos] == '^') { ++pos; return Token(Tokens::T_XOR, DebugPos(), line); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TrySyntaxes() {
     using namespace Lexer;
-    if (line[pos] == ',') { ++pos; return Token(Tokens::T_COMMA, pos); }
-    if (line[pos] == ':') { ++pos; return Token(Tokens::T_COLON, pos); }
-    if (line[pos] == '(') { ++pos; return Token(Tokens::T_LEFT_BRACKET, pos); }
-    if (line[pos] == ')') { ++pos; return Token(Tokens::T_RIGHT_BRACKET, pos); }
-    if (line[pos] == '[') { ++pos; return Token(Tokens::T_LEFT_SQUARE_BRACKET, pos); }
-    if (line[pos] == ']') { ++pos; return Token(Tokens::T_RIGHT_SQUARE_BRACKET, pos); }
+    if (text[pos] == '\n') { ++pos; archived_pos = pos; return Token(Tokens::T_EOL, DebugPos(), ++line); }
+    if (text[pos] == ',') { ++pos; return Token(Tokens::T_COMMA, DebugPos(), line); }
+    if (text[pos] == ':') { ++pos; return Token(Tokens::T_COLON, DebugPos(), line); }
+    if (text[pos] == '(') { ++pos; return Token(Tokens::T_LEFT_BRACKET, DebugPos(), line); }
+    if (text[pos] == ')') { ++pos; return Token(Tokens::T_RIGHT_BRACKET, DebugPos(), line); }
+    if (text[pos] == '[') { ++pos; return Token(Tokens::T_LEFT_SQUARE_BRACKET, DebugPos(), line); }
+    if (text[pos] == ']') { ++pos; return Token(Tokens::T_RIGHT_SQUARE_BRACKET, DebugPos(), line); }
 
     return {};
 }
@@ -182,9 +182,9 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryKeyWords(std::string str) {
     }
 
     if (auto iter = key_words_.find(str); iter == key_words_.end()) {
-        return Token(Errors::LexerErrors::LexerKeyWordError(), pos);
+        return Token(Errors::LexerErrors::LexerKeyWordError(), pos, line);
     } else {
-        return Token(static_cast<Tokens>(iter->second), pos);
+        return Token(static_cast<Tokens>(iter->second), pos, line);
     }
 }
 
@@ -206,7 +206,7 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryWords() {
     else return {};
 
     if (auto token = TryKeyWords(word); token) return token;
-    return Token(Tokens::T_VAR, std::move(word), pos);
+    return Token(Tokens::T_VAR, std::move(word), DebugPos(), line);
 }
 
 Lexer::Token Lexer::Tokenizer::Advance() {
@@ -215,12 +215,12 @@ Lexer::Token Lexer::Tokenizer::Advance() {
     SkipWhiteSpaces();
     SkipComment();
 
-    if (pos >= line.size()) return Token(Tokens::T_EOF, pos);
+    if (pos >= text.size()) { ++pos; return Token(Tokens::T_EOF, DebugPos(), line); }
 
     if (auto token = TryLexems(); token) return std::move(*token);
     if (auto token = TryWords(); token) return std::move(*token);
 
-    return Token(Errors::LexerErrors::LexerUnrecognizable{}, pos);
+    return Token(Errors::LexerErrors::LexerUnrecognizable{}, DebugPos(), line);
 }
 
 Lexer::Token Lexer::Tokenizer::Peek() {
