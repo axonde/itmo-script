@@ -11,7 +11,6 @@ std::unique_ptr<Parser::Node> Parser::MakeBadNode() {
     return std::make_unique<Bad>(std::move(token));
 }
 
-
 std::unique_ptr<Parser::Node> Parser::Factor() {
     using namespace Lexer;
 
@@ -39,12 +38,13 @@ std::unique_ptr<Parser::Node> Parser::Factor() {
         if (!Eat(token.token)) return MakeBadNode();
         auto expr = Expr();
         if (!Eat(Tokens::T_RIGHT_BRACKET)) return MakeBadNode();
+        return expr;
     }
     return MakeBadNode();
 }
 std::unique_ptr<Parser::Node> Parser::Term() {
     std::unique_ptr<Parser::Node> term = Factor();
-    while (token.token == Lexer::Tokens::T_MULT || Lexer::Tokens::T_DIV) {
+    while (token.token == Lexer::Tokens::T_MULT || token.token == Lexer::Tokens::T_DIV) {
         auto op = token.token;
         if (!Eat(token.token)) { return MakeBadNode(); }
         term = std::make_unique<BinaryOp>(op, std::move(term), Term());

@@ -25,19 +25,20 @@ bool Interpreter::Interpret(std::istream& input, std::ostream& output) {
 }
 
 bool Interpreter::Interpret(std::string& program, std::ostream& out) {
-    Lexer::Tokenizer tokenizer(program);
+    Parser parser{Lexer::Tokenizer(program)};
+    parser.Parse();
 
-    Lexer::Token token;
-    tokenizer >> token;
-    while (token.token != Lexer::Tokens::T_EOF) {
-        std::cout << token.token << " ; ";
-        if (token.token == Lexer::Tokens::T_BAD) {
-            SyntaxError(token);
-            return false;
-        }
-        tokenizer >> token;
-    }
-    std::cout << '\n';
+    // Lexer::Token token;
+    // tokenizer >> token;
+    // while (token.token != Lexer::Tokens::T_EOF) {
+    //     std::cout << token.token << " ; ";
+    //     if (token.token == Lexer::Tokens::T_BAD) {
+    //         SyntaxError(token);
+    //         return false;
+    //     }
+    //     tokenizer >> token;
+    // }
+    // std::cout << '\n';
 
     return true;
 }

@@ -9,6 +9,7 @@
 
 class Parser {
 
+public:
     enum Nodes : uint16_t {
         N_NUM_LITERAL,
         N_STRING_LITERAL,
@@ -24,6 +25,7 @@ class Parser {
         N_BAD
     };
 
+private:
     struct Node {
         Node(Nodes t) : type(t) {}
         Nodes type;
@@ -43,7 +45,7 @@ class Parser {
         Var(std::string&& id) : Node(Nodes::N_VAR), id(std::move(id)) {}
         std::string id;
     };
-    
+
     struct NoOp : Node {
         NoOp() : Node(Nodes::N_EMPTY) {}
     };
@@ -98,6 +100,7 @@ public:
 
     void Parse();
 
+private:
     std::unique_ptr<Node> root;
     Lexer::Token token;
     Lexer::Tokenizer tokenizer;

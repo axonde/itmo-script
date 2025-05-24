@@ -2,7 +2,8 @@
 #include <iostream>
 #include <string>
 
-#include "lexer/lexer.cpp"
+#include "lexer.h"
+#include "parser.h"
 
 namespace Interpreter {
     bool Interpret(std::istream&, std::ostream&);
