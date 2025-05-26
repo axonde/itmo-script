@@ -22,7 +22,7 @@ enum Tokens : uint16_t {
     T_VAR,                          // `var`, `Var_Var`, `var__0`, `_var_`
     T_NUMBER,                       // 12, -123, 1.2e-12
     T_STRING,                       // "string"
-    T_NULL,                         // `nil`
+    T_NIL,                         // `nil`
 
     // STATEMENTS
     T_THEN,                         // `then`

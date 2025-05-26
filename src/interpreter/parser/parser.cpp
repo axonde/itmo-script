@@ -1,6 +1,7 @@
 #include "parser.h"
 
 bool Parser::Eat(Lexer::Tokens token_type) {
+    debug_token = token;
     if (token.token == token_type) {
         tokenizer >> token;
         return true;
@@ -8,7 +9,7 @@ bool Parser::Eat(Lexer::Tokens token_type) {
     return false;
 }
 std::unique_ptr<Parser::Node> Parser::MakeBadNode() {
-    return std::make_unique<Bad>(std::move(token));
+    return std::make_unique<Bad>(this);
 }
 
 std::unique_ptr<Parser::Node> Parser::Factor() {
@@ -17,22 +18,26 @@ std::unique_ptr<Parser::Node> Parser::Factor() {
     if (token.token == Tokens::T_NUMBER) {
         double value = std::get<double>(token.value);
         if (!Eat(token.token)) return MakeBadNode();
-        return std::make_unique<NumLiteral>(std::move(value));
+        return std::make_unique<NumLiteral>(std::move(value), this);
     }
     if (token.token == Tokens::T_STRING) {
         std::string value = std::get<std::string>(token.value);
         if (!Eat(token.token)) return MakeBadNode();
-        return std::make_unique<StringLiteral>(std::move(value));
+        return std::make_unique<StringLiteral>(std::move(value), this);
     }
     if (token.token == Tokens::T_VAR) {
         std::string id = std::get<std::string>(token.value);
         if (!Eat(token.token)) return MakeBadNode();
-        return std::make_unique<Var>(std::move(id));
+        return std::make_unique<Var>(std::move(id), this);
+    }
+    if (token.token == Tokens::T_NIL) {
+        if (!Eat(token.token)) return MakeBadNode();
+        return std::make_unique<Nil>(this);
     }
     if (token.token == Tokens::T_MINUS || token.token == Tokens::T_PLUS) {
         Tokens op = token.token;
         if (!Eat(token.token)) return MakeBadNode();
-        return std::make_unique<UnaryOp>(op, Factor());
+        return std::make_unique<UnaryOp>(op, Factor(), this);
     }
     if (token.token == Tokens::T_LEFT_BRACKET) {
         if (!Eat(token.token)) return MakeBadNode();
@@ -47,7 +52,7 @@ std::unique_ptr<Parser::Node> Parser::Term() {
     while (token.token == Lexer::Tokens::T_MULT || token.token == Lexer::Tokens::T_DIV) {
         auto op = token.token;
         if (!Eat(token.token)) { return MakeBadNode(); }
-        term = std::make_unique<BinaryOp>(op, std::move(term), Term());
+        term = std::make_unique<BinaryOp>(op, std::move(term), Term(), this);
     }
     return term;
 }
@@ -56,35 +61,34 @@ std::unique_ptr<Parser::Node> Parser::Expr() {
     while (token.token == Lexer::Tokens::T_MINUS || token.token == Lexer::Tokens::T_PLUS) {
         auto op = token.token;
         if (!Eat(token.token)) { return MakeBadNode(); }
-        expr = std::make_unique<BinaryOp>(op, std::move(expr), Term());
+        expr = std::make_unique<BinaryOp>(op, std::move(expr), Term(), this);
     }
     return expr;
 }
 std::unique_ptr<Parser::Node> Parser::Empty() {
-    Lexer::Token curr_token = token;
     if (!Eat(Lexer::Tokens::T_EOL)) { return MakeBadNode(); }
-    return std::make_unique<NoOp>();
+    return std::make_unique<NoOp>(this);
 }
 std::unique_ptr<Parser::Node> Parser::AssignmentStatement() {
-    Var var(std::get<std::string>(token.value));
+    Var var(std::get<std::string>(token.value), this);
     if (!Eat(Lexer::Tokens::T_VAR)) { return MakeBadNode(); }
 
     if (!Eat(Lexer::Tokens::T_EQUAL)) { return MakeBadNode(); }
 
-    return std::make_unique<AssignOp>(std::move(var), Expr());
+    return std::make_unique<AssignOp>(std::move(var), Expr(), this);
 }
 std::unique_ptr<Parser::Node> Parser::Statement() {
     switch (token.token) {
-    case Lexer::Tokens::T_VAR:
-        return AssignmentStatement();
-    case Lexer::Tokens::T_EOL:
-        return Empty();
-    default:
-        return Expr();
+        case Lexer::Tokens::T_VAR:
+            return AssignmentStatement();
+        case Lexer::Tokens::T_EOL:
+            return Empty();
+        default:
+            return Expr();
     }
 }
 std::unique_ptr<Parser::Node> Parser::StatementList() {
-    Compound node;
+    Compound node(this);
     node.children.push_back(Statement());
     while (token.token == Lexer::Tokens::T_EOL) {
         if (!Eat(Lexer::Tokens::T_EOL)) { return MakeBadNode(); }
