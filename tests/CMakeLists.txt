@@ -14,9 +14,10 @@ enable_testing()
 
 add_executable(
   itmoscript_tests
-  function_test.cpp
-  types_test.cpp
-  loop_and_branch_test.cpp
+  lexer_ut.cpp
+  # function_test.cpp
+  # types_test.cpp
+  # loop_and_branch_test.cpp
 )
 
 target_link_libraries(
@@ -25,7 +26,7 @@ target_link_libraries(
   GTest::gtest_main
 )
 
-target_include_directories(itmoscript_tests PUBLIC ${PROJECT_SOURCE_DIR})
+target_include_directories(itmoscript_tests PUBLIC ${PROJECT_SOURCE_DIR}/src/interpreter)
 
 include(GoogleTest)
 

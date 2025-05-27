@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
         Patterns::Welcome();
 
         while (true) {
-            if (!Interpreter::Interpret(std::cin, std::cout)) {
+            if (!Interpreter::Interpret(std::cin, std::cout, true)) {
                 return 1;
             }
         }
@@ -24,12 +24,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    size_t size = file.tellg();
-    file.seekg(0);
-    std::string program(size, '\0');
-    file.read(&program[0], size);
-
-    if (!Interpreter::Interpret(program, std::cout)) {
+    if (!Interpreter::Interpret(file, std::cout)) {
         return 1;
     }
 

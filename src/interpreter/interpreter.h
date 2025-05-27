@@ -12,7 +12,7 @@
 #include "operators.h"
 
 namespace Interpreter {
-    inline bool Interpret(std::istream&, std::ostream&);
+    inline bool Interpret(std::istream&, std::ostream&, bool);
     inline bool Interpret(std::string&, std::ostream&);
 
     // ERRORS

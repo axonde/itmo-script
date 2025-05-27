@@ -1,30 +1,39 @@
 #include "interpreter.h"
 
-bool Interpreter::Interpret(std::istream& input, std::ostream& output) {
-    std::string line;
-    do {
-        std::cout << Patterns::CMD;
-        std::getline(input, line);
-    } while (line.size() == 0);
+bool Interpreter::Interpret(std::istream& input, std::ostream& output, bool IsRepl = false) {
+    if (IsRepl) {
+        std::string line;
+        do {
+            std::cout << Patterns::CMD;
+            std::getline(input, line);
+        } while (line.size() == 0);
 
-    Lexer::Tokenizer tokenizer(line);
+        Lexer::Tokenizer tokenizer(line);
 
-    Lexer::Token token;
-    tokenizer >> token;
-    while (token.token != Lexer::Tokens::T_EOF) {
-        std::cout << token.token << " ; ";
-        if (token.token == Lexer::Tokens::T_BAD) {
-            SyntaxError(token);
-            return false;
-        }
+        Lexer::Token token;
         tokenizer >> token;
-    }
-    std::cout << '\n';
+        while (token.token != Lexer::Tokens::T_EOF) {
+            std::cout << token.token << " ; ";
+            if (token.token == Lexer::Tokens::T_BAD) {
+                SyntaxError(token);
+                return false;
+            }
+            tokenizer >> token;
+        }
+        std::cout << '\n';
 
-    return true;
+        return true;
+    }
+
+    size_t size = input.tellg();
+    input.seekg(0);
+    std::string program(size, '\0');
+    input.read(&program[0], size);
+
+    return Interpret(program, output);
 }
 
-bool Interpreter::Interpret(std::string& program, std::ostream& out) {
+bool Interpreter::Interpret(std::string& program, std::ostream& output) {
     Runner runner(std::move(program));
 
     if (auto expected = runner.Run(); !expected) {
