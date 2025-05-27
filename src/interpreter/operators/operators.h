@@ -20,7 +20,10 @@ namespace Operators {
         Parser::Types arg_type;
         bool operator==(const UnaryOpTableKey& other) const = default;
     };
-    using UnaryOpTableValue = std::function<Value(Value&&)>;
+    struct UnaryOpTableValue {
+        Parser::Types type;
+        std::function<Value(Value&&)> func;
+    };
 
     struct BinaryOpTableKey {
         Lexer::Tokens op;
@@ -28,26 +31,29 @@ namespace Operators {
         Parser::Types right_arg_type;
         bool operator==(const BinaryOpTableKey& other) const = default;
     };
-    using BinaryOpTableValue = std::function<Value(Value&&, Value&&)>;
+    struct BinaryOpTableValue {
+        Parser::Types type;
+        std::function<Value(Value&&, Value&&)> func;
+    };
 
     extern std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
     extern std::unordered_map<BinaryOpTableKey, BinaryOpTableValue> BINARY_OP_TABLE;
 
-    void RegisterUnaryNumOperators();
-    void RegisterUnaryStringOperators();
-    void RegisterUnaryBoolOperators();
-    void RegisterUnaryNilOperators();
-    void RegisterUnaryOperators();
+    void RegisterUnaryNumOperators() noexcept;
+    void RegisterUnaryStringOperators() noexcept;
+    void RegisterUnaryBoolOperators() noexcept;
+    void RegisterUnaryNilOperators() noexcept;
+    void RegisterUnaryOperators() noexcept;
 
-    void RegisterBinaryNumOperators();
-    void RegisterBinaryStringOperators();
-    void RegisterBinaryBoolOperators();
-    void RegisterBinaryNilOperators();
+    void RegisterBinaryNumOperators() noexcept;
+    void RegisterBinaryStringOperators() noexcept;
+    void RegisterBinaryBoolOperators() noexcept;
+    void RegisterBinaryNilOperators() noexcept;
 
-    void RegisterBinaryOperators();
+    void RegisterBinaryOperators() noexcept;
 
-    Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed);
-    Expected ExecBinaryOperation(Parser::BinaryOp* node, Value&& computed_left, Value&& computed_right);
+    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed);
+    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Value&& computed_left, Value&& computed_right);
 }
 
 namespace std {

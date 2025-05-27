@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <string_view>
 
 namespace Patterns {
     static std::string RED = "\e[1;31m";

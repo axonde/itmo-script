@@ -23,24 +23,26 @@ namespace Operators {
     };
 
     /// Unary operations
-    void RegisterUnaryNumOperators() {
+    void RegisterUnaryNumOperators() noexcept {
         UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, Parser::Types::NUM_TYPE}] = {
+            Parser::Types::NUM_TYPE,
             [](Value&& value) -> Value { 
                 return std::get<double>(value); }
         };
 
         UNARY_OP_TABLE[{Lexer::Tokens::T_MINUS, Parser::Types::NUM_TYPE}] = {
+            Parser::Types::NUM_TYPE,
             [](Value&& value) -> Value {
                 return -std::get<double>(value);
             }
         };
     }
 
-    void RegisterUnaryStringOperators() {}
-    void RegisterUnaryBoolOperators() {}
-    void RegisterUnaryNilOperators() {}
+    void RegisterUnaryStringOperators() noexcept {}
+    void RegisterUnaryBoolOperators() noexcept {}
+    void RegisterUnaryNilOperators() noexcept {}
 
-    void RegisterUnaryOperators() {
+    void RegisterUnaryOperators() noexcept {
         RegisterUnaryNumOperators();
         RegisterUnaryStringOperators();
         RegisterUnaryBoolOperators();
@@ -48,19 +50,19 @@ namespace Operators {
     }
 
     /// Binary operations
-    void RegisterBinaryNumOperators() {}
-    void RegisterBinaryStringOperators() {}
-    void RegisterBinaryBoolOperators() {}
-    void RegisterBinaryNilOperators() {}
+    void RegisterBinaryNumOperators() noexcept {}
+    void RegisterBinaryStringOperators() noexcept {}
+    void RegisterBinaryBoolOperators() noexcept {}
+    void RegisterBinaryNilOperators() noexcept {}
 
-    void RegisterBinaryOperators() {
+    void RegisterBinaryOperators() noexcept {
         RegisterBinaryNumOperators();
         RegisterBinaryStringOperators();
         RegisterBinaryBoolOperators();
         RegisterBinaryNilOperators();
     }
 
-    Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed) {
+    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed) {
         UnaryOpTableKey key = {node->op, node->child->type};
         auto iter = UNARY_OP_TABLE.find(std::move(key));
         if (iter == UNARY_OP_TABLE.end()) {
@@ -69,15 +71,15 @@ namespace Operators {
                 node->token});
         }
         try {
-            // TODO: update the calculated type!
-            Value result = iter->second(std::move(computed));
+            node->type = iter->second.type;
+            Value result = iter->second.func(std::move(computed));
             return result;
         } catch (const std::bad_variant_access&) {
             return std::unexpected(Lexer::Token{Errors::InternalErrors::InternalOperationError(), node->token});
         }
     }
 
-    Expected ExecBinaryOperation(Parser::BinaryOp* node, Value&& computed_left, Value&& computed_right) {
+    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Value&& computed_left, Value&& computed_right) {
         BinaryOpTableKey key = {node->op, node->left->type, node->right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {
@@ -87,7 +89,8 @@ namespace Operators {
         }
 
         try {
-            Value result = iter->second(std::move(computed_left), std::move(computed_right));
+            node->type = iter->second.type;
+            Value result = iter->second.func(std::move(computed_left), std::move(computed_right));
             return result;
         } catch (const std::bad_variant_access&) {
             return std::unexpected(Lexer::Token{Errors::InternalErrors::InternalOperationError(), node->token});

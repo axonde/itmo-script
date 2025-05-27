@@ -51,15 +51,19 @@ Runner::Expected Runner::Run() {
 
 /// LITERALS
 Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
+    std::cout << "visit num literal\n";
     return static_cast<Parser::NumLiteral*>(node.get())->value;
 }
 Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
+    std::cout << "visit str literal\n";
     return std::move(static_cast<Parser::StringLiteral*>(node.get())->value);
 }
 Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
+    std::cout << "visit var\n";
     return std::move(static_cast<Parser::Var*>(node.get())->id);
 }
 Runner::Expected Runner::VisitNil(Runner::NodePtr&) {
+    std::cout << "visit nil\n";
     return std::monostate{};
 }
 
@@ -69,11 +73,11 @@ Runner::Expected Runner::VisitNoOp(NodePtr&) {
     return std::monostate{};
 }
 Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
+    std::cout << "visit unary\n";
     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
     auto computed_child = Visit(ptr->child);
     if (computed_child) {
         if (auto computed = Operators::ExecUnaryOperation(ptr, std::move(*computed_child)); computed) {
-            // need to update the new type of the node.
             return std::move(*computed);
         } else {
             return std::unexpected(std::move(computed.error()));
@@ -83,7 +87,7 @@ Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
     }
 }
 Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
-    std::cout << "visit binary op, curr line " << node->token.line << ", col " << node->token.pos << '\n';
+    std::cout << "visit binary\n";
     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
     auto computed_left = Visit(ptr->left);
     auto computed_right = Visit(ptr->right);
@@ -103,8 +107,8 @@ Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
 }
 
 Runner::Expected Runner::VisitAssignmentOp(Runner::NodePtr& node) {
-    // creata a new variable in interpretator memory
     std::cout << "visit assign\n";
+    // creata a new variable in interpretator memory
     return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
 }
 
@@ -112,9 +116,7 @@ Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
     std::cout << "visit compound\n";
     Parser::Compound* ptr = static_cast<Parser::Compound*>(node.get());
     for (auto& child : ptr->children) {
-        std::cout << "Yes, Im here.\n";
         if (auto visit = Visit(child); !visit) {
-            std::cout << "before dying!";
             return std::unexpected(std::move(visit.error()));
         }
     }
@@ -127,7 +129,7 @@ Runner::Expected Runner::VisitBad(Runner::NodePtr& node) {
 }
 
 Runner::Expected Runner::Visit(Runner::NodePtr& node) {
-    std::cout << "visit visit\n";
+    std::cout << "visit ...\n\t";
     switch (node->node) {
         case Parser::Nodes::N_NUM_LITERAL:
             return VisitNumLiteral(node);
