@@ -68,10 +68,6 @@ Runner::Expected Runner::VisitNil(Runner::NodePtr&) {
 }
 
 /// OPERATIONS
-Runner::Expected Runner::VisitNoOp(NodePtr&) {
-    std::cout << "visit no op\n";
-    return std::monostate{};
-}
 Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
     std::cout << "visit unary\n";
     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
@@ -112,6 +108,10 @@ Runner::Expected Runner::VisitAssignmentOp(Runner::NodePtr& node) {
     return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
 }
 
+Runner::Expected Runner::VisitEmpty(NodePtr&) {
+    std::cout << "visit no op\n";
+    return std::monostate{};
+}
 Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
     std::cout << "visit compound\n";
     Parser::Compound* ptr = static_cast<Parser::Compound*>(node.get());
@@ -125,7 +125,7 @@ Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
 
 Runner::Expected Runner::VisitBad(Runner::NodePtr& node) {
     std::cout << "visit bad\n";
-    return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
+    return std::unexpected(std::move(node->token));
 }
 
 Runner::Expected Runner::Visit(Runner::NodePtr& node) {
@@ -140,8 +140,6 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
         case Parser::Nodes::N_NIL:
             return VisitNil(node);
 
-        case Parser::Nodes::N_NO_OP:
-            return VisitNoOp(node);
         case Parser::Nodes::N_UNARY_OP:
             return VisitUnaryOp(node);
         case Parser::Nodes::N_BINARY_OP:
@@ -150,6 +148,8 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
         case Parser::Nodes::N_ASSIGNMENT_OP:
             return VisitAssignmentOp(node);
         
+        case Parser::Nodes::N_EMPTY:
+            return VisitEmpty(node);
         case Parser::Nodes::N_COMPOUND:
             return VisitCompound(node);
         case Parser::Nodes::N_BAD:

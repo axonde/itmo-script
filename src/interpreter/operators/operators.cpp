@@ -24,12 +24,14 @@ namespace Operators {
 
     /// Unary operations
     void RegisterUnaryNumOperators() noexcept {
+        // + NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, Parser::Types::NUM_TYPE}] = {
             Parser::Types::NUM_TYPE,
             [](Value&& value) -> Value { 
                 return std::get<double>(value); }
         };
 
+        // - NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_MINUS, Parser::Types::NUM_TYPE}] = {
             Parser::Types::NUM_TYPE,
             [](Value&& value) -> Value {

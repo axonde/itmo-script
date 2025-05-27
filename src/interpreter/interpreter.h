@@ -47,12 +47,12 @@ private:
     Expected VisitVar(NodePtr&);
     Expected VisitNil(NodePtr&);
 
-    Expected VisitNoOp(NodePtr&);
     Expected VisitUnaryOp(NodePtr&);
     Expected VisitBinaryOp(NodePtr&);
 
     Expected VisitAssignmentOp(NodePtr&);
 
+    Expected VisitEmpty(NodePtr&);
     Expected VisitCompound(NodePtr&);
     Expected VisitBad(NodePtr&);
 

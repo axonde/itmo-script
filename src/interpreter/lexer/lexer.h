@@ -131,6 +131,7 @@ public:
     Tokenizer(const std::string& str) : text(str) {}
 
     Tokenizer& operator>>(Lexer::Token& token);
+    Lexer::Token Peek();
 
 private:
     size_t archived_pos = 0;
@@ -140,7 +141,6 @@ private:
     size_t DebugPos() { return pos - archived_pos; }
 
     Lexer::Token Advance();
-    Lexer::Token Peek();
 
     /// SKIPPERS
     void SkipWhiteSpaces();

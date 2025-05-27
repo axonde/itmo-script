@@ -16,12 +16,12 @@ public:
         N_VAR,
         N_NIL,
 
-        N_NO_OP,
         N_UNARY_OP,
         N_BINARY_OP,
 
         N_ASSIGNMENT_OP,
-
+        
+        N_EMPTY,
         N_COMPOUND,
         N_BAD
     };
@@ -67,9 +67,6 @@ public:
         Nil(Lexer::Token&& token) : Node(Nodes::N_NIL, Types::NIL_TYPE, std::move(token)) {}
     };
 
-    struct NoOp : Node {
-        NoOp(Lexer::Token&& token) : Node(Nodes::N_NO_OP, std::move(token)) {}
-    };
     struct UnaryOp : Node {
         UnaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& node, Lexer::Token&& token)
         : Node(Nodes::N_UNARY_OP, std::move(token)), op(o), child(std::move(node)) {}
@@ -95,6 +92,9 @@ public:
         std::unique_ptr<Node> expr;
     };
 
+    struct Empty : Node {
+        Empty(Lexer::Token&& token) : Node(Nodes::N_EMPTY, std::move(token)) {}
+    };
     struct Compound : Node {
         Compound(Lexer::Token&& token) : Node(Nodes::N_COMPOUND, std::move(token)) {}
         std::vector<std::unique_ptr<Node>> children;
@@ -109,13 +109,20 @@ public:
     Lexer::Token GetTraitedToken();
     std::unique_ptr<Node> MakeBadNode();
 
+    template<typename T>
+    requires std::derived_from<T, Error>
+    std::unique_ptr<Node> MakeBadNode(T&& e);
+
     std::unique_ptr<Node> Factor();
     std::unique_ptr<Node> Term();
     std::unique_ptr<Node> Expr();
-    std::unique_ptr<Node> Empty();
-    std::unique_ptr<Node> AssignmentStatement();
+
+    std::unique_ptr<Node> RValueStatement();
+    std::unique_ptr<Node> AssignmentStatement(Var&& var);
     std::unique_ptr<Node> Statement();
-    std::unique_ptr<Node> StatementList();
+
+    std::unique_ptr<Node> VarDecomposition();
+    std::unique_ptr<Node> Block();
 
     void Parse();
 

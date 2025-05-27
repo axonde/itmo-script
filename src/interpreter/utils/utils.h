@@ -42,6 +42,15 @@ namespace Errors {
         };
     }
 
+    namespace ParserErrors {
+        struct Base : Error {
+            std::string what() override { return "parser error"; }
+        };
+        struct RValueAssignment : Error {
+            std::string what() override { return "cannot assign to rvalue"; }
+        };
+    }
+
     namespace OperatorErrors {
         struct OperatorUnaryError : Error {
             OperatorUnaryError(const std::string& o, const std::string& t) : op(o), type(t) {}
