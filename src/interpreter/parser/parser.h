@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <variant>
+#include <stack>
 
 #include "lexer.h"
 
@@ -36,8 +37,8 @@ public:
     };
 
     struct Node {
-        Node(Nodes n, Parser* parser) : node(n), type(Types::NOT_SET_TYPE), token(parser->debug_token) {}
-        Node(Nodes n, Types t, Parser* parser) : node(n), type(t), token(parser->debug_token) {}
+        Node(Nodes n, Lexer::Token&& t) : node(n), type(Types::NOT_SET_TYPE), token(std::move(t)) {}
+        Node(Nodes n, Types t, Lexer::Token&& tkn) : node(n), type(t), token(std::move(tkn)) {}
 
         Nodes node;
         Types type;
@@ -45,40 +46,40 @@ public:
     };
 
     struct NumLiteral : Node {
-        NumLiteral(double v, Parser* parser) : Node(Nodes::N_NUM_LITERAL, Types::NUM_TYPE, parser), value(v) {}
+        NumLiteral(double v, Lexer::Token&& token) : Node(Nodes::N_NUM_LITERAL, Types::NUM_TYPE, std::move(token)), value(v) {}
         double value;
     };
     struct StringLiteral : Node {
-        StringLiteral(const std::string& str, Parser* parser)
-        : Node(Nodes::N_STRING_LITERAL, Types::STRING_TYPE, parser), value(str) {}
-        StringLiteral(std::string&& str, Parser* parser)
-        : Node(Nodes::N_STRING_LITERAL, Types::STRING_TYPE, parser), value(std::move(str)) {}
+        StringLiteral(const std::string& str, Lexer::Token&& token)
+        : Node(Nodes::N_STRING_LITERAL, Types::STRING_TYPE, std::move(token)), value(str) {}
+        StringLiteral(std::string&& str, Lexer::Token&& token)
+        : Node(Nodes::N_STRING_LITERAL, Types::STRING_TYPE, std::move(token)), value(std::move(str)) {}
 
         std::string value;
     };
     struct Var : Node {
-        Var(const std::string& id, Parser* parser) : Node(Nodes::N_VAR, parser), id(id) {}
-        Var(std::string&& id, Parser* parser) : Node(Nodes::N_VAR, parser), id(std::move(id)) {}
+        Var(const std::string& id, Lexer::Token&& token) : Node(Nodes::N_VAR, std::move(token)), id(id) {}
+        Var(std::string&& id, Lexer::Token&& token) : Node(Nodes::N_VAR, std::move(token)), id(std::move(id)) {}
 
         std::string id;
     };
     struct Nil : Node {
-        Nil(Parser* parser) : Node(Nodes::N_NIL, Types::NIL_TYPE, parser) {}
+        Nil(Lexer::Token&& token) : Node(Nodes::N_NIL, Types::NIL_TYPE, std::move(token)) {}
     };
 
     struct NoOp : Node {
-        NoOp(Parser* parser) : Node(Nodes::N_NO_OP, parser) {}
+        NoOp(Lexer::Token&& token) : Node(Nodes::N_NO_OP, std::move(token)) {}
     };
     struct UnaryOp : Node {
-        UnaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& node, Parser* parser)
-        : Node(Nodes::N_UNARY_OP, parser), op(o), child(std::move(node)) {}
+        UnaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& node, Lexer::Token&& token)
+        : Node(Nodes::N_UNARY_OP, std::move(token)), op(o), child(std::move(node)) {}
 
         Lexer::Tokens op;
         std::unique_ptr<Node> child;
     };
     struct BinaryOp : Node {
-        BinaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& l, std::unique_ptr<Node>&& r, Parser* parser)
-        : Node(Nodes::N_BINARY_OP, parser)
+        BinaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& l, std::unique_ptr<Node>&& r, Lexer::Token&& token)
+        : Node(Nodes::N_BINARY_OP, std::move(token))
         , op(o), left(std::move(l)), right(std::move(r)) {}
 
         Lexer::Tokens op;
@@ -86,8 +87,8 @@ public:
         std::unique_ptr<Node> right;
     };
     struct AssignOp : Node {
-        AssignOp(Var&& v, std::unique_ptr<Node> e, Parser* parser)
-        : Node(Nodes::N_ASSIGNMENT_OP, parser),
+        AssignOp(Var&& v, std::unique_ptr<Node> e, Lexer::Token&& token)
+        : Node(Nodes::N_ASSIGNMENT_OP, std::move(token)),
           var(std::move(v)), expr(std::move(e)) {}
 
         Var var;
@@ -95,16 +96,17 @@ public:
     };
 
     struct Compound : Node {
-        Compound(Parser* parser) : Node(Nodes::N_COMPOUND, parser) {}
+        Compound(Lexer::Token&& token) : Node(Nodes::N_COMPOUND, std::move(token)) {}
         std::vector<std::unique_ptr<Node>> children;
     };
     struct Bad : Node {
-        Bad(Parser* parser) : Node(Nodes::N_BAD, parser) {}
+        Bad(Lexer::Token&& token) : Node(Nodes::N_BAD, std::move(token)) {}
     };
 
     Parser(Lexer::Tokenizer&& t) : tokenizer(t) {}
 
     bool Eat(Lexer::Tokens);
+    Lexer::Token GetTraitedToken();
     std::unique_ptr<Node> MakeBadNode();
 
     std::unique_ptr<Node> Factor();
@@ -121,7 +123,7 @@ public:
 
 private:
     Lexer::Token token;
-    Lexer::Token debug_token;
+    std::stack<Lexer::Token> tokens_traits;
     Lexer::Tokenizer tokenizer;
 
     friend Node;

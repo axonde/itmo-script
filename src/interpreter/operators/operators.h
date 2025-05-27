@@ -4,13 +4,16 @@
 #include <memory>
 #include <string>
 #include <variant>
+#include <vector>
 
-#include "lexer.h"
 #include "parser.h"
 
 namespace Operators {
     using Value = std::variant<std::monostate, double, std::string, bool>;
     using Expected = std::expected<Value, Lexer::Token>;
+
+    extern std::unordered_map<Lexer::Tokens, std::string> OP_TO_STR;
+    extern std::unordered_map<Parser::Types, std::string> TYPE_TO_STR;
 
     struct UnaryOpTableKey {
         Lexer::Tokens op;

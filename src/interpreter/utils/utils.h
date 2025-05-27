@@ -22,22 +22,55 @@ namespace Errors {
     }
 
     struct Error {
-        virtual const char* what() { return "error"; }
+        virtual std::string what() { return "error"; }
         virtual ~Error() = default;
     };
 
     namespace LexerErrors {
         struct LexerNumberError : Error {
-            const char* what() override { return "wrong number literal"; }
+            std::string what() override { return "wrong number literal"; }
         };
         struct LexerStringError : Error {
-            const char* what() override { return "unclosed string literal"; }
+            std::string what() override { return "unclosed string literal"; }
         };
         struct LexerKeyWordError : Error {
-            const char* what() override { return "non-existant key word"; }
+            std::string what() override { return "non-existant key word"; }
         };
         struct LexerUnrecognizable : Error {
-            const char* what() override { return "unrecognizable symbols"; }
+            std::string what() override { return "unrecognizable symbols"; }
+        };
+    }
+
+    namespace OperatorErrors {
+        struct OperatorUnaryError : Error {
+            OperatorUnaryError(const std::string& o, const std::string& t) : op(o), type(t) {}
+            std::string what() override {
+                using namespace std::string_literals;
+                return "unknow unary operation '"s + op + "' and "s + type; 
+            }
+            std::string op;
+            std::string type;
+        };
+
+        struct OperatorBinaryError : Error {
+            OperatorBinaryError(const std::string& o, const std::string& l, const std::string& r)
+            : op(o), left(l), right(r) {}
+            std::string what() override {
+                using namespace std::string_literals;
+                return "unknow unary operation '"s + op + "' between "s + left + " and "s + right; 
+            }
+            std::string op;
+            std::string left;
+            std::string right;
+        };
+    }
+
+    namespace InternalErrors {
+        struct InternalOperationError : Error {
+            std::string what() override { return "internal operation error occured: wrong argument (or arg / return types) for operator"; }
+        };
+        struct NotImplemented : Error {
+            std::string what() override { return "not implemented yet"; }
         };
     }
 
@@ -47,3 +80,5 @@ namespace Errors {
                   << "line " << line << ", col " << pos << Patterns::WHITE << std::endl;
     }
 }
+
+using Error = Errors::Error;

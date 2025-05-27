@@ -37,7 +37,7 @@ bool Interpreter::Interpret(std::string& program, std::ostream& output) {
     Runner runner(std::move(program));
 
     if (auto expected = runner.Run(); !expected) {
-        SyntaxError(expected.error());
+        SyntaxError(std::move(expected.error()));
         return false;
     }
     return true;
@@ -73,16 +73,17 @@ Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
     auto computed_child = Visit(ptr->child);
     if (computed_child) {
         if (auto computed = Operators::ExecUnaryOperation(ptr, std::move(*computed_child)); computed) {
+            // need to update the new type of the node.
             return std::move(*computed);
         } else {
-            return std::unexpected(computed.error());
+            return std::unexpected(std::move(computed.error()));
         }
     } else {
-        return std::unexpected(computed_child.error());
+        return std::unexpected(std::move(computed_child.error()));
     }
 }
 Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
-    std::cout << "visit binary op\n";
+    std::cout << "visit binary op, curr line " << node->token.line << ", col " << node->token.pos << '\n';
     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
     auto computed_left = Visit(ptr->left);
     auto computed_right = Visit(ptr->right);
@@ -91,28 +92,30 @@ Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
         if (computed) {
             return std::move(*computed);
         } else {
-            return std::unexpected(computed.error());
+            return std::unexpected(std::move(computed.error()));
         }
     } else {
         if (!computed_left) {
-            return std::unexpected(computed_left.error());
+            return std::unexpected(std::move(computed_left.error()));
         }
-        return std::unexpected(computed_right.error());
+        return std::unexpected(std::move(computed_right.error()));
     }
 }
 
 Runner::Expected Runner::VisitAssignmentOp(Runner::NodePtr& node) {
     // creata a new variable in interpretator memory
     std::cout << "visit assign\n";
-    return std::unexpected(node->token);
+    return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
 }
 
 Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
     std::cout << "visit compound\n";
     Parser::Compound* ptr = static_cast<Parser::Compound*>(node.get());
     for (auto& child : ptr->children) {
+        std::cout << "Yes, Im here.\n";
         if (auto visit = Visit(child); !visit) {
-            return std::unexpected(visit.error());
+            std::cout << "before dying!";
+            return std::unexpected(std::move(visit.error()));
         }
     }
     return std::monostate{};
@@ -120,7 +123,7 @@ Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
 
 Runner::Expected Runner::VisitBad(Runner::NodePtr& node) {
     std::cout << "visit bad\n";
-    return std::unexpected(node->token);
+    return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
 }
 
 Runner::Expected Runner::Visit(Runner::NodePtr& node) {

@@ -228,8 +228,12 @@ Lexer::Token Lexer::Tokenizer::Peek() {
 
     std::string str;
     size_t pos_save = pos;
+    size_t archived_pos_save = archived_pos;
+    size_t line_save = line;
     Token token = Advance();
     pos = pos_save;
+    archived_pos = archived_pos_save;
+    line = line_save;
     return token;
 }
 

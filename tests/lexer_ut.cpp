@@ -1,11 +1,26 @@
 #include <sstream>
+#include <ranges>
+#include <utility>
 
 #include <interpreter>
 #include <gtest/gtest.h>
 
 using namespace Lexer;
 
-std::vector<Tokens> MakeTokensVector(std::string&& str) {
+std::vector<Token> MakeTokensVector(std::string&& str) {
+    Tokenizer tokenizer(std::move(str));
+    std::vector<Token> computed;
+    Token token;
+    tokenizer >> token;
+    while (token.token != T_BAD && token.token != T_EOF) {
+        computed.push_back(token);
+        tokenizer >> token;
+    }
+    computed.push_back(token);
+    return std::move(computed);
+}
+
+std::vector<Tokens> MakeTokensTypeVector(std::string&& str) {
     Tokenizer tokenizer(std::move(str));
     std::vector<Tokens> computed;
     Token token;
@@ -18,11 +33,10 @@ std::vector<Tokens> MakeTokensVector(std::string&& str) {
     return std::move(computed);
 }
 
-
 TEST(LexerTokenizerTest, OnePlusOneTest) {
     std::string program = R"(1 + 1)";
 
-    std::vector<Tokens> computed = MakeTokensVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
 
     std::vector<Tokens> expected = {T_NUMBER, T_PLUS, T_NUMBER, T_EOF};
     ASSERT_EQ(computed, expected);
@@ -31,7 +45,7 @@ TEST(LexerTokenizerTest, OnePlusOneTest) {
 TEST(LexerTokenizerTest, SimpleCalculator) {
     std::string program = R"(1 + (1 + 1))";
 
-    std::vector<Tokens> computed = MakeTokensVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
 
     std::vector<Tokens> expected = {T_NUMBER, T_PLUS, T_LEFT_BRACKET, T_NUMBER, T_PLUS, T_NUMBER, T_RIGHT_BRACKET, T_EOF};
     ASSERT_EQ(computed, expected);
@@ -40,7 +54,7 @@ TEST(LexerTokenizerTest, SimpleCalculator) {
 TEST(LexerTokenizerTest, SimpleWrongSyntax) {
     std::string program = R"(###)";
 
-    std::vector<Tokens> computed = MakeTokensVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
 
     std::vector<Tokens> expected = {T_BAD};
     ASSERT_EQ(computed, expected);
@@ -53,7 +67,7 @@ TEST(LexerTokenizerTest, ForCycle) {
         end for
     )";
 
-    std::vector<Tokens> computed = MakeTokensVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
 
     std::vector<Tokens> expected = {
         T_EOL,
@@ -71,7 +85,7 @@ TEST(LexerTokenizerTest, Functions) {
         end function
     )";
 
-    std::vector<Tokens> computed = MakeTokensVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
 
     std::vector<Tokens> expected = {
         T_EOL,
@@ -85,8 +99,27 @@ TEST(LexerTokenizerTest, Functions) {
 TEST(LexerTokenizerTest, Empty) {
     std::string program = R"()";
 
-    std::vector<Tokens> computed = MakeTokensVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
 
     std::vector<Tokens> expected = {T_EOF};
     ASSERT_EQ(computed, expected);
+}
+
+TEST(LexerTokenTest, SimplePosTracker) {
+     std::string program = R"(a = 1)";
+
+    std::vector<Token> computed = MakeTokensVector(std::move(program));
+    auto transformed = computed | std::views::transform([](const Lexer::Token& token) {
+        return std::make_pair(token.line, token.pos);
+    });
+    std::vector<std::pair<size_t, size_t>> positions(transformed.begin(), transformed.end());
+
+    std::vector<std::pair<size_t, size_t>> expected_positions = {
+        {1, 1},
+        {1, 3},
+        {1, 5},
+        {1, 6}
+    };
+
+    ASSERT_EQ(positions, expected_positions);
 }
