@@ -46,6 +46,9 @@ namespace Errors {
         struct Base : Error {
             std::string what() override { return "parser error"; }
         };
+        struct FactorError : Error {
+            std::string what() override { return "cannot correctly evaluate expression"; }
+        };
         struct RValueAssignment : Error {
             std::string what() override { return "cannot assign to rvalue"; }
         };

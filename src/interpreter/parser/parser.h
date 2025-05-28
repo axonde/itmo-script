@@ -13,17 +13,29 @@ public:
     enum Nodes : uint16_t {
         N_NUM_LITERAL,
         N_STRING_LITERAL,
+        N_BOOL_LITERAL,
+        N_NIL_LITERAL,
         N_VAR,
-        N_NIL,
+        N_LIST,
 
         N_UNARY_OP,
         N_BINARY_OP,
+        N_TERNARY_OP,
 
-        N_ASSIGNMENT_OP,
-        
+        N_IF,
+
+        N_FOR,
+        N_WHILE,
+        N_BREAK,
+        N_CONTINUE,
+
+        N_FUNC,
+        N_FUNC_CALL,
+        N_RETURN,
+
         N_EMPTY,
         N_COMPOUND,
-        N_BAD
+        N_BAD,
     };
 
     enum Types : uint16_t {
@@ -37,6 +49,7 @@ public:
     };
 
     struct Node {
+        Node(Nodes n) : node(n) {}
         Node(Nodes n, Lexer::Token&& t) : node(n), type(Types::NOT_SET_TYPE), token(std::move(t)) {}
         Node(Nodes n, Types t, Lexer::Token&& tkn) : node(n), type(t), token(std::move(tkn)) {}
 
@@ -45,8 +58,22 @@ public:
         Lexer::Token token;
     };
 
+    using NodePtr = std::unique_ptr<Node>;
+
+    struct Empty : Node {
+        Empty(Lexer::Token&& token) : Node(Nodes::N_EMPTY, std::move(token)) {}
+    };
+    struct Compound : Node {
+        Compound() : Node(Nodes::N_COMPOUND) {}
+        std::vector<NodePtr> data;
+    };
+    struct Bad : Node {
+        Bad(Lexer::Token&& token) : Node(Nodes::N_BAD, std::move(token)) {}
+    };
+
     struct NumLiteral : Node {
         NumLiteral(double v, Lexer::Token&& token) : Node(Nodes::N_NUM_LITERAL, Types::NUM_TYPE, std::move(token)), value(v) {}
+        
         double value;
     };
     struct StringLiteral : Node {
@@ -57,76 +84,138 @@ public:
 
         std::string value;
     };
+    struct BoolLiteral : Node {
+        BoolLiteral(bool v, Lexer::Token&& token)
+        : Node(Nodes::N_BOOL_LITERAL, Types::BOOL_TYPE, std::move(token)), value(v) {}
+        
+        bool value;
+    };
+    struct NilLiteral : Node {
+        NilLiteral(Lexer::Token&& token) : Node(Nodes::N_NIL_LITERAL, Types::NIL_TYPE, std::move(token)) {}
+    };
     struct Var : Node {
         Var(const std::string& id, Lexer::Token&& token) : Node(Nodes::N_VAR, std::move(token)), id(id) {}
         Var(std::string&& id, Lexer::Token&& token) : Node(Nodes::N_VAR, std::move(token)), id(std::move(id)) {}
 
         std::string id;
     };
-    struct Nil : Node {
-        Nil(Lexer::Token&& token) : Node(Nodes::N_NIL, Types::NIL_TYPE, std::move(token)) {}
+    struct List : Node {
+        List(Lexer::Token&& token) : Node(Nodes::N_LIST, std::move(token)) {}
+
+        Compound data;
     };
 
     struct UnaryOp : Node {
-        UnaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& node, Lexer::Token&& token)
-        : Node(Nodes::N_UNARY_OP, std::move(token)), op(o), child(std::move(node)) {}
+        UnaryOp(Lexer::Tokens o, NodePtr&& node, Lexer::Token&& token)
+        : Node(Nodes::N_UNARY_OP, std::move(token)), op(o), operand(std::move(node)) {}
 
         Lexer::Tokens op;
-        std::unique_ptr<Node> child;
+        NodePtr operand;
     };
     struct BinaryOp : Node {
-        BinaryOp(Lexer::Tokens o, std::unique_ptr<Node>&& l, std::unique_ptr<Node>&& r, Lexer::Token&& token)
+        BinaryOp(Lexer::Tokens o, NodePtr&& l, NodePtr&& r, Lexer::Token&& token)
         : Node(Nodes::N_BINARY_OP, std::move(token))
         , op(o), left(std::move(l)), right(std::move(r)) {}
 
         Lexer::Tokens op;
-        std::unique_ptr<Node> left;
-        std::unique_ptr<Node> right;
+        NodePtr left;
+        NodePtr right;
     };
-    struct AssignOp : Node {
-        AssignOp(Var&& v, std::unique_ptr<Node> e, Lexer::Token&& token)
-        : Node(Nodes::N_ASSIGNMENT_OP, std::move(token)),
-          var(std::move(v)), expr(std::move(e)) {}
+    struct TernaryOp : Node {
+        TernaryOp(Lexer::Tokens o, NodePtr&& tar, NodePtr&& l, NodePtr&& r, Lexer::Token&& token)
+        : Node(Nodes::N_TERNARY_OP, std::move(token))
+        , op(o), target(std::move(tar)), left(std::move(l)), right(std::move(r)) {}
 
-        Var var;
-        std::unique_ptr<Node> expr;
+        Lexer::Tokens op;
+        NodePtr target;
+        NodePtr left;
+        NodePtr right;
     };
 
-    struct Empty : Node {
-        Empty(Lexer::Token&& token) : Node(Nodes::N_EMPTY, std::move(token)) {}
+    struct If : Node {
+        If(NodePtr&& c, Compound&& b, Lexer::Token token)
+        : Node(Nodes::N_IF, std::move(token)), condition(std::move(c)), body(std::move(b)) {}
+
+        NodePtr condition;  // should be a bool type in run-time
+        Compound body;
     };
-    struct Compound : Node {
-        Compound(Lexer::Token&& token) : Node(Nodes::N_COMPOUND, std::move(token)) {}
-        std::vector<std::unique_ptr<Node>> children;
+
+    struct For : Node {
+        For(NodePtr&& i, Compound&& b, Lexer::Token token)
+        : Node(Nodes::N_FOR, std::move(token)), iterator(std::move(i)), body(std::move(b)) {}
+        
+        NodePtr iterator;  // should be a var symbol (+ num type) in run-time
+        Compound body;
     };
-    struct Bad : Node {
-        Bad(Lexer::Token&& token) : Node(Nodes::N_BAD, std::move(token)) {}
+    struct While : Node {
+        While(NodePtr&& c, Compound&& b, Lexer::Token token)
+        : Node(Nodes::N_WHILE, std::move(token)), condition(std::move(c)), body(std::move(b)) {}
+        
+        NodePtr condition;  // should be a bool type in run-time
+        Compound body;
+    };
+    struct Break : Node {
+        Break(Lexer::Token&& token) : Node(Nodes::N_BREAK, std::move(token)) {}
+    };
+    struct Continue : Node {
+        Continue(Lexer::Token&& token) : Node(Nodes::N_CONTINUE, std::move(token)) {}
+    };
+
+    struct Func : Node {
+        Func(Compound&& p, Compound&& b, Lexer::Token&& token)
+        : Node(Nodes::N_FUNC, std::move(token)), params(std::move(p)), body(std::move(b)) {}
+
+        Compound params;
+        Compound body;
+    };
+    struct FuncCall : Node {
+        FuncCall(FuncCall&&) = default;
+        FuncCall(Lexer::Token&& token) : Node(Nodes::N_FUNC_CALL, std::move(token)) {}
+        
+        std::vector<NodePtr> params;
+    };
+    struct Return : Node {
+        Return(NodePtr&& ex, Lexer::Token&& token)
+        : Node(Nodes::N_RETURN, std::move(token)), expr(std::move(ex)) {}
+
+        NodePtr expr;
     };
 
     Parser(Lexer::Tokenizer&& t) : tokenizer(t) {}
 
     bool Eat(Lexer::Tokens);
     Lexer::Token GetTraitedToken();
-    std::unique_ptr<Node> MakeBadNode();
 
+    NodePtr MakeBadNode();
     template<typename T>
     requires std::derived_from<T, Error>
-    std::unique_ptr<Node> MakeBadNode(T&& e);
+    NodePtr MakeBadNode(T&& e);
 
-    std::unique_ptr<Node> Factor();
-    std::unique_ptr<Node> Term();
-    std::unique_ptr<Node> Expr();
+    NodePtr VarExpr();
 
-    std::unique_ptr<Node> RValueStatement();
-    std::unique_ptr<Node> AssignmentStatement(Var&& var);
-    std::unique_ptr<Node> Statement();
+    NodePtr Factor();
+    NodePtr Term();
+    NodePtr Expr();
 
-    std::unique_ptr<Node> VarDecomposition();
-    std::unique_ptr<Node> Block();
+    NodePtr Assignment();
+    NodePtr Break();
+    NodePtr Continue();
+    NodePtr Empty();
+
+    NodePtr Statement();
+    NodePtr If();
+    NodePtr For();
+    NodePtr While();
+
+    NodePtr Func();
+    NodePtr ReturnExpr();
+
+    NodePtr StatementList();
+    NodePtr Block();
 
     void Parse();
 
-    std::unique_ptr<Node> root;
+    NodePtr root;
 
 private:
     Lexer::Token token;

@@ -22,7 +22,7 @@ enum Tokens : uint16_t {
     T_VAR,                          // `var`, `Var_Var`, `var__0`, `_var_`
     T_NUMBER,                       // 12, -123, 1.2e-12
     T_STRING,                       // "string"
-    T_NIL,                         // `nil`
+    T_NIL,                          // `nil`
 
     // STATEMENTS
     T_THEN,                         // `then`
@@ -47,8 +47,8 @@ enum Tokens : uint16_t {
     T_AND,                          // `and`
     T_OR,                           // `or`
     T_NOT,                          // `not`
-    T_BOOL_FALSE,                   // `false`
-    T_BOOL_TRUE,                    // `true`
+    T_FALSE,                        // `false`
+    T_TRUE,                         // `true`
 
     // COMPARATORS
     T_COMP_EQUAL,                   // `==`
@@ -200,8 +200,8 @@ private:
         {"and", Tokens::T_AND},
         {"or", Tokens::T_OR},
         {"not", Tokens::T_NOT},
-        {"false", Tokens::T_BOOL_FALSE},
-        {"true", Tokens::T_BOOL_TRUE}
+        {"false", Tokens::T_FALSE},
+        {"true", Tokens::T_TRUE}
     };
 };
 
