@@ -58,7 +58,7 @@ enum Tokens : uint16_t {
     T_COMP_SMALLER_OR_EQ,           // `<=`
     T_COMP_GREATER_OR_EQ,           // `>=`
 
-    // EQUALS
+    // ASSIGNMENTS
     T_EQUAL,                        // `=`
     T_EQUAL_PLUS,                   // `+=`
     T_EQUAL_MINUS,                  // `-=`

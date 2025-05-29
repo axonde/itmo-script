@@ -65,11 +65,11 @@ namespace Operators {
     }
 
     [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed) {
-        UnaryOpTableKey key = {node->op, node->child->type};
+        UnaryOpTableKey key = {node->op, node->operand->type};
         auto iter = UNARY_OP_TABLE.find(std::move(key));
         if (iter == UNARY_OP_TABLE.end()) {
             return std::unexpected(Lexer::Token{
-                Errors::OperatorErrors::OperatorUnaryError(OP_TO_STR[node->op], TYPE_TO_STR[node->child->type]), 
+                Errors::OperatorErrors::OperatorUnaryError(OP_TO_STR[node->op], TYPE_TO_STR[node->operand->type]), 
                 node->token});
         }
         try {

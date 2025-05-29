@@ -43,14 +43,44 @@ namespace Errors {
     }
 
     namespace ParserErrors {
-        struct Base : Error {
-            std::string what() override { return "parser error"; }
+        struct Panic : Error {
+            std::string what() override { return "parser panic"; }
         };
         struct FactorError : Error {
             std::string what() override { return "cannot correctly evaluate expression"; }
         };
-        struct RValueAssignment : Error {
-            std::string what() override { return "cannot assign to rvalue"; }
+        struct ExpectedAssignment : Error {
+            std::string what() override { return "expected an assignment operator"; }
+        };
+        struct ExpectedEmpty : Error {
+            std::string what() override { return "expected end of line"; }
+        };
+        struct ExpectedThen : Error {
+            std::string what() override { return "expected then"; }
+        };
+        struct ExpectedEndIf : Error {
+            std::string what() override { return "expected end if"; }
+        };
+        struct ExpectedIn : Error {
+            std::string what() override { return "expected in"; }
+        };
+        struct ExpectedEndFor : Error {
+            std::string what() override { return "expected end for"; }
+        };
+        struct ExpectedEndWhile : Error {
+            std::string what() override { return "expected end while"; }
+        };
+        struct ExpectedFuntionName : Error {
+            std::string what() override { return "expected function name"; }
+        };
+        struct ExpectedLeftBracket : Error {
+            std::string what() override { return "expected '('"; }
+        };
+        struct FunctionParamsError : Error {
+            std::string what() override { return "cannot evaluate given function's parameters"; }
+        };
+        struct ExpectedEndFunc : Error {
+            std::string what() override { return "expected end function"; }
         };
     }
 
