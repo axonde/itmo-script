@@ -34,125 +34,125 @@ bool Interpreter::Interpret(std::istream& input, std::ostream& output, bool IsRe
 }
 
 bool Interpreter::Interpret(std::string& program, std::ostream& output) {
-    Runner runner(std::move(program));
+    // Runner runner(std::move(program));
 
-    if (auto expected = runner.Run(); !expected) {
-        SyntaxError(std::move(expected.error()));
-        return false;
-    }
+    // if (auto expected = runner.Run(); !expected) {
+    //     SyntaxError(std::move(expected.error()));
+    //     return false;
+    // }
     return true;
 }
 
-Runner::Expected Runner::Run() {
-    Operators::RegisterUnaryOperators();
-    Operators::RegisterBinaryOperators();
-    return Visit(parser.root);
-}
+// Runner::Expected Runner::Run() {
+//     Operators::RegisterUnaryOperators();
+//     Operators::RegisterBinaryOperators();
+//     return Visit(parser.root);
+// }
 
-/// LITERALS
-Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
-    std::cout << "visit num literal\n";
-    return static_cast<Parser::NumLiteral*>(node.get())->value;
-}
-Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
-    std::cout << "visit str literal\n";
-    return std::move(static_cast<Parser::StringLiteral*>(node.get())->value);
-}
-Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
-    std::cout << "visit var\n";
-    return std::move(static_cast<Parser::Var*>(node.get())->id);
-}
-Runner::Expected Runner::VisitNil(Runner::NodePtr&) {
-    std::cout << "visit nil\n";
-    return std::monostate{};
-}
+// /// LITERALS
+// Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
+//     std::cout << "visit num literal\n";
+//     return static_cast<Parser::NumLiteral*>(node.get())->value;
+// }
+// Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
+//     std::cout << "visit str literal\n";
+//     return std::move(static_cast<Parser::StringLiteral*>(node.get())->value);
+// }
+// Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
+//     std::cout << "visit var\n";
+//     return std::move(static_cast<Parser::Var*>(node.get())->id);
+// }
+// Runner::Expected Runner::VisitNil(Runner::NodePtr&) {
+//     std::cout << "visit nil\n";
+//     return std::monostate{};
+// }
 
-/// OPERATIONS
-Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
-    std::cout << "visit unary\n";
-    Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
-    auto computed_child = Visit(ptr->child);
-    if (computed_child) {
-        if (auto computed = Operators::ExecUnaryOperation(ptr, std::move(*computed_child)); computed) {
-            return std::move(*computed);
-        } else {
-            return std::unexpected(std::move(computed.error()));
-        }
-    } else {
-        return std::unexpected(std::move(computed_child.error()));
-    }
-}
-Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
-    std::cout << "visit binary\n";
-    Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
-    auto computed_left = Visit(ptr->left);
-    auto computed_right = Visit(ptr->right);
-    if (computed_left && computed_right) {
-        auto computed = Operators::ExecBinaryOperation(ptr, std::move(*computed_left), std::move(*computed_right));
-        if (computed) {
-            return std::move(*computed);
-        } else {
-            return std::unexpected(std::move(computed.error()));
-        }
-    } else {
-        if (!computed_left) {
-            return std::unexpected(std::move(computed_left.error()));
-        }
-        return std::unexpected(std::move(computed_right.error()));
-    }
-}
+// /// OPERATIONS
+// Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
+//     std::cout << "visit unary\n";
+//     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
+//     auto computed_child = Visit(ptr->child);
+//     if (computed_child) {
+//         if (auto computed = Operators::ExecUnaryOperation(ptr, std::move(*computed_child)); computed) {
+//             return std::move(*computed);
+//         } else {
+//             return std::unexpected(std::move(computed.error()));
+//         }
+//     } else {
+//         return std::unexpected(std::move(computed_child.error()));
+//     }
+// }
+// Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
+//     std::cout << "visit binary\n";
+//     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
+//     auto computed_left = Visit(ptr->left);
+//     auto computed_right = Visit(ptr->right);
+//     if (computed_left && computed_right) {
+//         auto computed = Operators::ExecBinaryOperation(ptr, std::move(*computed_left), std::move(*computed_right));
+//         if (computed) {
+//             return std::move(*computed);
+//         } else {
+//             return std::unexpected(std::move(computed.error()));
+//         }
+//     } else {
+//         if (!computed_left) {
+//             return std::unexpected(std::move(computed_left.error()));
+//         }
+//         return std::unexpected(std::move(computed_right.error()));
+//     }
+// }
 
-Runner::Expected Runner::VisitAssignmentOp(Runner::NodePtr& node) {
-    std::cout << "visit assign\n";
-    // creata a new variable in interpretator memory
-    return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
-}
+// Runner::Expected Runner::VisitAssignmentOp(Runner::NodePtr& node) {
+//     std::cout << "visit assign\n";
+//     // creata a new variable in interpretator memory
+//     return std::unexpected(Lexer::Token{Errors::InternalErrors::NotImplemented(), node->token});
+// }
 
-Runner::Expected Runner::VisitEmpty(NodePtr&) {
-    std::cout << "visit no op\n";
-    return std::monostate{};
-}
-Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
-    std::cout << "visit compound\n";
-    Parser::Compound* ptr = static_cast<Parser::Compound*>(node.get());
-    for (auto& child : ptr->children) {
-        if (auto visit = Visit(child); !visit) {
-            return std::unexpected(std::move(visit.error()));
-        }
-    }
-    return std::monostate{};
-}
+// Runner::Expected Runner::VisitEmpty(NodePtr&) {
+//     std::cout << "visit no op\n";
+//     return std::monostate{};
+// }
+// Runner::Expected Runner::VisitCompound(Runner::NodePtr& node) {
+//     std::cout << "visit compound\n";
+//     Parser::Compound* ptr = static_cast<Parser::Compound*>(node.get());
+//     for (auto& child : ptr->children) {
+//         if (auto visit = Visit(child); !visit) {
+//             return std::unexpected(std::move(visit.error()));
+//         }
+//     }
+//     return std::monostate{};
+// }
 
-Runner::Expected Runner::VisitBad(Runner::NodePtr& node) {
-    std::cout << "visit bad\n";
-    return std::unexpected(std::move(node->token));
-}
+// Runner::Expected Runner::VisitBad(Runner::NodePtr& node) {
+//     std::cout << "visit bad\n";
+//     return std::unexpected(std::move(node->token));
+// }
 
-Runner::Expected Runner::Visit(Runner::NodePtr& node) {
-    std::cout << "visit ...\n\t";
-    switch (node->node) {
-        case Parser::Nodes::N_NUM_LITERAL:
-            return VisitNumLiteral(node);
-        case Parser::Nodes::N_STRING_LITERAL:
-            return VisitStringLiteral(node);
-        case Parser::Nodes::N_VAR:
-            return VisitVar(node);
-        case Parser::Nodes::N_NIL:
-            return VisitNil(node);
+// Runner::Expected Runner::Visit(Runner::NodePtr& node) {
+//     std::cout << "visit ...\n\t";
+//     switch (node->node) {
+//         case Parser::Nodes::N_NUM_LITERAL:
+//             return VisitNumLiteral(node);
+//         case Parser::Nodes::N_STRING_LITERAL:
+//             return VisitStringLiteral(node);
+//         case Parser::Nodes::N_VAR:
+//             return VisitVar(node);
+//         case Parser::Nodes::N_NIL:
+//             return VisitNil(node);
 
-        case Parser::Nodes::N_UNARY_OP:
-            return VisitUnaryOp(node);
-        case Parser::Nodes::N_BINARY_OP:
-            return VisitBinaryOp(node);
+//         case Parser::Nodes::N_UNARY_OP:
+//             return VisitUnaryOp(node);
+//         case Parser::Nodes::N_BINARY_OP:
+//             return VisitBinaryOp(node);
         
-        case Parser::Nodes::N_ASSIGNMENT_OP:
-            return VisitAssignmentOp(node);
+//         case Parser::Nodes::N_ASSIGNMENT_OP:
+//             return VisitAssignmentOp(node);
         
-        case Parser::Nodes::N_EMPTY:
-            return VisitEmpty(node);
-        case Parser::Nodes::N_COMPOUND:
-            return VisitCompound(node);
-        case Parser::Nodes::N_BAD:
-            return VisitBad(node);
-    }
-}
+//         case Parser::Nodes::N_EMPTY:
+//             return VisitEmpty(node);
+//         case Parser::Nodes::N_COMPOUND:
+//             return VisitCompound(node);
+//         case Parser::Nodes::N_BAD:
+//             return VisitBad(node);
+//     }
+// }

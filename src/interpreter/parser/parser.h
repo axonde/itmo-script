@@ -188,7 +188,7 @@ public:
         NodePtr expr;
     };
 
-    Parser(Lexer::Tokenizer&& t) : tokenizer(t) {}
+    Parser(Lexer::Tokenizer&& t) : tokenizer(std::move(t)) {}
 
     bool Eat(Lexer::Tokens);
     Lexer::Token GetTraitedToken();

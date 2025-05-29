@@ -76,7 +76,7 @@ Parser::NodePtr Parser::VarExpr() {
 // Factor: Number | String | Bool | Nil | VarExpr | List
 //         | ('not' | '+' | '-') Factor
 //         | '(' expr ')'
-Parser::NodePtr Parser::Factor() {
+Parser::NodePtr Parser::Factor() {   // add support for list literals.
     using namespace Lexer;
 
     switch (token.token) {
@@ -322,7 +322,7 @@ Parser::NodePtr Parser::StatementList() {
 // Block: StatementList (T_EOL | StatementList)*
 Parser::NodePtr Parser::Block() {
     Compound node;
-    while ( token.token != Lexer::Tokens::T_END_IF && token.token != Lexer::Tokens::T_END_WHILE
+    while (token.token != Lexer::Tokens::T_END_IF && token.token != Lexer::Tokens::T_END_WHILE
     && token.token != Lexer::Tokens::T_END_FOR && token.token != Lexer::Tokens::T_END_FUNC
     && token.token != Lexer::Tokens::T_EOF) {
         if (token.token == Lexer::Tokens::T_EOL) {
