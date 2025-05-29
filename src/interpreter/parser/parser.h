@@ -33,7 +33,6 @@ public:
         N_FUNC_CALL,
         N_RETURN,
 
-        N_EMPTY,
         N_COMPOUND,
         N_BAD,
     };
@@ -61,9 +60,6 @@ public:
     using NodePtr = std::unique_ptr<Node>;
 
     /// Base
-    struct Empty : Node {
-        Empty(Lexer::Token&& token) : Node(Nodes::N_EMPTY, std::move(token)) {}
-    };
     struct Compound : Node {
         Compound() : Node(Nodes::N_COMPOUND) {}
         std::vector<NodePtr> data;
@@ -213,7 +209,6 @@ public:
     NodePtr Assignment();
     NodePtr BreakExpr();
     NodePtr ContinueExpr();
-    NodePtr EmptyExpr();
 
     NodePtr Statement();
     NodePtr IfBlock();

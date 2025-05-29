@@ -172,37 +172,25 @@ Parser::NodePtr Parser::Assignment() {
     }
 }
 
-// Break: T_BREAK
+// BreakExpr: T_BREAK
 Parser::NodePtr Parser::BreakExpr() {
     if (!Eat(Lexer::Tokens::T_BREAK)) { return MakeBadNode(); }
     return std::make_unique<Break>(GetTraitedToken());
 }
 
-// Continue: T_CONTINUE
+// ContinueExpr: T_CONTINUE
 Parser::NodePtr Parser::ContinueExpr() {
     if (!Eat(Lexer::Tokens::T_CONTINUE)) { return MakeBadNode(); }
     return std::make_unique<Continue>(GetTraitedToken());
 }
 
-// Return: 'return' Expr
+// ReturnExpr: 'return' Expr
 Parser::NodePtr Parser::ReturnExpr() {
     if (!Eat(Lexer::Tokens::T_RETURN)) { return MakeBadNode(); }
     return std::make_unique<Return>(Expr(), GetTraitedToken());
 }
 
-// Empty: T_EOL | T_EOF
-Parser::NodePtr Parser::EmptyExpr() {
-    switch (token.token) {
-        case Lexer::Tokens::T_EOL:
-        case Lexer::Tokens::T_EOF:
-            if (!Eat(token.token)) { return MakeBadNode(); }
-            return std::make_unique<Empty>(GetTraitedToken());
-    default:
-        return MakeBadNode(Errors::ParserErrors::ExpectedEmpty());
-    }
-}
-
-// Statement: ReturnExpr | BreakExpr | ContinueExpr | EmptyExpr | Assignment | Expr
+// Statement: ReturnExpr | BreakExpr | ContinueExpr | Assignment | Expr
 Parser::NodePtr Parser::Statement() {
     using namespace Lexer;
 
@@ -213,9 +201,6 @@ Parser::NodePtr Parser::Statement() {
             return BreakExpr();
         case Tokens::T_CONTINUE:
             return ContinueExpr();
-        case Tokens::T_EOL:
-        case Tokens::T_EOF:
-            return EmptyExpr();
         case Tokens::T_VAR:
             return VarDispatch();
         default:
@@ -267,7 +252,7 @@ Parser::NodePtr Parser::ForBlock() {
     return std::make_unique<For>(std::move(for_block));
 }
 
-// WhileBlock: T_WHILE Expr() BLOCK T_END_WHILE
+// WhileBlock: T_WHILE Expr BLOCK T_END_WHILE
 Parser::NodePtr Parser::WhileBlock() {
     if (!Eat(Lexer::Tokens::T_WHILE)) { return MakeBadNode(); }
 
@@ -334,13 +319,17 @@ Parser::NodePtr Parser::StatementList() {
     }
 }
 
-// Block: StatementList (T_EOL StatementList)*
+// Block: StatementList (T_EOL | StatementList)*
 Parser::NodePtr Parser::Block() {
     Compound node;
-    node.data.push_back(StatementList());
-    while (token.token == Lexer::Tokens::T_EOL) {
-        if (!Eat(Lexer::Tokens::T_EOL)) { return MakeBadNode(); } GetTraitedToken();
-        node.data.push_back(StatementList());
+    while ( token.token != Lexer::Tokens::T_END_IF && token.token != Lexer::Tokens::T_END_WHILE
+    && token.token != Lexer::Tokens::T_END_FOR && token.token != Lexer::Tokens::T_END_FUNC
+    && token.token != Lexer::Tokens::T_EOF) {
+        if (token.token == Lexer::Tokens::T_EOL) {
+            if (!Eat(token.token)) { return MakeBadNode(); }
+        } else {
+            node.data.push_back(StatementList());
+        }
     }
     return std::make_unique<Compound>(std::move(node));
 }
