@@ -90,7 +90,7 @@ void Lexer::Tokenizer::SkipComment() {
 
 // GETTERS
 std::optional<double> Lexer::Tokenizer::GetNumber() {
-    auto get = [&]() { return text[pos++] - '0'; };
+    auto get = [&]() { Inc(); return text[pos - 1] - '0'; };
 
     double number = 0;
     while (pos < text.size() && std::isdigit(text[pos])) number = number * 10 + get();
@@ -131,7 +131,7 @@ std::optional<std::string> Lexer::Tokenizer::GetString() {
     std::string str;
     Inc();
 
-    while (pos < text.size()) {
+    while (pos < text.size() && text[pos] != '\n') {
         if (text[pos] == '"' && text[pos - 1] != '\\') {
             Inc(); return str;
         }
@@ -148,6 +148,7 @@ std::optional<std::string> Lexer::Tokenizer::GetWord() {
     if (std::regex_search(remaining, match, re) && match.position() == 0) {
         std::string str = match.str();
         pos += str.size();
+        column += str.size();
         return str;
     }
     return std::nullopt;
@@ -204,7 +205,7 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryOperators() {
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TrySyntaxes() {
     using namespace Lexer;
-    if (text[pos] == '\n') { Inc(); ++lineno, column = 0; return Token(Tokens::T_EOL, column, lineno); }
+    if (text[pos] == '\n') { ++pos; ++lineno, column = 1; return Token(Tokens::T_EOL, column, lineno); }
     if (text[pos] == ',') { Inc(); return Token(Tokens::T_COMMA, column, lineno); }
     if (text[pos] == ':') { Inc(); return Token(Tokens::T_COLON, column, lineno); }
     if (text[pos] == '(') { Inc(); return Token(Tokens::T_LEFT_BRACKET, column, lineno); }
@@ -256,10 +257,10 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryLexems() {
 std::optional<Lexer::Token> Lexer::Tokenizer::TryWords() {
     using namespace Lexer;
     std::string word;
-    if (auto w = GetWord(); w) word = std::move(*w);
+    if (auto w = GetWord(); w) { word = std::move(*w); }
     else return {};
 
-    if (auto token = TryKeyWords(word); token) return token;
+    if (auto token = TryKeyWords(word); token) { return token; }
     return Token(Tokens::T_VAR, std::move(word), column, lineno);
 }
 
@@ -269,10 +270,10 @@ Lexer::Token Lexer::Tokenizer::Advance() {
     SkipWhiteSpaces();
     SkipComment();
 
-    if (pos >= text.size()) { Inc(); return Token(Tokens::T_EOF, column, lineno); }
+    if (pos >= text.size()) { return Token(Tokens::T_EOF, column, lineno); }
 
-    if (auto token = TryLexems(); token) return std::move(*token);
-    if (auto token = TryWords(); token) return std::move(*token);
+    if (auto token = TryLexems(); token) { return std::move(*token); }
+    if (auto token = TryWords(); token) { return std::move(*token); }
 
     return Token(Errors::LexerErrors::LexerUnrecognizable{}, column, lineno);
 }
@@ -282,7 +283,7 @@ Lexer::Token Lexer::Tokenizer::Peek() {
 
     std::string str;
     size_t pos_save = pos;
-    size_t column_save = column;
+    auto column_save = column;
     size_t lineno_save = lineno;
     Token token = Advance();
     pos = pos_save;
@@ -293,8 +294,6 @@ Lexer::Token Lexer::Tokenizer::Peek() {
 
 void Lexer::Tokenizer::Inc() { ++pos; ++column; }
 void Lexer::Tokenizer::DoubleInc() { pos += 2; column += 2; }
-
-void Lexer::Tokenizer::Broke() { pos = text.size(); }
 
 Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {
     token = Advance();

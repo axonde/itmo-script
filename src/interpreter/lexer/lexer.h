@@ -134,11 +134,10 @@ public:
 
     Tokenizer& operator>>(Lexer::Token& token);
     Lexer::Token Peek();
-    void Broke();
 
 private:
-    size_t column = 1;
     size_t pos = 0;
+    size_t column = 1;
     size_t lineno = 1;
     std::string text;
 

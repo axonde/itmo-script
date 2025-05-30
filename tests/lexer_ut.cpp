@@ -115,10 +115,58 @@ TEST(LexerTokenTest, SimplePosTracker) {
     std::vector<std::pair<size_t, size_t>> positions(transformed.begin(), transformed.end());
 
     std::vector<std::pair<size_t, size_t>> expected_positions = {
-        {1, 1},
-        {1, 3},
-        {1, 5},
+        {1, 2},
+        {1, 4},
+        {1, 6},
         {1, 6}
+    };
+
+    ASSERT_EQ(positions, expected_positions);
+}
+
+TEST(LexerTokenTest, MultiLinePosTracker) {
+     std::string program = R"(a = 1
+b = 2)";
+
+    std::vector<Token> computed = MakeTokensVector(std::move(program));
+    auto transformed = computed | std::views::transform([](const Lexer::Token& token) {
+        return std::make_pair(token.lineno, token.column);
+    });
+    std::vector<std::pair<size_t, size_t>> positions(transformed.begin(), transformed.end());
+
+    std::vector<std::pair<size_t, size_t>> expected_positions = {
+        {1, 2},
+        {1, 4},
+        {1, 6},
+        {2, 1},
+        {2, 2},
+        {2, 4},
+        {2, 6},
+        {2, 6}
+    };
+
+    ASSERT_EQ(positions, expected_positions);
+}
+
+TEST(LexerTokenTest, MultiLinePosTrackerWithSpace) {
+     std::string program = R"(a = 1
+  b = 2)";
+
+    std::vector<Token> computed = MakeTokensVector(std::move(program));
+    auto transformed = computed | std::views::transform([](const Lexer::Token& token) {
+        return std::make_pair(token.lineno, token.column);
+    });
+    std::vector<std::pair<size_t, size_t>> positions(transformed.begin(), transformed.end());
+
+    std::vector<std::pair<size_t, size_t>> expected_positions = {
+        {1, 2},
+        {1, 4},
+        {1, 6},
+        {2, 1},
+        {2, 4},
+        {2, 6},
+        {2, 8},
+        {2, 8}
     };
 
     ASSERT_EQ(positions, expected_positions);

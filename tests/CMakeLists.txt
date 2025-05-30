@@ -15,6 +15,7 @@ enable_testing()
 add_executable(
   itmoscript_tests
   lexer_ut.cpp
+  ast_ut.cpp
   # function_test.cpp
   # types_test.cpp
   # loop_and_branch_test.cpp
@@ -23,10 +24,12 @@ add_executable(
 target_link_libraries(
   itmoscript_tests
   itmoscript
+  serializer_lib
   GTest::gtest_main
 )
 
 target_include_directories(itmoscript_tests PUBLIC ${PROJECT_SOURCE_DIR}/src/interpreter)
+target_include_directories(itmoscript_tests PUBLIC ${PROJECT_SOURCE_DIR}/src/interpreter/parser/serializer)
 
 include(GoogleTest)
 

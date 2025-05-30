@@ -11,5 +11,16 @@ include(FetchContent)
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
-add_executable(serializer serializer.cpp)
+# SERIALIZER INTERFACE FOR TESTING
+add_library(serializer_lib INTERFACE)
+target_include_directories(serializer_lib INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializer
+)
+target_link_libraries(serializer_lib INTERFACE 
+    parser 
+    nlohmann_json::nlohmann_json
+)
+
+add_executable(serializer ${CMAKE_CURRENT_SOURCE_DIR}/serializer/serializer.cpp)
 target_link_libraries(serializer PRIVATE parser nlohmann_json::nlohmann_json)
+target_include_directories(serializer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
