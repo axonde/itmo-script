@@ -46,7 +46,7 @@ struct Serializer {
         Parser::List* list = static_cast<Parser::List*>(node.get());
         json j; j["type"] = "List";
         json data;
-        for (auto& ptr : list->data.data) {
+        for (auto& ptr : list->data) {
             data += Visit(ptr);
         }
         j["data"] = data;

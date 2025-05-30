@@ -101,7 +101,7 @@ public:
     struct List : Node {
         List(Lexer::Token&& token) : Node(Nodes::N_LIST, std::move(token)) {}
 
-        Compound data;
+        std::vector<NodePtr> data;
     };
 
     /// Operators
@@ -194,6 +194,7 @@ public:
     Lexer::Token GetTraitedToken();
 
     NodePtr VarExpr();
+    NodePtr ListExpr();
     NodePtr FuncExpr();
     NodePtr ReturnExpr();
 

@@ -83,6 +83,12 @@ namespace Errors {
         struct ExpectedRightBracket : Error {
             const char* what() const override { return "expected ')'"; }
         };
+        struct ExpectedLeftSquareBracket : Error {
+            const char* what() const override { return "expected '['"; }
+        };
+        struct ExpectedRightSquareBracket : Error {
+            const char* what() const override { return "expected ']'"; }
+        };
         struct FunctionParamsError : Error {
             const char* what() const override { return "cannot evaluate given function's parameters"; }
         };

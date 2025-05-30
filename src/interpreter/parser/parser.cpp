@@ -65,7 +65,27 @@ Parser::NodePtr Parser::VarExpr() {
     return var;
 }
 
-// Factor: Number | String | Bool | Nil | VarExpr | List
+// ListExpr: '[' (Expr (, Expr)* )? ']'
+Parser::NodePtr Parser::ListExpr() {
+    if (!Eat(Lexer::Tokens::T_LEFT_SQUARE_BRACKET)) { throw Errors::ParserErrors::ExpectedLeftSquareBracket{}; }
+
+    auto list = std::make_unique<List>(GetTraitedToken());
+    if (token.token != Lexer::Tokens::T_LEFT_SQUARE_BRACKET) {
+        list->data.push_back(Expr());
+        while (token.token == Lexer::T_COMMA) {
+            if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+            list->data.push_back(Expr());
+        }
+    }
+
+    if (!Eat(Lexer::Tokens::T_RIGHT_SQUARE_BRACKET)) {
+        throw Errors::ParserErrors::ExpectedRightSquareBracket{};
+    } GetTraitedToken();
+
+    return list;
+}
+
+// Factor: Number | String | Bool | Nil | VarExpr | ListExpr
 //         | ('not' | '+' | '-') Factor
 //         | '(' expr ')'
 //         | T_BAD
@@ -102,6 +122,8 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
         {   Tokens op = token.token;
             if (!Eat(token.token)) { throw ParserError{}; }
             return std::make_unique<UnaryOp>(op, Factor(), GetTraitedToken()); }
+        case Tokens::T_LEFT_SQUARE_BRACKET:
+            return ListExpr();
         case Tokens::T_LEFT_BRACKET:
         {   if (!Eat(token.token)) { throw ParserError{}; }
             auto expr = Expr();
