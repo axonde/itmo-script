@@ -88,39 +88,41 @@ enum Tokens : uint16_t {
     T_BAD                           // ill formed token
 };
 
+extern std::unordered_map<Lexer::Tokens, std::string> TOKENS_TO_STR;
+
 class Token {
 public:
     Token() = default;
 
     template<typename T>
     requires std::derived_from<T, Error>
-    Token(T&& e, size_t p, size_t l)
-    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), pos(p), line(l) {}
+    Token(T&& e, size_t c, size_t l)
+    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), column(c), lineno(l) {}
 
     template<typename T>
     requires std::derived_from<T, Error>
     Token(T&& e, const Token& other)
-    : token(other.token), value(std::make_shared<T>(std::forward<T>(e))), pos(other.pos), line(other.line) {}
+    : token(other.token), value(std::make_shared<T>(std::forward<T>(e))), column(other.column), lineno(other.lineno) {}
 
-    Token(Tokens t, double v, size_t p, size_t l)
-    : token(t), value(v), pos(p), line(l) {}
+    Token(Tokens t, double v, size_t c, size_t l)
+    : token(t), value(v), column(c), lineno(l) {}
 
-    Token(Tokens t, const std::string& v, size_t p, size_t l)
-    : token(t), value(v), pos(p), line(l) {}
-    Token(Tokens t, std::string&& v, size_t p, size_t l)
-    : token(t), value(std::forward<std::string>(v)), pos(p), line(l) {}
+    Token(Tokens t, const std::string& v, size_t c, size_t l)
+    : token(t), value(v), column(c), lineno(l) {}
+    Token(Tokens t, std::string&& v, size_t c, size_t l)
+    : token(t), value(std::move(v)), column(c), lineno(l) {}
 
     // (Comfy) function, that give you a possibility to pass an optional object
     // and will return a T_BAD if that is empty.
     template<typename T>
     Token(Tokens, const std::optional<T>&, size_t, size_t);
 
-    Token(Tokens t, size_t p, size_t l)
-    : token(t), value(std::monostate{}), pos(p), line(l) {}
+    Token(Tokens t, size_t c, size_t l)
+    : token(t), value(std::monostate{}), column(c), lineno(l) {}
 
     Tokens token;
-    size_t pos = 0;
-    size_t line = 0;
+    size_t column = 0;
+    size_t lineno = 0;
     std::variant<std::monostate, double, std::string, std::shared_ptr<Error>> value;
 };
 
@@ -132,15 +134,17 @@ public:
 
     Tokenizer& operator>>(Lexer::Token& token);
     Lexer::Token Peek();
+    void Broke();
 
 private:
-    size_t archived_pos = 0;
+    size_t column = 1;
     size_t pos = 0;
-    size_t line = 1;
+    size_t lineno = 1;
     std::string text;
-    size_t DebugPos() { return pos - archived_pos; }
 
     Lexer::Token Advance();
+    void Inc();
+    void DoubleInc();
 
     /// SKIPPERS
     void SkipWhiteSpaces();

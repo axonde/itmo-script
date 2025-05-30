@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <unordered_map>
 
 #include <nlohmann/json.hpp>
 #include "parser.h"
@@ -10,12 +11,6 @@ using json = nlohmann::json;
 using NodePtr = std::unique_ptr<Parser::Node>;
 
 struct Serializer {
-    Serializer(Parser&& p) : parser(std::move(p)) {
-        Lexer::Token token;
-        parser.Parse();
-        tree = Visit(parser.root);
-    }
-
     json VisitNumLiteral(NodePtr& node) {
         return {
             {"type", "Num Literal"},
@@ -47,67 +42,67 @@ struct Serializer {
     }
     json VisitList(NodePtr& node) {
         Parser::List* list = static_cast<Parser::List*>(node.get());
-        json j; j += {"type", "List"};
+        json j; j["type"] = "List";
         json data;
         for (auto& ptr : list->data.data) {
             data += Visit(ptr);
         }
-        j += {"data", data};
+        j["data"] = data;
         return j;
     }
 
     json VisitUnaryOp(NodePtr& node) {
         Parser::UnaryOp* un_op = static_cast<Parser::UnaryOp*>(node.get());
         json j;
-        j += {"type", "Unary Op"};
-        j += {"operator", un_op->op};
-        j += {"operand", Visit(un_op->operand)};
+        j["type"] = "Unary Op";
+        j["operator"] = Lexer::TOKENS_TO_STR[un_op->op];
+        j["operand"] = Visit(un_op->operand);
         return j;
     }
     json VisitBinaryOp(NodePtr& node) {
         Parser::BinaryOp* bin_op = static_cast<Parser::BinaryOp*>(node.get());
         json j;
-        j += {"type", "Binary Op"};
-        j += {"operator", bin_op->op};
-        j += {"left", Visit(bin_op->left)};
-        j += {"right", Visit(bin_op->right)};
+        j["type"] = "Binary Op";
+        j["operator"] = Lexer::TOKENS_TO_STR[bin_op->op];
+        j["left"] = Visit(bin_op->left);
+        j["right"] = Visit(bin_op->right);
         return j;
     }
     json VisitSubscript(NodePtr& node) {
         Parser::Subscript* sub = static_cast<Parser::Subscript*>(node.get());
         json j;
-        j += {"type", "Subscript"};
-        j += {"is_slice", sub->is_slice};
-        j += {"var expr", Visit(sub->var_expr)};
-        j += {"left", Visit(sub->left)};
-        j += {"right", Visit(sub->right)};
+        j["type"] = "Subscript";
+        j["is_slice"] = sub->is_slice;
+        j["var expr"] = Visit(sub->var_expr);
+        j["left"] = Visit(sub->left);
+        j["right"] = Visit(sub->right);
         return j;
     }
 
     json VisitIf(NodePtr& node) {
         Parser::If* if_block = static_cast<Parser::If*>(node.get());
         json j;
-        j += {"type", "If Block"};
-        j += {"condition", Visit(if_block->condition)};
-        j += {"body", Visit(if_block->body)};
+        j["type"] = "If Block";
+        j["condition"] = Visit(if_block->condition);
+        j["body"] = Visit(if_block->body);
         return j;
     }
 
     json VisitFor(NodePtr& node) {
         Parser::For* for_block = static_cast<Parser::For*>(node.get());
         json j;
-        j += {"type", "For Block"};
-        j += {"iterator", Visit(for_block->iterator)};
-        j += {"range", Visit(for_block->range)};
-        j += {"body", Visit(for_block->body)};
+        j["type"] = "For Block";
+        j["iterator"] = Visit(for_block->iterator);
+        j["range"] = Visit(for_block->range);
+        j["body"] = Visit(for_block->body);
         return j;
     }
     json VisitWhile(NodePtr& node) {
         Parser::While* while_block = static_cast<Parser::While*>(node.get());
         json j;
-        j += {"type", "While Block"};
-        j += {"condition", Visit(while_block->condition)};
-        j += {"body", Visit(while_block->body)};
+        j["type"] = "While Block";
+        j["condition"] = Visit(while_block->condition);
+        j["body"] = Visit(while_block->body);
         return j;
     }
     json VisitBreak(NodePtr& node) {
@@ -119,47 +114,48 @@ struct Serializer {
 
     json VisitFunc(NodePtr& node) {
         Parser::Func* func = static_cast<Parser::Func*>(node.get());
-        json j; j += {"type", "function"};
-        j += {"id", func->id.id};
+        json j; j["type"] = "function";
         json params;
         for (auto& ptr : func->params.data) {
             params += Visit(ptr);
         }
-        j += {"params", params};
-        j += {"body", Visit(func->body)};
+        j["params"] = params;
+        j["body"] = Visit(func->body);
         return j;
     }
     json VisitFuncCall(NodePtr& node) {
         Parser::FuncCall* func_call = static_cast<Parser::FuncCall*>(node.get());
-        json j; j += {"type", "function call"};
-        j += {"func", Visit(func_call->func)};
+        json j; j["type"] = "function call";
+        j["func"] = Visit(func_call->func);
         json params;
         for (auto& ptr : func_call->params) {
             params += Visit(ptr);
         }
-        j += {"params", params};
+        j["params"] = params;
         return j;
     }
     json VisitReturn(NodePtr& node) {
         Parser::Return* return_expr = static_cast<Parser::Return*>(node.get());
-        json j; j += {"type", "return statement"};
-        j += {"expr", Visit(return_expr->expr)};
+        json j; j["type"] = "return statement";
+        j["expr"] = Visit(return_expr->expr);
         return j;
     }
 
     json VisitCompound(NodePtr& node) {
         json j;
-        j += {"type", "compound"};
+        j["type"] = "compound";
         json children;
         Parser::Compound* cmpd = static_cast<Parser::Compound*>(node.get());
         for (auto& child : cmpd->data) {
             children += Visit(child);
         }
-        j += {"children", children};
+        j["children"] = children;
         return j;
     }
     json VisitBad(NodePtr& node) {
-        return {"type", "BAD"};
+        return {
+            {"type", "BAD"}
+        };
     }
 
     json Visit(NodePtr& node) {
@@ -208,6 +204,12 @@ struct Serializer {
             case Parser::Nodes::N_BAD:
                 return VisitBad(node);
         }
+    }
+
+    Serializer(Parser&& p) : parser(std::move(p)) {
+        Lexer::Token token;
+        parser.Parse();
+        tree = Visit(parser.root);
     }
 
     Parser parser;

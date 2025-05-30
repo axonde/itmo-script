@@ -76,11 +76,17 @@ namespace Errors {
         struct ExpectedLeftBracket : Error {
             std::string what() override { return "expected '('"; }
         };
+        struct ExpectedRightBracket : Error {
+            std::string what() override { return "expected ')'"; }
+        };
         struct FunctionParamsError : Error {
             std::string what() override { return "cannot evaluate given function's parameters"; }
         };
         struct ExpectedEndFunc : Error {
             std::string what() override { return "expected end function"; }
+        };
+        struct ExpectedVarExpr : Error {
+            std::string what() override { return "expected variable expression"; }
         };
     }
 

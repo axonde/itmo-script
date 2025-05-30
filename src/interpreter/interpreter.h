@@ -19,7 +19,7 @@ namespace Interpreter {
     // ERRORS
     void SyntaxError(const Lexer::Token& token) {
         using ErrorType = std::shared_ptr<Errors::Error>;
-        Errors::PrintError("Syntax error", std::get<ErrorType>(token.value).get(), token.pos, token.line);
+        Errors::PrintError("Syntax error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
     }
 }
 

@@ -110,7 +110,7 @@ TEST(LexerTokenTest, SimplePosTracker) {
 
     std::vector<Token> computed = MakeTokensVector(std::move(program));
     auto transformed = computed | std::views::transform([](const Lexer::Token& token) {
-        return std::make_pair(token.line, token.pos);
+        return std::make_pair(token.lineno, token.column);
     });
     std::vector<std::pair<size_t, size_t>> positions(transformed.begin(), transformed.end());
 
