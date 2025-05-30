@@ -62,6 +62,7 @@ public:
     /// Base
     struct Compound : Node {
         Compound() : Node(Nodes::N_COMPOUND) {}
+        
         std::vector<NodePtr> data;
     };
     struct Bad : Node {
@@ -191,11 +192,6 @@ public:
 
     bool Eat(Lexer::Tokens);
     Lexer::Token GetTraitedToken();
-
-    NodePtr MakeBadNode();
-    template<typename T>
-    requires std::derived_from<T, Error>
-    NodePtr MakeBadNode(T&& e);
 
     NodePtr VarExpr();
     NodePtr FuncExpr();

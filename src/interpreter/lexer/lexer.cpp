@@ -133,7 +133,7 @@ std::optional<std::string> Lexer::Tokenizer::GetString() {
 
     while (pos < text.size()) {
         if (text[pos] == '"' && text[pos - 1] != '\\') {
-           return str;
+            Inc(); return str;
         }
         str += text[pos];
         Inc();

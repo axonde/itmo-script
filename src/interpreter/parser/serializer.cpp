@@ -3,6 +3,7 @@
 #include <fstream>
 #include <memory>
 #include <unordered_map>
+#include <variant>
 
 #include <nlohmann/json.hpp>
 #include "parser.h"
@@ -154,7 +155,8 @@ struct Serializer {
     }
     json VisitBad(NodePtr& node) {
         return {
-            {"type", "BAD"}
+            {"type", "BAD"},
+            {"error", std::get<std::shared_ptr<Error>>(node->token.value)->what()}
         };
     }
 

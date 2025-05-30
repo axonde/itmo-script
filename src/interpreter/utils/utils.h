@@ -22,104 +22,106 @@ namespace Errors {
         std::cout << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
     }
 
+// переделать на строковые литералы const char*
     struct Error {
-        virtual std::string what() { return "error"; }
+        Error(const std::string& e = "error") : error(e) {}
+        virtual const char* what() const { return error.c_str(); }
         virtual ~Error() = default;
+
+        std::string error;
     };
 
     namespace LexerErrors {
         struct LexerNumberError : Error {
-            std::string what() override { return "wrong number literal"; }
+            const char* what() const override { return "wrong number literal"; }
         };
         struct LexerStringError : Error {
-            std::string what() override { return "unclosed string literal"; }
+            const char* what() const override { return "unclosed string literal"; }
         };
         struct LexerKeyWordError : Error {
-            std::string what() override { return "non-existant key word"; }
+            const char* what() const override { return "non-existant key word"; }
         };
         struct LexerUnrecognizable : Error {
-            std::string what() override { return "unrecognizable symbols"; }
+            const char* what() const override { return "unrecognizable symbols"; }
         };
     }
 
     namespace ParserErrors {
         struct Panic : Error {
-            std::string what() override { return "parser panic"; }
+            const char* what() const override { return "parser panic"; }
         };
         struct FactorError : Error {
-            std::string what() override { return "cannot correctly evaluate expression"; }
+            const char* what() const override { return "cannot correctly evaluate expression"; }
         };
         struct ExpectedAssignment : Error {
-            std::string what() override { return "expected an assignment operator"; }
+            const char* what() const override { return "expected an assignment operator"; }
         };
         struct ExpectedEmpty : Error {
-            std::string what() override { return "expected end of line"; }
+            const char* what() const override { return "expected end of line"; }
         };
         struct ExpectedThen : Error {
-            std::string what() override { return "expected then"; }
+            const char* what() const override { return "expected then"; }
         };
         struct ExpectedEndIf : Error {
-            std::string what() override { return "expected end if"; }
+            const char* what() const override { return "expected end if"; }
         };
         struct ExpectedIn : Error {
-            std::string what() override { return "expected in"; }
+            const char* what() const override { return "expected in"; }
         };
         struct ExpectedEndFor : Error {
-            std::string what() override { return "expected end for"; }
+            const char* what() const override { return "expected end for"; }
         };
         struct ExpectedEndWhile : Error {
-            std::string what() override { return "expected end while"; }
+            const char* what() const override { return "expected end while"; }
         };
         struct ExpectedFuntionName : Error {
-            std::string what() override { return "expected function name"; }
+            const char* what() const override { return "expected function name"; }
         };
         struct ExpectedLeftBracket : Error {
-            std::string what() override { return "expected '('"; }
+            const char* what() const override { return "expected '('"; }
         };
         struct ExpectedRightBracket : Error {
-            std::string what() override { return "expected ')'"; }
+            const char* what() const override { return "expected ')'"; }
         };
         struct FunctionParamsError : Error {
-            std::string what() override { return "cannot evaluate given function's parameters"; }
+            const char* what() const override { return "cannot evaluate given function's parameters"; }
         };
         struct ExpectedEndFunc : Error {
-            std::string what() override { return "expected end function"; }
+            const char* what() const override { return "expected end function"; }
         };
         struct ExpectedVarExpr : Error {
-            std::string what() override { return "expected variable expression"; }
+            const char* what() const override { return "expected variable expression"; }
         };
     }
 
     namespace OperatorErrors {
         struct OperatorUnaryError : Error {
-            OperatorUnaryError(const std::string& o, const std::string& t) : op(o), type(t) {}
-            std::string what() override {
+            OperatorUnaryError(const std::string& op, const std::string& type) {
                 using namespace std::string_literals;
-                return "unknow unary operation '"s + op + "' and "s + type; 
+                error = "unknow unary operation '"s + op + "' and "s + type;
             }
-            std::string op;
-            std::string type;
+            const char* what() const override {
+                return error.c_str();
+            }
+            std::string error;
         };
 
         struct OperatorBinaryError : Error {
-            OperatorBinaryError(const std::string& o, const std::string& l, const std::string& r)
-            : op(o), left(l), right(r) {}
-            std::string what() override {
+            OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right) {
                 using namespace std::string_literals;
-                return "unknow unary operation '"s + op + "' between "s + left + " and "s + right; 
+                error = "unknow unary operation '"s + op + "' between "s + left + " and "s + right; 
             }
-            std::string op;
-            std::string left;
-            std::string right;
+            const char* what() const override { return error.c_str(); }
+            std::string error;
         };
     }
 
     namespace InternalErrors {
-        struct InternalOperationError : Error {
-            std::string what() override { return "internal operation error occured: wrong argument (or arg / return types) for operator"; }
+        struct InternalError : Error {
+            const char* what() const override { return "internal operation error occured"; }
         };
         struct NotImplemented : Error {
-            std::string what() override { return "not implemented yet"; }
+            const char* what() const override { return "not implemented yet"; }
         };
     }
 
@@ -131,3 +133,5 @@ namespace Errors {
 }
 
 using Error = Errors::Error;
+using ParserError = Errors::ParserErrors::Panic;
+using InternalError = Errors::InternalErrors::InternalError;

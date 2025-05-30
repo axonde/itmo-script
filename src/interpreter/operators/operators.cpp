@@ -76,8 +76,8 @@ namespace Operators {
             node->type = iter->second.type;
             Value result = iter->second.func(std::move(computed));
             return result;
-        } catch (const std::bad_variant_access&) {
-            return std::unexpected(Lexer::Token{Errors::InternalErrors::InternalOperationError(), node->token});
+        } catch (...) {
+            return std::unexpected(Lexer::Token{InternalError(), node->token});
         }
     }
 
@@ -89,13 +89,12 @@ namespace Operators {
                 Errors::OperatorErrors::OperatorBinaryError(OP_TO_STR[node->op], TYPE_TO_STR[node->left->type], TYPE_TO_STR[node->right->type]),
                 node->token});
         }
-
         try {
             node->type = iter->second.type;
             Value result = iter->second.func(std::move(computed_left), std::move(computed_right));
             return result;
-        } catch (const std::bad_variant_access&) {
-            return std::unexpected(Lexer::Token{Errors::InternalErrors::InternalOperationError(), node->token});
+        } catch (...) {
+            return std::unexpected(Lexer::Token{InternalError(), node->token});
         }
     }
 }
