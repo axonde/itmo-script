@@ -291,7 +291,7 @@ TEST(AST_SERIALIZATION, IfStatement) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxLiteral) {
+TEST(AST_SERIALIZATION, WrongSyntaxStringLiteral) {
     std::string program = R"(
         a = "sdfkjfkjdf
         b = 2
@@ -302,6 +302,180 @@ TEST(AST_SERIALIZATION, WrongSyntaxLiteral) {
     json expected = {
         {"error", "unclosed string literal"},
         {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxNumLiteral) {
+    std::string program = R"(
+        a = 1123.
+        b = 2
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "wrong number literal"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxUndefinedSymbols) {
+    std::string program = R"(!@!#)";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "unrecognizable symbols"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxIfStatementExpThen) {
+    std::string program = R"(
+        if i < 3
+            i = 3
+        end if
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "expected then"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxIfStatementExpExpr) {
+    std::string program = R"(
+        if then
+            i = 3
+        end if
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "cannot correctly evaluate expression"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxIfStatementForgotEndIf) {
+    std::string program = R"(
+        if i < 3 then
+            i = 3
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "expected end if"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxForStatementExpIn) {
+    std::string program = R"(
+        for i range(3)
+            print("Mega For")
+        end for
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "expected in"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxForStatementExpr) {
+    std::string program = R"(
+        for in range(3)
+            print("Mega For")
+        end for
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "expected variable expression"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxForStatementRange) {
+    std::string program = R"(
+        for in
+            continue
+        end for
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "expected variable expression"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, WrongSyntaxForStatementForgotEndFor) {
+    std::string program = R"(
+        for i in range(3)
+            continue
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "expected end for"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, AbnormalInput) {
+    std::string program = R"(
+        !@O#I1o] 	2-]9u j[9j4n ln;lkj;j]
+    )";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"error", "unrecognizable symbols"},
+        {"type", "BAD"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AST_SERIALIZATION, EmptyInput) {
+    std::string program = R"()";
+
+    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+
+    json expected = {
+        {"children", {}},
+        {"type", "compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
