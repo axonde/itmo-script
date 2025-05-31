@@ -122,6 +122,12 @@ namespace Errors {
         };
     }
 
+    namespace MemoryErrors {
+        struct NotFound : Error {
+            const char* what() const override { return "variable is not declared"; }
+        };
+    }
+
     namespace InternalErrors {
         struct InternalError : Error {
             const char* what() const override { return "internal operation error occured"; }

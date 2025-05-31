@@ -5,8 +5,10 @@
 #include <optional>
 #include <variant>
 #include <stack>
+#include <unordered_set>
 
 #include "lexer.h"
+#include "built_in.h"
 
 class Parser {
 public:
@@ -37,23 +39,13 @@ public:
         N_BAD,
     };
 
-    enum Types : uint16_t {
-        NUM_TYPE,
-        STRING_TYPE,
-        NIL_TYPE,
-        BOOL_TYPE,
-        LIST_TYPE,
-        FUNC_TYPE,
-        NOT_SET_TYPE
-    };
-
     struct Node {
         Node(Nodes n) : node(n) {}
-        Node(Nodes n, Lexer::Token&& t) : node(n), type(Types::NOT_SET_TYPE), token(std::move(t)) {}
-        Node(Nodes n, Types t, Lexer::Token&& tkn) : node(n), type(t), token(std::move(tkn)) {}
+        Node(Nodes n, Lexer::Token&& t) : node(n), type(TYPES::NOT_SET_TYPE), token(std::move(t)) {}
+        Node(Nodes n, TYPES t, Lexer::Token&& tkn) : node(n), type(t), token(std::move(tkn)) {}
 
         Nodes node;
-        Types type;
+        TYPES type;
         Lexer::Token token;
     };
 
@@ -71,26 +63,26 @@ public:
 
     /// Literals
     struct NumLiteral : Node {
-        NumLiteral(double v, Lexer::Token&& token) : Node(Nodes::N_NUM_LITERAL, Types::NUM_TYPE, std::move(token)), value(v) {}
+        NumLiteral(double v, Lexer::Token&& token) : Node(Nodes::N_NUM_LITERAL, TYPES::NUM_TYPE, std::move(token)), value(v) {}
         
         double value;
     };
     struct StringLiteral : Node {
         StringLiteral(const std::string& str, Lexer::Token&& token)
-        : Node(Nodes::N_STRING_LITERAL, Types::STRING_TYPE, std::move(token)), value(str) {}
+        : Node(Nodes::N_STRING_LITERAL, TYPES::STRING_TYPE, std::move(token)), value(str) {}
         StringLiteral(std::string&& str, Lexer::Token&& token)
-        : Node(Nodes::N_STRING_LITERAL, Types::STRING_TYPE, std::move(token)), value(std::move(str)) {}
+        : Node(Nodes::N_STRING_LITERAL, TYPES::STRING_TYPE, std::move(token)), value(std::move(str)) {}
 
         std::string value;
     };
     struct BoolLiteral : Node {
         BoolLiteral(bool v, Lexer::Token&& token)
-        : Node(Nodes::N_BOOL_LITERAL, Types::BOOL_TYPE, std::move(token)), value(v) {}
+        : Node(Nodes::N_BOOL_LITERAL, TYPES::BOOL_TYPE, std::move(token)), value(v) {}
         
         bool value;
     };
     struct NilLiteral : Node {
-        NilLiteral(Lexer::Token&& token) : Node(Nodes::N_NIL_LITERAL, Types::NIL_TYPE, std::move(token)) {}
+        NilLiteral(Lexer::Token&& token) : Node(Nodes::N_NIL_LITERAL, TYPES::NIL_TYPE, std::move(token)) {}
     };
     struct Var : Node {
         Var(const std::string& id, Lexer::Token&& token) : Node(Nodes::N_VAR, std::move(token)), id(id) {}

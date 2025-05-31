@@ -11,6 +11,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "operators.h"
+#include "memory.h"
 
 namespace Interpreter {
     inline bool Interpret(std::istream&, std::ostream&, bool);
@@ -27,12 +28,12 @@ class Runner {
 public:
     template<typename T>
     requires std::same_as<T, std::string>
-    Runner(T&& str)
-    : parser(Lexer::Tokenizer( std::forward<T>(str) )) {
+    Runner(T&& str, std::ostream& o)
+    : parser(Lexer::Tokenizer( std::forward<T>(str) )), out(o), stack_frame(BUILT_IN_FUNCTIONS) {
         parser.Parse();
     }
 
-    using Value = Operators::Value;
+    using Holder = Memory::Holder;
     using Expected = Operators::Expected;
 
     Expected Run();
@@ -44,17 +45,28 @@ private:
 
     Expected VisitNumLiteral(NodePtr&);
     Expected VisitStringLiteral(NodePtr&);
+    Expected VisitBoolLiteral(NodePtr&);
+    Expected VisitNilLiteral(NodePtr&);
+    
     Expected VisitVar(NodePtr&);
-    Expected VisitNil(NodePtr&);
+    Expected VisitList(NodePtr&);
 
     Expected VisitUnaryOp(NodePtr&);
     Expected VisitBinaryOp(NodePtr&);
+    Expected VisitSubscript(NodePtr&);
 
-    Expected VisitAssignmentOp(NodePtr&);
-
-    Expected VisitEmpty(NodePtr&);
+    Expected VisitIf(NodePtr&);
+    Expected VisitFor(NodePtr&);
+    Expected VisitWhile(NodePtr&);
+    Expected VisitBreak(NodePtr&);
+    Expected VisitContinue(NodePtr&);
+    
+    Expected VisitFunc(NodePtr&);
+    Expected VisitFuncCall(NodePtr&);
+    Expected VisitReturn(NodePtr&);
     Expected VisitCompound(NodePtr&);
-    Expected VisitBad(NodePtr&);
 
     Parser parser;
+    Memory::StackFrame stack_frame;
+    std::ostream& out;
 };

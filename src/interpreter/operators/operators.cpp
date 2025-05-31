@@ -4,37 +4,19 @@ namespace Operators {
     std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
     std::unordered_map<BinaryOpTableKey, BinaryOpTableValue> BINARY_OP_TABLE;
 
-    std::unordered_map<Lexer::Tokens, std::string> OP_TO_STR {
-        {Lexer::Tokens::T_PLUS, "+"},
-        {Lexer::Tokens::T_MINUS, "-"},
-        {Lexer::Tokens::T_DIV, "/"},
-        {Lexer::Tokens::T_MULT, "*"},
-        {Lexer::Tokens::T_MOD, "%"},
-        {Lexer::Tokens::T_XOR, "^"}
-    };
-    std::unordered_map<Parser::Types, std::string> TYPE_TO_STR {
-        {Parser::Types::NUM_TYPE, "number"},
-        {Parser::Types::STRING_TYPE, "string"},
-        {Parser::Types::NIL_TYPE, "nil"},
-        {Parser::Types::BOOL_TYPE, "bool"},
-        {Parser::Types::LIST_TYPE, "list"},
-        {Parser::Types::FUNC_TYPE, "func"},
-        {Parser::Types::NOT_SET_TYPE, "(not set type)"}
-    };
-
     /// Unary operations
     void RegisterUnaryNumOperators() noexcept {
         // + NUM
-        UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, Parser::Types::NUM_TYPE}] = {
-            Parser::Types::NUM_TYPE,
-            [](Value&& value) -> Value { 
+        UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::NUM_TYPE}] = {
+            TYPES::NUM_TYPE,
+            [](Holder&& value) -> Holder { 
                 return std::get<double>(value); }
         };
 
         // - NUM
-        UNARY_OP_TABLE[{Lexer::Tokens::T_MINUS, Parser::Types::NUM_TYPE}] = {
-            Parser::Types::NUM_TYPE,
-            [](Value&& value) -> Value {
+        UNARY_OP_TABLE[{Lexer::Tokens::T_MINUS, TYPES::NUM_TYPE}] = {
+            TYPES::NUM_TYPE,
+            [](Holder&& value) -> Holder {
                 return -std::get<double>(value);
             }
         };
@@ -64,34 +46,34 @@ namespace Operators {
         RegisterBinaryNilOperators();
     }
 
-    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed) {
+    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Holder&& computed) {
         UnaryOpTableKey key = {node->op, node->operand->type};
         auto iter = UNARY_OP_TABLE.find(std::move(key));
         if (iter == UNARY_OP_TABLE.end()) {
             return std::unexpected(Lexer::Token{
-                Errors::OperatorErrors::OperatorUnaryError(OP_TO_STR[node->op], TYPE_TO_STR[node->operand->type]), 
+                Errors::OperatorErrors::OperatorUnaryError(Lexer::TOKENS_TO_STR[node->op], TYPE_TO_STR[node->operand->type]), 
                 node->token});
         }
         try {
             node->type = iter->second.type;
-            Value result = iter->second.func(std::move(computed));
+            Holder result = iter->second.func(std::move(computed));
             return result;
         } catch (...) {
             return std::unexpected(Lexer::Token{InternalError(), node->token});
         }
     }
 
-    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Value&& computed_left, Value&& computed_right) {
+    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Holder&& computed_left, Holder&& computed_right) {
         BinaryOpTableKey key = {node->op, node->left->type, node->right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {
             return std::unexpected(Lexer::Token{
-                Errors::OperatorErrors::OperatorBinaryError(OP_TO_STR[node->op], TYPE_TO_STR[node->left->type], TYPE_TO_STR[node->right->type]),
+                Errors::OperatorErrors::OperatorBinaryError(Lexer::TOKENS_TO_STR[node->op], TYPE_TO_STR[node->left->type], TYPE_TO_STR[node->right->type]),
                 node->token});
         }
         try {
             node->type = iter->second.type;
-            Value result = iter->second.func(std::move(computed_left), std::move(computed_right));
+            Holder result = iter->second.func(std::move(computed_left), std::move(computed_right));
             return result;
         } catch (...) {
             return std::unexpected(Lexer::Token{InternalError(), node->token});

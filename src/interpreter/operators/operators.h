@@ -9,31 +9,28 @@
 #include "parser.h"
 
 namespace Operators {
-    using Value = std::variant<std::monostate, double, std::string, bool>;
-    using Expected = std::expected<Value, Lexer::Token>;
-
-    extern std::unordered_map<Lexer::Tokens, std::string> OP_TO_STR;
-    extern std::unordered_map<Parser::Types, std::string> TYPE_TO_STR;
+    using Holder = Memory::Holder;
+    using Expected = std::expected<Holder, Lexer::Token>;
 
     struct UnaryOpTableKey {
         Lexer::Tokens op;
-        Parser::Types arg_type;
+        TYPES arg_type;
         bool operator==(const UnaryOpTableKey& other) const = default;
     };
     struct UnaryOpTableValue {
-        Parser::Types type;
-        std::function<Value(Value&&)> func;
+        TYPES type;
+        std::function<Holder(Holder&&)> func;
     };
 
     struct BinaryOpTableKey {
         Lexer::Tokens op;
-        Parser::Types left_arg_type;
-        Parser::Types right_arg_type;
+        TYPES left_arg_type;
+        TYPES right_arg_type;
         bool operator==(const BinaryOpTableKey& other) const = default;
     };
     struct BinaryOpTableValue {
-        Parser::Types type;
-        std::function<Value(Value&&, Value&&)> func;
+        TYPES type;
+        std::function<Holder(Holder&&, Holder&&)> func;
     };
 
     extern std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
@@ -52,8 +49,8 @@ namespace Operators {
 
     void RegisterBinaryOperators() noexcept;
 
-    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Value&& computed);
-    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Value&& computed_left, Value&& computed_right);
+    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Holder&& computed);
+    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Holder&& computed_left, Holder&& computed_right);
 }
 
 namespace std {
