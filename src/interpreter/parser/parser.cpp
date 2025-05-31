@@ -18,7 +18,8 @@ Lexer::Token Parser::GetTraitedToken() {
 
 /// GRAMMAR
 
-// Var: T_VAR ( ('[' (Expr)? (':')? (Expr)? ']') | ('(' (expr (',' expr)* )? ')') )*
+// Var: T_VAR ( ('[' (Expr)? 1(':' | ':' (Expr)? 2(':' | ':' (Expr)? )? )? ) ']')
+//            | ('(' (expr (',' expr)* )? ')') )*
 Parser::NodePtr Parser::VarExpr() {
     if (token.token != Lexer::Tokens::T_VAR) { throw Errors::ParserErrors::ExpectedVarExpr{}; }
 
@@ -31,21 +32,32 @@ Parser::NodePtr Parser::VarExpr() {
     while (token.token == Tokens::T_LEFT_SQUARE_BRACKET || token.token == Tokens::T_LEFT_BRACKET) {
         if (token.token == Tokens::T_LEFT_SQUARE_BRACKET) {
             if (!Eat(token.token)) { throw ParserError{}; }
-            NodePtr expr_left, expr_right;
-            bool is_slice = false;
+            NodePtr expr_start, expr_end, expr_step;
+            bool is_slice = (token.token == Tokens::T_RIGHT_SQUARE_BRACKET);
+
             if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET && token.token != Tokens::T_COLON) {
-                expr_left = Expr();
+                expr_start = Expr();
             }
             if (token.token == Tokens::T_COLON) {
                 if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
                 is_slice = true;
+
+                if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET && token.token != Tokens::T_COLON) {
+                    expr_end = Expr();
+
+                    if (token.token == Tokens::T_COLON) {
+                        if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                        
+                        if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET) {
+                            expr_step = Expr();
+                        }
+                    }
+                }
             }
-            if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET) {
-                expr_right = Expr();
-            }
+
             if (!Eat(Tokens::T_RIGHT_SQUARE_BRACKET)) { throw ParserError{}; } GetTraitedToken();
             // expr_left and expr_right can be empty! check it without fail!
-            var = std::make_unique<Subscript>(std::move(var), std::move(expr_left), std::move(expr_right), is_slice, GetTraitedToken());
+            var = std::make_unique<Subscript>(std::move(var), std::move(expr_start), std::move(expr_end), std::move(expr_step), is_slice, GetTraitedToken());
         }
         else {
             if (!Eat(Tokens::T_LEFT_BRACKET)) { throw ParserError{}; }

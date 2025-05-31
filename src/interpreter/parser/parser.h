@@ -114,13 +114,14 @@ public:
         NodePtr right;
     };
     struct Subscript : Node {
-        Subscript(NodePtr&& v, NodePtr&& l, NodePtr&& r, bool i_s, Lexer::Token&& token)
+        Subscript(NodePtr&& v, NodePtr&& sta, NodePtr&& e, NodePtr&& ste, bool i_s, Lexer::Token&& token)
         : Node(Nodes::N_SUBSCRIPT, std::move(token))
-        , var_expr(std::move(v)), left(std::move(l)), right(std::move(r)), is_slice(i_s) {}
+        , var_expr(std::move(v)), start(std::move(sta)), end(std::move(e)), step(std::move(ste)), is_slice(i_s) {}
 
         NodePtr var_expr;
-        NodePtr left;
-        NodePtr right;
+        NodePtr start;
+        NodePtr end;
+        NodePtr step;
         bool is_slice;
     };
 

@@ -76,8 +76,9 @@ struct Serializer {
         j["type"] = "Subscript";
         j["is_slice"] = sub->is_slice;
         j["var expr"] = Visit(sub->var_expr);
-        j["left"] = Visit(sub->left);
-        j["right"] = Visit(sub->right);
+        j["start"] = Visit(sub->start);
+        j["end"] = Visit(sub->end);
+        j["step"] = Visit(sub->step);
         return j;
     }
 

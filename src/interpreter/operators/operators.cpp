@@ -1,24 +1,28 @@
 #include "operators.h"
 
 namespace Operators {
-    std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
-    std::unordered_map<BinaryOpTableKey, BinaryOpTableValue> BINARY_OP_TABLE;
+    std::unordered_map<UnaryOpTableKey, UnaryFunction> UNARY_OP_TABLE;
+    std::unordered_map<BinaryOpTableKey, BinaryFunction> BINARY_OP_TABLE;
 
     /// Unary operations
     void RegisterUnaryNumOperators() noexcept {
         // + NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::NUM_TYPE}] = {
-            TYPES::NUM_TYPE,
-            [](HolderPack&& arg) -> HolderPack { 
-                return {std::get<double>(arg.holder), TYPES::NUM_TYPE};
+            [](HolderPack&& arg) -> HolderPack {
+                return { 
+                    std::make_shared<HolderTypes>(std::get<double>(*(arg.holder))),
+                    TYPES::NUM_TYPE
+                };
             }
         };
 
         // - NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_MINUS, TYPES::NUM_TYPE}] = {
-            TYPES::NUM_TYPE,
             [](HolderPack&& arg) -> HolderPack {
-                return {-std::get<double>(arg.holder), TYPES::NUM_TYPE};
+                return {
+                    std::make_shared<HolderTypes>(-std::get<double>(*(arg.holder))),
+                    TYPES::NUM_TYPE
+                };
             }
         };
     }
@@ -56,7 +60,7 @@ namespace Operators {
                 node->token});
         }
         try {
-            return iter->second.func(std::move(computed));
+            return iter->second(std::move(computed));
         } catch (...) {
             return std::unexpected(Lexer::Token{InternalError(), node->token});
         }
@@ -71,7 +75,7 @@ namespace Operators {
                 node->token});
         }
         try {
-            return iter->second.func(std::move(computed_left), std::move(computed_right));
+            return iter->second(std::move(computed_left), std::move(computed_right));
         } catch (...) {
             return std::unexpected(Lexer::Token{InternalError(), node->token});
         }

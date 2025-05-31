@@ -20,26 +20,32 @@ namespace Memory {
 
 class StackFrame;
 
-struct StringHolder;
-struct ListHolder;
+struct ListHolder;      // defined in memory.h
 struct FuncHolder;
 
-using Holder = std::variant<
-    std::monostate,                     // nil type
-    double,                             // num type
-    bool,                               // bool type
-    std::shared_ptr<StringHolder>,      // string type
-    std::shared_ptr<ListHolder>,        // list type
-    std::shared_ptr<FuncHolder>         // functions type
+using HolderTypes = std::variant<
+    std::monostate,     // nil type
+    double,             // num type
+    bool,               // bool type
+    std::string,        // string type
+    ListHolder,         // list type
+    FuncHolder          // functions type
 >;
+
+using Holder = std::shared_ptr<HolderTypes>;
 
 struct HolderPack {
     Holder holder;
     TYPES type;
 };
 
-using Function = std::function<HolderPack(HolderPack&&)>; 
+using Function = std::function<HolderPack(HolderPack&&)>;
 
+struct ListHolder {
+    template<typename T>
+    ListHolder(T&& container) : data(std::forward<T>(container)) {}
+    std::vector<Holder> data;
+};
 struct FuncHolder {
     FuncHolder(Function f) : function(std::move(f)) {}
     Function function;

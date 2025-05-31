@@ -10,19 +10,17 @@
 
 namespace Operators {
 
+using HolderTypes = Memory::HolderTypes;
 using Holder = Memory::Holder;
 using HolderPack = Memory::HolderPack;
-using Function = Memory::Function;
+using UnaryFunction = Memory::Function;
+using BinaryFunction = std::function<HolderPack(HolderPack&&, HolderPack&&)>;
 using Expected = std::expected<HolderPack, Lexer::Token>;
 
 struct UnaryOpTableKey {
     Lexer::Tokens op;
     TYPES arg_type;
     bool operator==(const UnaryOpTableKey& other) const = default;
-};
-struct UnaryOpTableValue {
-    TYPES type;
-    Function func;
 };
 
 struct BinaryOpTableKey {
@@ -31,13 +29,9 @@ struct BinaryOpTableKey {
     TYPES right_arg_type;
     bool operator==(const BinaryOpTableKey& other) const = default;
 };
-struct BinaryOpTableValue {
-    TYPES type;
-    std::function<HolderPack(HolderPack&&, HolderPack&&)> func;
-};
 
-extern std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
-extern std::unordered_map<BinaryOpTableKey, BinaryOpTableValue> BINARY_OP_TABLE;
+extern std::unordered_map<UnaryOpTableKey, UnaryFunction> UNARY_OP_TABLE;
+extern std::unordered_map<BinaryOpTableKey, BinaryFunction> BINARY_OP_TABLE;
 
 void RegisterUnaryNumOperators() noexcept;
 void RegisterUnaryStringOperators() noexcept;
