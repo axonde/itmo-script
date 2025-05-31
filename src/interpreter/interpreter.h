@@ -34,7 +34,8 @@ public:
     }
 
     using Holder = Memory::Holder;
-    using Expected = Operators::Expected;
+    using HolderPack = Memory::HolderPack;
+    using Expected = std::expected<HolderPack, Lexer::Token>;
 
     Expected Run();
 
@@ -47,7 +48,7 @@ private:
     Expected VisitStringLiteral(NodePtr&);
     Expected VisitBoolLiteral(NodePtr&);
     Expected VisitNilLiteral(NodePtr&);
-    
+
     Expected VisitVar(NodePtr&);
     Expected VisitList(NodePtr&);
 

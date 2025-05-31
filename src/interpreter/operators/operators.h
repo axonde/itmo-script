@@ -9,49 +9,53 @@
 #include "parser.h"
 
 namespace Operators {
-    using Holder = Memory::Holder;
-    using Expected = std::expected<Holder, Lexer::Token>;
 
-    struct UnaryOpTableKey {
-        Lexer::Tokens op;
-        TYPES arg_type;
-        bool operator==(const UnaryOpTableKey& other) const = default;
-    };
-    struct UnaryOpTableValue {
-        TYPES type;
-        std::function<Holder(Holder&&)> func;
-    };
+using Holder = Memory::Holder;
+using HolderPack = Memory::HolderPack;
+using Function = Memory::Function;
+using Expected = std::expected<HolderPack, Lexer::Token>;
 
-    struct BinaryOpTableKey {
-        Lexer::Tokens op;
-        TYPES left_arg_type;
-        TYPES right_arg_type;
-        bool operator==(const BinaryOpTableKey& other) const = default;
-    };
-    struct BinaryOpTableValue {
-        TYPES type;
-        std::function<Holder(Holder&&, Holder&&)> func;
-    };
+struct UnaryOpTableKey {
+    Lexer::Tokens op;
+    TYPES arg_type;
+    bool operator==(const UnaryOpTableKey& other) const = default;
+};
+struct UnaryOpTableValue {
+    TYPES type;
+    Function func;
+};
 
-    extern std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
-    extern std::unordered_map<BinaryOpTableKey, BinaryOpTableValue> BINARY_OP_TABLE;
+struct BinaryOpTableKey {
+    Lexer::Tokens op;
+    TYPES left_arg_type;
+    TYPES right_arg_type;
+    bool operator==(const BinaryOpTableKey& other) const = default;
+};
+struct BinaryOpTableValue {
+    TYPES type;
+    std::function<HolderPack(HolderPack&&, HolderPack&&)> func;
+};
 
-    void RegisterUnaryNumOperators() noexcept;
-    void RegisterUnaryStringOperators() noexcept;
-    void RegisterUnaryBoolOperators() noexcept;
-    void RegisterUnaryNilOperators() noexcept;
-    void RegisterUnaryOperators() noexcept;
+extern std::unordered_map<UnaryOpTableKey, UnaryOpTableValue> UNARY_OP_TABLE;
+extern std::unordered_map<BinaryOpTableKey, BinaryOpTableValue> BINARY_OP_TABLE;
 
-    void RegisterBinaryNumOperators() noexcept;
-    void RegisterBinaryStringOperators() noexcept;
-    void RegisterBinaryBoolOperators() noexcept;
-    void RegisterBinaryNilOperators() noexcept;
+void RegisterUnaryNumOperators() noexcept;
+void RegisterUnaryStringOperators() noexcept;
+void RegisterUnaryBoolOperators() noexcept;
+void RegisterUnaryNilOperators() noexcept;
+void RegisterUnaryOperators() noexcept;
 
-    void RegisterBinaryOperators() noexcept;
+void RegisterBinaryNumOperators() noexcept;
+void RegisterBinaryStringOperators() noexcept;
+void RegisterBinaryBoolOperators() noexcept;
+void RegisterBinaryNilOperators() noexcept;
 
-    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, Holder&& computed);
-    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, Holder&& computed_left, Holder&& computed_right);
-}
+void RegisterBinaryOperators() noexcept;
+
+[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, HolderPack&& computed);
+[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, HolderPack&& computed_left, HolderPack&& computed_right);
+
+} // end Operators
 
 namespace std {
     template<>

@@ -53,24 +53,36 @@ Runner::Expected Runner::Run() {
 Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
     std::cout << "visit num literal\n";
 
-    return static_cast<Parser::NumLiteral*>(node.get())->value;
+    Parser::NumLiteral* num_literal = static_cast<Parser::NumLiteral*>(node.get());
+    return {
+        std::make_shared<NumberHolder>(num_literal->value)
+        TYPES::NUM_TYPE
+    };
 }
+
 Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
     std::cout << "visit str literal\n";
 
-    return std::make_shared<Memory::StringHolder>(
-        std::move(static_cast<Parser::StringLiteral*>(node.get())->value
-    ));
+    Parser::StringLiteral* str_literal = static_cast<Parser::StringLiteral*>(node.get());
+    return {
+        std::make_shared<Memory::StringHolder>(std::move(str_literal->value)),
+        TYPES::STRING_TYPE
+    };
 }
+
 Runner::Expected Runner::VisitBoolLiteral(Runner::NodePtr& node) {
     std::cout << "visit bool literal\n";
 
-    return static_cast<Parser::BoolLiteral*>(node.get())->value;
+    Parser::BoolLiteral* bool_literal = static_cast<Parser::BoolLiteral*>(node.get());
+    return {
+        std::make_shared<BoolHolder>(bool_literal->value)
+    };
 }
+
 Runner::Expected Runner::VisitNilLiteral(Runner::NodePtr& node) {
     std::cout << "visit nil literal\n";
 
-    return std::monostate{};
+    return { std::make_shared<NilHolder>(), TYPES::NIL_TYPE };
 }
 
 /// LITERAL EXPR
@@ -78,7 +90,11 @@ Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
     std::cout << "visit var\n";
 
     std::string id = std::move(static_cast<Parser::Var*>(node.get())->id);
-    return stack_frame.Lookup(std::move(id));
+    try {
+        return stack_frame.Lookup(std::move(id));
+    } catch (Errors::MemoryErrors::NotFound&& e) {
+        return std::unexpected(std::move(e));
+    }
 }
 Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
     std::cout << "visit list\n";
@@ -135,6 +151,39 @@ Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
 }
 Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
     std::cout << "visit subscript\n";
+
+    Parser::Subscript* ptr = static_cast<Parser::Subscript*>(node.get());
+    Expected var_expr = Visit(ptr->var_expr);
+    if (!var_expr) { reuturn std::unexpected(var_expr.error()); }
+    if (var_expr->type != TYPES::STRING_TYPE && var_expr->type != TYPES::LIST_TYPE) {
+        return std::unexpected(Errors::TypeErrors::TypeErrorStringOrList());
+    }
+
+    Expected computed_left, computed_right;
+    if (ptr->left) {
+        if (auto computed_left = Visit(ptr->left); !computed_left) {
+            return std::unexpected(computed_left.error());
+        }
+    }
+    if (ptr->right) {
+        if (auto computed_right = Visit(ptr->right); !computed_right) {
+            return std::unexpected(computed_right.error());
+        }
+        if (var_expr->type == TYPES::STRING_TYPE) {}
+    }
+
+    if (ptr->is_slice) {
+        return std::unexpected(Errors::InternalErrors::NotImplemented());
+    } else {
+        if (left->type != TYPES::NUM_TYPE) {
+            return std::unexpected(Errors::TypeErrros::TypeErrorInt());
+        }
+        double index = std::get<double>(computed_left);
+        if (index % 1 != index) {
+            return std::unexpected(Errors::TypeErrors::IndexNotInteger());
+        }
+        
+    }
 }
 
 

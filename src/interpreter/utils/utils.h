@@ -128,6 +128,18 @@ namespace Errors {
         };
     }
 
+    namespace TypeErrors {
+        struct TypeErrorInt : Error {
+            const char* what() const override { return "expression must to be a number"; }
+        };
+        struct IndexNotInteger : Error {
+            const char* what() const override { return "index must be an integer"; }
+        };
+        struct TypeErrorStringOrList : Error {
+            const char* what() const override { return "variable must be a string or list"; }
+        };
+    }
+
     namespace InternalErrors {
         struct InternalError : Error {
             const char* what() const override { return "internal operation error occured"; }

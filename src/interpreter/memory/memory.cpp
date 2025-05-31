@@ -1,6 +1,6 @@
 #include "memory.h"
 
-Memory::Holder& Memory::StackFrame::Lookup(const std::string& key) {
+Memory::HolderPack& Memory::StackFrame::Lookup(std::string_view key) {
     if (auto iter = environment.find(key); iter != environment.end()) {
         return iter->second;
     }
