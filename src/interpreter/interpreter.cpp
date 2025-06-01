@@ -1,6 +1,19 @@
 #include "interpreter.h"
 
-bool Interpreter::Interpret(std::istream& input, std::ostream& output, bool IsRepl = false) {
+namespace Interpreter {
+
+/// ERRORS
+void SyntaxError(const Lexer::Token& token) {
+    using ErrorType = std::shared_ptr<Errors::Error>;
+    Errors::PrintError("Syntax error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
+}
+void RunTimeError(const Lexer::Token& token) {
+    using ErrorType = std::shared_ptr<Errors::Error>;
+    Errors::PrintError("RunTime error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
+}
+
+/// INTERPRET
+bool Interpret(std::istream& input, std::ostream& output, bool IsRepl = false) {
     if (IsRepl) {
         std::string line;
         do {
@@ -33,48 +46,121 @@ bool Interpreter::Interpret(std::istream& input, std::ostream& output, bool IsRe
     return Interpret(program, output);
 }
 
-bool Interpreter::Interpret(std::string& program, std::ostream& output) {
+bool Interpret(std::string& program, std::ostream& output) {
     Runner runner(std::move(program), output);
 
+    if (runner.GetRoot()->node == Parser::Nodes::N_BAD) {
+        SyntaxError(std::move(runner.GetRoot()->token));
+        return false;
+    }
+
     if (auto expected = runner.Run(); !expected) {
-        SyntaxError(std::move(expected.error()));
+        RunTimeError(std::move(expected.error()));
         return false;
     }
     return true;
 }
 
+} // end Interpreter
+
+
 Runner::Expected Runner::Run() {
     Operators::RegisterUnaryOperators();
     Operators::RegisterBinaryOperators();
+
     return Visit(parser.root);
 }
+
+Runner::Expected Runner::Visit(Runner::NodePtr& node) {
+    std::cout << "visit ...\n\t";
+
+    switch (node->node) {
+        case Parser::Nodes::N_NUM_LITERAL:
+            return VisitNumLiteral(node);
+        case Parser::Nodes::N_STRING_LITERAL:
+            return VisitStringLiteral(node);
+        case Parser::Nodes::N_BOOL_LITERAL:
+            return VisitBoolLiteral(node);
+        case Parser::Nodes::N_NIL_LITERAL:
+            return VisitNilLiteral(node);
+
+        case Parser::Nodes::N_VAR:
+            return VisitVar(node);
+        case Parser::Nodes::N_LIST:
+            return VisitList(node);
+
+        case Parser::Nodes::N_UNARY_OP:
+            return VisitUnaryOp(node);
+        case Parser::Nodes::N_BINARY_OP:
+            return VisitBinaryOp(node);
+        case Parser::Nodes::N_SUBSCRIPT:
+            return VisitSubscript(node);
+        
+        case Parser::Nodes::N_IF:
+            return VisitIf(node);
+        case Parser::Nodes::N_FOR:
+            return VisitFor(node);
+        case Parser::Nodes::N_WHILE:
+            return VisitWhile(node);
+        case Parser::Nodes::N_BREAK:
+            return VisitBreak(node);
+        case Parser::Nodes::N_CONTINUE:
+            return VisitContinue(node);
+
+        case Parser::Nodes::N_FUNC:
+            return VisitFunc(node);
+        case Parser::Nodes::N_FUNC_CALL:
+            return VisitFuncCall(node);
+        case Parser::Nodes::N_RETURN:
+            return VisitReturn(node);
+        case Parser::Nodes::N_COMPOUND:
+            return VisitCompound(node);
+        default:
+            return std::unexpected(Lexer::Token(
+                InternalError(), node->token
+            ));
+    }
+}
+
 
 /// LITERALS
 Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
     std::cout << "visit num literal\n";
 
     Parser::NumLiteral* num_literal = static_cast<Parser::NumLiteral*>(node.get());
-    return HolderPack{num_literal->value, TYPES::NUM_TYPE};
+    return HolderPack{
+        std::make_shared<HolderTypes>(num_literal->value),
+        TYPES::NUM_TYPE
+    };
 }
 
 Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
     std::cout << "visit str literal\n";
 
     Parser::StringLiteral* str_literal = static_cast<Parser::StringLiteral*>(node.get());
-    return HolderPack{str_literal->value, TYPES::STRING_TYPE};
+    return HolderPack{
+        std::make_shared<HolderTypes>(str_literal->value),
+        TYPES::STRING_TYPE
+    };
 }
 
 Runner::Expected Runner::VisitBoolLiteral(Runner::NodePtr& node) {
     std::cout << "visit bool literal\n";
 
     Parser::BoolLiteral* bool_literal = static_cast<Parser::BoolLiteral*>(node.get());
-    return HolderPack{bool_literal->value, TYPES::BOOL_TYPE};
+    return HolderPack{
+        std::make_shared<HolderTypes>(bool_literal->value),
+        TYPES::BOOL_TYPE
+    };
 }
 
 Runner::Expected Runner::VisitNilLiteral(Runner::NodePtr& node) {
     std::cout << "visit nil literal\n";
 
-    return HolderPack{std::monostate(), TYPES::NIL_TYPE};
+    return HolderPack{
+        std::make_shared<HolderTypes>(),
+        TYPES::NIL_TYPE
+    };
 }
 
 /// LITERAL EXPR
@@ -102,7 +188,7 @@ Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
         }
     }
     return HolderPack{
-        std::make_shared<Memory::ListHolder>(std::move(data)),
+        std::make_shared<HolderTypes>(Memory::ListHolder(std::move(data))),
         TYPES::LIST_TYPE
     };
 }
@@ -147,6 +233,7 @@ Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
     std::cout << "visit subscript\n";
 
     Parser::Subscript* ptr = static_cast<Parser::Subscript*>(node.get());
+
     Expected var_expr = Visit(ptr->var_expr);
     if (!var_expr) { return std::unexpected(var_expr.error()); }
     if (var_expr->type != TYPES::STRING_TYPE && var_expr->type != TYPES::LIST_TYPE) {
@@ -156,48 +243,91 @@ Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
     }
 
     if (!ptr->is_slice) {
-        return SubsciptIndexer(ptr, std::move(var_expr));
+        return SubscriptIndexer(ptr, std::move(*var_expr));
     } else {
-        return SubscriptSlicer();
+        return SubscriptSlicer(ptr, std::move(*var_expr));
     }
 }
 
-
-Runner::Expected Runner::SubsciptIndexer(Parser::Subscript* ptr, HolderPack&& var) {
-    if (var->type == TYPES::STRING_TYPE) {
-        
-    }
-    else {
-
-    }
+/// BLOCKS
+Runner::Expected Runner::VisitIf(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
+Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
+Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
 }
 
+/// CLOSURE STATEMENTS
+Runner::Expected Runner::VisitReturn(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
+Runner::Expected Runner::VisitBreak(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
+Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
 
-Runner::Expected Runner::Visit(Runner::NodePtr& node) {
-    std::cout << "visit ...\n\t";
-    switch (node->node) {
-        case Parser::Nodes::N_NUM_LITERAL:
-            return VisitNumLiteral(node);
-        case Parser::Nodes::N_STRING_LITERAL:
-            return VisitStringLiteral(node);
-        case Parser::Nodes::N_VAR:
-            return VisitVar(node);
-        case Parser::Nodes::N_NIL:
-            return VisitNil(node);
+/// FUNCTIONS
+Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
+Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
+Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
+    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+}
 
-        case Parser::Nodes::N_UNARY_OP:
-            return VisitUnaryOp(node);
-        case Parser::Nodes::N_BINARY_OP:
-            return VisitBinaryOp(node);
-        
-        case Parser::Nodes::N_ASSIGNMENT_OP:
-            return VisitAssignmentOp(node);
-        
-        case Parser::Nodes::N_EMPTY:
-            return VisitEmpty(node);
-        case Parser::Nodes::N_COMPOUND:
-            return VisitCompound(node);
-        case Parser::Nodes::N_BAD:
-            return VisitBad(node);
+/// HELPERS
+Runner::Expected Runner::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var) {
+    auto index_computed = GetIndex(ptr->start, var);
+    if (!index_computed) { return std::unexpected(index_computed.error()); }
+    if (var.type == TYPES::STRING_TYPE) {
+        return HolderPack{
+            std::make_shared<HolderTypes>(
+                std::string{std::get<std::string>(*var.holder)[*index_computed]}
+            ),
+            TYPES::STRING_TYPE
+        };
     }
+    return std::get<Memory::ListHolder>(*var.holder).data[*index_computed];
+}
+
+Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {}
+
+std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var) {
+    auto index = Visit(node);
+    if (!index) { return std::unexpected(index.error()); }
+    if (index->type != TYPES::NUM_TYPE) {
+        return std::unexpected(Lexer::Token(
+            Errors::TypeErrors::TypeErrorInt(), node->token
+        ));
+    }
+    double raw_index = std::get<double>(*index->holder);
+    if (raw_index != std::trunc(raw_index)) {
+        return std::unexpected(Lexer::Token(
+            Errors::TypeErrors::IndexNotInteger(), node->token
+        ));
+    }
+
+    size_t var_size;
+    if (var.type == TYPES::STRING_TYPE) {
+        var_size = std::get<std::string>(*var.holder).size();
+    } else {
+        var_size = std::get<Memory::ListHolder>(*var.holder).data.size();
+    }
+
+    if (raw_index < 0) { raw_index = var_size + raw_index; }
+
+    if (raw_index < 0 || raw_index >= var_size) {
+        return std::unexpected(Lexer::Token(
+            OutOfRange(), node->token
+        ));
+    }
+
+    return raw_index;
 }

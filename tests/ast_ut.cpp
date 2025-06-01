@@ -1,7 +1,7 @@
 #include <serializer.h>
 #include <gtest/gtest.h>
 
-TEST(AST_SERIALIZATION, OnePlusOne) {
+TEST(AstSerialization, OnePlusOne) {
     std::string program = "1 + 1";
 
     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
@@ -29,7 +29,7 @@ TEST(AST_SERIALIZATION, OnePlusOne) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, BasicVar) {
+TEST(AstSerialization, BasicVar) {
     std::string program = R"(
         a = 1
     )";
@@ -59,7 +59,7 @@ TEST(AST_SERIALIZATION, BasicVar) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, FunctionDeclaration) {
+TEST(AstSerialization, FunctionDeclaration) {
     std::string program = R"(
         a = function(a, b)
             return a + b
@@ -116,7 +116,7 @@ TEST(AST_SERIALIZATION, FunctionDeclaration) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, NestedFunctionCall) {
+TEST(AstSerialization, NestedFunctionCall) {
     std::string program = R"(
         a(b())
     )";
@@ -149,7 +149,7 @@ TEST(AST_SERIALIZATION, NestedFunctionCall) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, ForCycle) {
+TEST(AstSerialization, ForCycle) {
     std::string program = R"(
         for i in range(1, 2)
             a += 1
@@ -206,7 +206,7 @@ TEST(AST_SERIALIZATION, ForCycle) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WhileCycle) {
+TEST(AstSerialization, WhileCycle) {
     std::string program = R"(
         while true
             print("while true!")
@@ -243,7 +243,7 @@ TEST(AST_SERIALIZATION, WhileCycle) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, IfStatement) {
+TEST(AstSerialization, IfStatement) {
     std::string program = R"(
         if cond == 1 then
             print("cool!")
@@ -291,7 +291,7 @@ TEST(AST_SERIALIZATION, IfStatement) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxStringLiteral) {
+TEST(AstSerialization, WrongSyntaxStringLiteral) {
     std::string program = R"(
         a = "sdfkjfkjdf
         b = 2
@@ -307,7 +307,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxStringLiteral) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxNumLiteral) {
+TEST(AstSerialization, WrongSyntaxNumLiteral) {
     std::string program = R"(
         a = 1123.
         b = 2
@@ -323,7 +323,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxNumLiteral) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxUndefinedSymbols) {
+TEST(AstSerialization, WrongSyntaxUndefinedSymbols) {
     std::string program = R"(!@!#)";
 
     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
@@ -336,7 +336,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxUndefinedSymbols) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxIfStatementExpThen) {
+TEST(AstSerialization, WrongSyntaxIfStatementExpThen) {
     std::string program = R"(
         if i < 3
             i = 3
@@ -353,7 +353,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxIfStatementExpThen) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxIfStatementExpExpr) {
+TEST(AstSerialization, WrongSyntaxIfStatementExpExpr) {
     std::string program = R"(
         if then
             i = 3
@@ -370,7 +370,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxIfStatementExpExpr) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxIfStatementForgotEndIf) {
+TEST(AstSerialization, WrongSyntaxIfStatementForgotEndIf) {
     std::string program = R"(
         if i < 3 then
             i = 3
@@ -386,7 +386,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxIfStatementForgotEndIf) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxForStatementExpIn) {
+TEST(AstSerialization, WrongSyntaxForStatementExpIn) {
     std::string program = R"(
         for i range(3)
             print("Mega For")
@@ -403,7 +403,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxForStatementExpIn) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxForStatementExpr) {
+TEST(AstSerialization, WrongSyntaxForStatementExpr) {
     std::string program = R"(
         for in range(3)
             print("Mega For")
@@ -420,7 +420,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxForStatementExpr) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxForStatementRange) {
+TEST(AstSerialization, WrongSyntaxForStatementRange) {
     std::string program = R"(
         for in
             continue
@@ -437,7 +437,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxForStatementRange) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, WrongSyntaxForStatementForgotEndFor) {
+TEST(AstSerialization, WrongSyntaxForStatementForgotEndFor) {
     std::string program = R"(
         for i in range(3)
             continue
@@ -453,7 +453,7 @@ TEST(AST_SERIALIZATION, WrongSyntaxForStatementForgotEndFor) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, AbnormalInput) {
+TEST(AstSerialization, AbnormalInput) {
     std::string program = R"(
         !@O#I1o] 	2-]9u j[9j4n ln;lkj;j]
     )";
@@ -468,7 +468,7 @@ TEST(AST_SERIALIZATION, AbnormalInput) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AST_SERIALIZATION, EmptyInput) {
+TEST(AstSerialization, EmptyInput) {
     std::string program = R"()";
 
     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));

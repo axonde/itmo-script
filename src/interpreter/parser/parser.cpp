@@ -56,7 +56,6 @@ Parser::NodePtr Parser::VarExpr() {
             }
 
             if (!Eat(Tokens::T_RIGHT_SQUARE_BRACKET)) { throw ParserError{}; } GetTraitedToken();
-            // expr_left and expr_right can be empty! check it without fail!
             var = std::make_unique<Subscript>(std::move(var), std::move(expr_start), std::move(expr_end), std::move(expr_step), is_slice, GetTraitedToken());
         }
         else {
@@ -69,7 +68,9 @@ Parser::NodePtr Parser::VarExpr() {
                     func_call.params.push_back(Expr());
                 }
             }
-            if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw Errors::ParserErrors::ExpectedRightBracket{}; }
+            if (!Eat(Tokens::T_RIGHT_BRACKET)) {
+                throw Errors::ParserErrors::ExpectedRightBracket{};
+            } GetTraitedToken();
             var = std::make_unique<FuncCall>(std::move(func_call));
         }
     }
@@ -102,8 +103,6 @@ Parser::NodePtr Parser::ListExpr() {
 //         | '(' expr ')'
 //         | T_BAD
 Parser::NodePtr Parser::Factor() {   // add support for list literals.
-    std::cout << "now try to dispatch in factor > " << Lexer::TOKENS_TO_STR[token.token] << '\n';
-
     using namespace Lexer;
 
     switch (token.token) {
@@ -144,15 +143,12 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
         case Tokens::T_BAD:
             throw Error(std::get<std::shared_ptr<Error>>(token.value)->what());
         default:
-            std::cout << "must to be here!\n";
             throw Errors::ParserErrors::FactorError{};
     }
 }
 
 // Term: Factor (('*' | '/' | '%' | '^' | 'and') Factor)*
 Parser::NodePtr Parser::Term() {
-    std::cout << "now try to dispatch in term > " << Lexer::TOKENS_TO_STR[token.token] << '\n';
-
     NodePtr term = Factor();
     while (token.token == Lexer::Tokens::T_MULT
     || token.token == Lexer::Tokens::T_MOD
@@ -167,8 +163,6 @@ Parser::NodePtr Parser::Term() {
 
 // Expr: Term (('+' | '-' | 'or' | '==' | '!=' | '<' | '>' | '<=' | '>=') Term)*
 Parser::NodePtr Parser::Expr() {
-    std::cout << "now try to dispatch in expr > " << Lexer::TOKENS_TO_STR[token.token] << '\n';
-
     using namespace Lexer;
 
     NodePtr expr = Term();
@@ -228,8 +222,6 @@ Parser::NodePtr Parser::ReturnExpr() {
 
 // Statement: ReturnExpr | BreakExpr | ContinueExpr | Assignment | Expr
 Parser::NodePtr Parser::Statement() {
-    std::cout << "now try to dispatch in statement > " << Lexer::TOKENS_TO_STR[token.token] << '\n';
-
     using namespace Lexer;
 
     switch (token.token) {
@@ -282,7 +274,6 @@ Parser::NodePtr Parser::IfBlock() {
 
 // ForBlock: T_FOR VarExpr T_IN VarExpr BLOCK T_FOR_END
 Parser::NodePtr Parser::ForBlock() {
-    std::cout << "for entrance\n";
     if (!Eat(Lexer::Tokens::T_FOR)) { throw ParserError{}; }
 
     auto iterator = VarExpr();
@@ -349,7 +340,6 @@ Parser::NodePtr Parser::FuncExpr() {
 
 // StatementList: If | While | For | Statement
 Parser::NodePtr Parser::StatementList() {
-    std::cout << "now try to dispatch in statement list > " << Lexer::TOKENS_TO_STR[token.token] << '\n';
     switch (token.token) {
         case Lexer::Tokens::T_IF:
             return IfBlock();
@@ -400,7 +390,8 @@ void Parser::Parse() {
     } catch (const Error& e) {
         root = std::make_unique<Bad>(
             Lexer::Token(Error(e.what()),
-            GetTraitedToken()));
+            GetTraitedToken())
+        );
     } catch (...) {
         root = std::make_unique<Bad>(Lexer::Token(InternalError(), GetTraitedToken()));
     }

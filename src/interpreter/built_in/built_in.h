@@ -20,7 +20,7 @@ namespace Memory {
 
 class StackFrame;
 
-struct ListHolder;      // defined in memory.h
+struct ListHolder;
 struct FuncHolder;
 
 using HolderTypes = std::variant<
@@ -42,12 +42,10 @@ struct HolderPack {
 using Function = std::function<HolderPack(HolderPack&&)>;
 
 struct ListHolder {
-    template<typename T>
-    ListHolder(T&& container) : data(std::forward<T>(container)) {}
-    std::vector<Holder> data;
+    ListHolder(std::vector<HolderPack>&& d) : data(std::move(d)) {}
+    std::vector<HolderPack> data;
 };
 struct FuncHolder {
-    FuncHolder(Function f) : function(std::move(f)) {}
     Function function;
 };
 
@@ -61,38 +59,38 @@ namespace BuiltIn {
 using HolderPack = Memory::HolderPack;
 using Function = Memory::Function;
 
-HolderPack abs;
-HolderPack ceil;
-HolderPack floor;
-HolderPack round;
-HolderPack sqrt;
-HolderPack rnd;
-HolderPack parse_num;
-HolderPack to_string;
+extern HolderPack abs;
+extern HolderPack ceil;
+extern HolderPack floor;
+extern HolderPack round;
+extern HolderPack sqrt;
+extern HolderPack rnd;
+extern HolderPack parse_num;
+extern HolderPack to_string;
 
 // STRING AWARE FUNCTIONS
-HolderPack lower;
-HolderPack upper;
-HolderPack split;
-HolderPack join;
-HolderPack replace;
+extern HolderPack lower;
+extern HolderPack upper;
+extern HolderPack split;
+extern HolderPack join;
+extern HolderPack replace;
 
 // LIST AWARE FUNCTIONS
-HolderPack range;
-HolderPack push;
-HolderPack pop;
-HolderPack insert;
-HolderPack remove;
-HolderPack sort;
+extern HolderPack range;
+extern HolderPack push;
+extern HolderPack pop;
+extern HolderPack insert;
+extern HolderPack remove;
+extern HolderPack sort;
 
 // UNIVERSAL FUNCTIONS
-HolderPack copy;
-HolderPack len;
+extern HolderPack copy;
+extern HolderPack len;
 
 // SYSTEM FUNCTIONS
-HolderPack print;
-HolderPack println;
-HolderPack read;
-HolderPack stacktrace;
+extern HolderPack print;
+extern HolderPack println;
+extern HolderPack read;
+extern HolderPack stacktrace;
 
 } // BuiltIn

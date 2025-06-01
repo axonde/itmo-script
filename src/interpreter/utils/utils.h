@@ -140,6 +140,12 @@ namespace Errors {
         };
     }
 
+    namespace RunTime {
+        struct OutOfRange : Error {
+            const char* what() const override { return "out of range"; }
+        };
+    }
+
     namespace InternalErrors {
         struct InternalError : Error {
             const char* what() const override { return "internal operation error occured"; }
@@ -149,13 +155,15 @@ namespace Errors {
         };
     }
 
-    inline void PrintError(std::string header, Errors::Error* error, size_t pos, size_t line) {
-        std::cout << '\n' << Patterns::RED << header << Patterns::WHITE << ": "
-                  << error->what() << " at " << Patterns::WHITEBOLD 
-                  << "line " << line << ", col " << pos << Patterns::WHITE << std::endl;
-    }
+inline void PrintError(std::string header, Errors::Error* error, size_t pos, size_t line) {
+    std::cout << Patterns::RED << header << Patterns::WHITE << ": "
+                << error->what() << " at " << Patterns::WHITEBOLD 
+                << "line " << line << ", col " << pos << Patterns::WHITE << std::endl;
 }
+
+} // end Errors
 
 using Error = Errors::Error;
 using ParserError = Errors::ParserErrors::Panic;
 using InternalError = Errors::InternalErrors::InternalError;
+using OutOfRange = Errors::RunTime::OutOfRange;

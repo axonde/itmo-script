@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <concepts>
 #include <functional>
 #include <iostream>
@@ -14,14 +15,12 @@
 #include "memory.h"
 
 namespace Interpreter {
-    inline bool Interpret(std::istream&, std::ostream&, bool);
-    inline bool Interpret(std::string&, std::ostream&);
+    bool Interpret(std::istream&, std::ostream&, bool);
+    bool Interpret(std::string&, std::ostream&);
 
     // ERRORS
-    void SyntaxError(const Lexer::Token& token) {
-        using ErrorType = std::shared_ptr<Errors::Error>;
-        Errors::PrintError("Syntax error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
-    }
+    void SyntaxError(const Lexer::Token& token);
+    void RunTimeError(const Lexer::Token&);
 }
 
 class Runner {
@@ -39,8 +38,11 @@ public:
 
     Expected Run();
 
+    Parser::NodePtr& GetRoot() { return parser.root; }
+
 private:
     using NodePtr = std::unique_ptr<Parser::Node>;
+    using HolderTypes = Memory::HolderTypes;
 
     Expected Visit(NodePtr&);
 
@@ -59,13 +61,20 @@ private:
     Expected VisitIf(NodePtr&);
     Expected VisitFor(NodePtr&);
     Expected VisitWhile(NodePtr&);
+
+    Expected VisitReturn(NodePtr&);
     Expected VisitBreak(NodePtr&);
     Expected VisitContinue(NodePtr&);
     
     Expected VisitFunc(NodePtr&);
     Expected VisitFuncCall(NodePtr&);
-    Expected VisitReturn(NodePtr&);
+
     Expected VisitCompound(NodePtr&);
+
+    // Helpers
+    std::expected<int, Lexer::Token> GetIndex(NodePtr& node, HolderPack& var);
+    Expected SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var);
+    Expected SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var);
 
     Parser parser;
     Memory::StackFrame stack_frame;

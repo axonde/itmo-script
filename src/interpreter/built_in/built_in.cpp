@@ -47,3 +47,43 @@ std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
     {TYPES::FUNC_TYPE, "func"},
     {TYPES::NOT_SET_TYPE, "(not set type)"}
 };
+
+
+namespace BuiltIn {
+
+// NUMBER AWARE FUNCTIONS
+HolderPack abs;
+HolderPack ceil;
+HolderPack floor;
+HolderPack round;
+HolderPack sqrt;
+HolderPack rnd;
+HolderPack parse_num;
+HolderPack to_string;
+
+// STRING AWARE FUNCTIONS
+HolderPack lower;
+HolderPack upper;
+HolderPack split;
+HolderPack join;
+HolderPack replace;
+
+// LIST AWARE FUNCTIONS
+HolderPack range;
+HolderPack push;
+HolderPack pop;
+HolderPack insert;
+HolderPack remove;
+HolderPack sort;
+
+// UNIVERSAL FUNCTIONS
+HolderPack copy;
+HolderPack len;
+
+// SYSTEM FUNCTIONS
+HolderPack print;
+HolderPack println;
+HolderPack read;
+HolderPack stacktrace;
+
+}
