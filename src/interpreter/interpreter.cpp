@@ -224,6 +224,7 @@ Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
         }
     } else {
         if (!computed_left) {
+            // we need to create instance!
             return std::unexpected(std::move(computed_left.error()));
         }
         return std::unexpected(std::move(computed_right.error()));
@@ -279,7 +280,15 @@ Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
     return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
 }
 Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    std::cout << "visit compound\n";
+
+    Parser::Compound* cmpd = static_cast<Parser::Compound*>(node.get());
+    for (auto& child : cmpd->data) {
+        if (auto visited = Visit(child); !visited) {
+            return std::unexpected(visited.error());
+        }
+    }
+    return HolderPack();
 }
 
 /// HELPERS

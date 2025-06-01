@@ -36,7 +36,7 @@ public:
         N_RETURN,
 
         N_COMPOUND,
-        N_BAD,
+        N_BAD
     };
 
     struct Node {

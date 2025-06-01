@@ -24,11 +24,12 @@ namespace Errors {
 
 // переделать на строковые литералы const char*
     struct Error {
-        Error(const std::string& e = "error") : error(e) {}
+        Error() = default;
+        Error(const std::string& e) : error(e) {}
         virtual const char* what() const { return error.c_str(); }
         virtual ~Error() = default;
 
-        std::string error;
+        std::string error = "error";
     };
 
     namespace LexerErrors {
@@ -115,7 +116,7 @@ namespace Errors {
         struct OperatorBinaryError : Error {
             OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right) {
                 using namespace std::string_literals;
-                error = "unknow unary operation '"s + op + "' between "s + left + " and "s + right; 
+                error = "unknow binary operation '"s + op + "' between "s + left + " and "s + right; 
             }
             const char* what() const override { return error.c_str(); }
             std::string error;

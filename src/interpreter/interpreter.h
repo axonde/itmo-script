@@ -1,11 +1,11 @@
 #pragma once
 #include <cmath>
 #include <concepts>
+#include <expected>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <expected>
 #include <variant>
 #include <unordered_map>
 

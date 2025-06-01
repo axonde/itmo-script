@@ -389,8 +389,7 @@ void Parser::Parse() {
         root = Block();
     } catch (const Error& e) {
         root = std::make_unique<Bad>(
-            Lexer::Token(Error(e.what()),
-            GetTraitedToken())
+            Lexer::Token(Error(e.what()), std::move(token))
         );
     } catch (...) {
         root = std::make_unique<Bad>(Lexer::Token(InternalError(), GetTraitedToken()));

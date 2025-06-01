@@ -59,11 +59,7 @@ namespace Operators {
                 Errors::OperatorErrors::OperatorUnaryError(Lexer::TOKENS_TO_STR[node->op], TYPE_TO_STR[computed.type]), 
                 node->token});
         }
-        try {
-            return iter->second(std::move(computed));
-        } catch (...) {
-            return std::unexpected(Lexer::Token{InternalError(), node->token});
-        }
+        return iter->second(std::move(computed));
     }
 
     [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, HolderPack&& computed_left, HolderPack&& computed_right) {
@@ -74,10 +70,6 @@ namespace Operators {
                 Errors::OperatorErrors::OperatorBinaryError(Lexer::TOKENS_TO_STR[node->op], TYPE_TO_STR[node->left->type], TYPE_TO_STR[node->right->type]),
                 node->token});
         }
-        try {
-            return iter->second(std::move(computed_left), std::move(computed_right));
-        } catch (...) {
-            return std::unexpected(Lexer::Token{InternalError(), node->token});
-        }
+        return iter->second(std::move(computed_left), std::move(computed_right));
     }
 }

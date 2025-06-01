@@ -24,19 +24,24 @@ struct ListHolder;
 struct FuncHolder;
 
 using HolderTypes = std::variant<
-    std::monostate,     // nil type
+    std::monostate,     // nil type / not set(initialized) type
     double,             // num type
     bool,               // bool type
     std::string,        // string type
     ListHolder,         // list type
-    FuncHolder          // functions type
+    FuncHolder         // functions type
 >;
 
 using Holder = std::shared_ptr<HolderTypes>;
 
 struct HolderPack {
+    HolderPack() = default;
+    HolderPack(const Holder& h) : holder(h) {}
+    HolderPack(Holder&& h) : holder(std::move(h)) {}
+    HolderPack(const Holder& h, TYPES t) : holder(h), type(t) {}
+    HolderPack(Holder&& h, TYPES t) : holder(std::move(h)), type(t) {}
     Holder holder;
-    TYPES type;
+    TYPES type = TYPES::NOT_SET_TYPE;
 };
 
 using Function = std::function<HolderPack(HolderPack&&)>;
