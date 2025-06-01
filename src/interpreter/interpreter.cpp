@@ -277,6 +277,32 @@ Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
     return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
 }
 Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
+    std::cout << "visit func call\n";
+
+    auto ptr = static_cast<Parser::FuncCall*>(node.get());
+    auto func = Visit(ptr->func);
+    if (!func) { return std::unexpected(func.error()); }
+    if (func->type != TYPES::FUNC_TYPE) {
+        return std::unexpected(Lexer::Token(Errors::TypeErrors::ExpectedFuncType(), node->token));
+    }
+    Memory::FuncHolder& function_holder = std::get<Memory::FuncHolder>(*(func->holder));
+    if (std::holds_alternative<std::any>(function_holder.function)) {
+        // do user func call
+    } else {
+        std::vector<HolderPack> params;
+        for (auto& param : ptr->params) {
+            auto visited = Visit(param);
+            if (!visited) { return std::unexpected(visited.error()); }
+            if (visited->type == TYPES::NOT_SET_TYPE) { return std::unexpected(Lexer::Token(
+                Errors::MemoryErrors::NotFound(), std::move(param->token)
+            )); }
+            params.push_back(*visited);
+        }
+
+        using type = std::function<HolderPack(std::vector<HolderPack>&&)>;
+        auto& function = std::get<type>(function_holder.function);
+        return function(std::move(params));
+    }
     return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
 }
 Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {

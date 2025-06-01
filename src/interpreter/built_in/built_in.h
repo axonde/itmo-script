@@ -1,10 +1,15 @@
 #pragma once
+#include <any>
 #include <functional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <variant>
+#include <vector>
+
+
+#include <iostream>
 
 enum TYPES : uint16_t {
     NUM_TYPE,
@@ -44,13 +49,17 @@ struct HolderPack {
     TYPES type = TYPES::NOT_SET_TYPE;
 };
 
-using Function = std::function<HolderPack(HolderPack&&)>;
+using Function = std::variant<
+    std::function<HolderPack(std::vector<HolderPack>&&)>,    // built in function
+    std::any                                                 // user set function (Parser::NodePtr)
+>;
 
 struct ListHolder {
     ListHolder(std::vector<HolderPack>&& d) : data(std::move(d)) {}
     std::vector<HolderPack> data;
 };
 struct FuncHolder {
+    FuncHolder(Function&& f) : function(std::move(f)) {}
     Function function;
 };
 

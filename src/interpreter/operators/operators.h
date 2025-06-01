@@ -13,7 +13,7 @@ namespace Operators {
 using HolderTypes = Memory::HolderTypes;
 using Holder = Memory::Holder;
 using HolderPack = Memory::HolderPack;
-using UnaryFunction = Memory::Function;
+using UnaryFunction = std::function<HolderPack(HolderPack&&)>;
 using BinaryFunction = std::function<HolderPack(HolderPack&&, HolderPack&&)>;
 using Expected = std::expected<HolderPack, Lexer::Token>;
 

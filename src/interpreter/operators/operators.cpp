@@ -39,7 +39,18 @@ namespace Operators {
     }
 
     /// Binary operations
-    void RegisterBinaryNumOperators() noexcept {}
+    void RegisterBinaryNumOperators() noexcept {
+        // (not set type) = NUM
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                arg_left.holder = arg_right.holder;
+                return {
+                    arg_left.holder,
+                    TYPES::NUM_TYPE
+                };
+            }
+        };
+    }
     void RegisterBinaryStringOperators() noexcept {}
     void RegisterBinaryBoolOperators() noexcept {}
     void RegisterBinaryNilOperators() noexcept {}

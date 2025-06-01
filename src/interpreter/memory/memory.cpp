@@ -2,7 +2,7 @@
 
 Memory::HolderPack Memory::StackFrame::Lookup(std::string_view key) {
     try {
-        return std::move(search(key));
+        return search(key);
     } catch (const Errors::MemoryErrors::NotFound&) {
         environment[key] = {{}, TYPES::NOT_SET_TYPE};
         return environment[key];

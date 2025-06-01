@@ -139,6 +139,10 @@ namespace Errors {
         struct TypeErrorStringOrList : Error {
             const char* what() const override { return "variable must be a string or list"; }
         };
+
+        struct ExpectedFuncType : Error {
+            const char* what() const override { return "expected function type"; }
+        };
     }
 
     namespace RunTime {
