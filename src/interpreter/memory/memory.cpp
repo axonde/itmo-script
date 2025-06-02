@@ -4,15 +4,17 @@ Memory::HolderPack Memory::StackFrame::Lookup(std::string_view key) {
     try {
         return search(key);
     } catch (const Errors::MemoryErrors::NotFound&) {
-        environment[key] = {{}, TYPES::NOT_SET_TYPE};
-        return environment[key];
+        environment[std::string(key)] = std::make_shared<RawHolderPack>();
+        return environment[std::string(key)];
     }
 }
 
 Memory::HolderPack Memory::StackFrame::search(std::string_view key) {
-    if (auto iter = environment.find(key); iter != environment.end()) {
+    std::cout << "смотрю!\n";
+    std::cout << "вот пример " << (environment.find("print") != environment.end()) << '\n';
+    if (auto iter = environment.find(std::string(key)); iter != environment.end()) {
         return iter->second;
     }
-    if (parent != nullptr) { return parent->Lookup(key); }
+    if (parent != nullptr) { return parent->search(key); }
     throw Errors::MemoryErrors::NotFound();
 }

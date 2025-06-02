@@ -12,6 +12,8 @@ namespace Patterns {
 
     static std::string CMD = "\e[3;34mitmo> \e[0m";
 
+    static std::string STACK_TRACE_HEADER = "STACK TRACE\n===========\n";
+
     inline void Welcome() {
         std::cout << "Welcome to " + BLUE + "ITMO SCRIPT" + WHITE + "!" << std::endl;
     }
@@ -148,6 +150,9 @@ namespace Errors {
     namespace RunTime {
         struct OutOfRange : Error {
             const char* what() const override { return "out of range"; }
+        };
+        struct ExpectedZeroArgs : Error {
+            const char* what() const override { return "expected no args for call"; }
         };
     }
 

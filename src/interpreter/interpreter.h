@@ -17,7 +17,11 @@
 
 namespace Interpreter {
     bool Interpret(std::istream&, std::ostream&, bool);
-    bool Interpret(std::string&, std::ostream&);
+    bool Interpret(std::string&, std::istream&, std::ostream&);
+
+    extern std::unique_ptr<Memory::StackFrame> stack_frame;
+    extern std::istream* in;
+    extern std::ostream* out;
 
     // ERRORS
     void SyntaxError(const Lexer::Token& token);
@@ -28,22 +32,21 @@ class Runner {
 public:
     template<typename T>
     requires std::same_as<T, std::string>
-    Runner(T&& str, std::ostream& o)
-    : parser(Lexer::Tokenizer( std::forward<T>(str) )), out(o), stack_frame(BUILT_IN_FUNCTIONS) {
+    Runner(T&& str)
+    : parser(Lexer::Tokenizer( std::forward<T>(str) )) {
         parser.Parse();
     }
 
-    using Holder = Memory::Holder;
     using HolderPack = Memory::HolderPack;
     using Expected = std::expected<HolderPack, Lexer::Token>;
-
     Expected Run();
 
     Parser::NodePtr& GetRoot() { return parser.root; }
 
 private:
+    using Holder = Memory::Holder;
     using NodePtr = std::unique_ptr<Parser::Node>;
-    using HolderTypes = Memory::HolderTypes;
+    using RawHolderPack = Memory::RawHolderPack;
 
     Expected Visit(NodePtr&);
 
@@ -78,6 +81,4 @@ private:
     Expected SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var);
 
     Parser parser;
-    Memory::StackFrame stack_frame;
-    std::ostream& out;
 };

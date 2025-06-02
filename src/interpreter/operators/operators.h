@@ -10,7 +10,7 @@
 
 namespace Operators {
 
-using HolderTypes = Memory::HolderTypes;
+using RawHolderPack = Memory::RawHolderPack;
 using Holder = Memory::Holder;
 using HolderPack = Memory::HolderPack;
 using UnaryFunction = std::function<HolderPack(HolderPack&&)>;
