@@ -44,18 +44,18 @@ Parser::NodePtr Parser::VarExpr() {
 
                 if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET && token.token != Tokens::T_COLON) {
                     expr_end = Expr();
+                }
 
-                    if (token.token == Tokens::T_COLON) {
-                        if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
-                        
-                        if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET) {
-                            expr_step = Expr();
-                        }
+                if (token.token == Tokens::T_COLON) {
+                    if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                    
+                    if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET) {
+                        expr_step = Expr();
                     }
                 }
             }
 
-            if (!Eat(Tokens::T_RIGHT_SQUARE_BRACKET)) { throw ParserError{}; } GetTraitedToken();
+            if (!Eat(Tokens::T_RIGHT_SQUARE_BRACKET)) { throw Errors::ParserErrors::ExpectedRightSquareBracket{}; } GetTraitedToken();
             var = std::make_unique<Subscript>(std::move(var), std::move(expr_start), std::move(expr_end), std::move(expr_step), is_slice, GetTraitedToken());
         }
         else {

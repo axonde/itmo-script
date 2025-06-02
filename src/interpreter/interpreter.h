@@ -78,9 +78,10 @@ private:
     Expected VisitCompound(NodePtr&);
 
     // Helpers
-    std::expected<int, Lexer::Token> GetIndex(NodePtr& node, HolderPack& var);
-    Expected SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var);
-    Expected SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var);
+    std::expected<int, Lexer::Token> IntegerRequirement(NodePtr&);
+    std::expected<int, Lexer::Token> GetIndex(NodePtr&, HolderPack&);
+    Expected SubscriptIndexer(Parser::Subscript*, HolderPack&&);
+    Expected SubscriptSlicer(Parser::Subscript*, HolderPack&&);
 
     Parser parser;
 };

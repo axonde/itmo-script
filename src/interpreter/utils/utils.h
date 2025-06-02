@@ -154,6 +154,9 @@ namespace Errors {
         struct ExpectedZeroArgs : Error {
             const char* what() const override { return "expected no args for call"; }
         };
+        struct SliceStep : Error {
+            const char* what() const override { return "cannot have 0 as step"; }
+        };
     }
 
     namespace InternalErrors {

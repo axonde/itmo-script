@@ -282,6 +282,10 @@ Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
 
 /// FUNCTIONS
 Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
+    std::cout << "visit func declaration\n";
+
+    // here we go again
+
     return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
 }
 Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
@@ -344,11 +348,50 @@ Runner::Expected Runner::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& v
 }
 
 Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {
-    auto start_expected = (ptr->start) ? GetIndex(ptr->start, var) : 0;
-    auto end_expected = (ptr->end) ? GetIndex(ptr->end, var) : std::get<std::string>(*var).size();
+    auto start_expected = (ptr->start) ? IntegerRequirement(ptr->start) : 0;
+    if (!start_expected) { return std::unexpected(start_expected.error()); }
+    auto step_expected = (ptr->step) ? IntegerRequirement(ptr->step) : 1;
+    if (!step_expected) { return std::unexpected(step_expected.error()); }
+    if (*step_expected == 0) { return std::unexpected(Lexer::Token(
+        Errors::RunTime::SliceStep(), ptr->token
+    )); }
+
+    int size;
+    if (var->type == TYPES::STRING_TYPE) { size = std::get<std::string>(var->holder).size(); }
+    else { size = std::get<Memory::ListHolderPtr>(var->holder)->data.size(); }
+    
+    auto end_expected = (ptr->end) ? IntegerRequirement(ptr->end) : size;
+    if (!end_expected) { return std::unexpected(end_expected.error()); }
+
+    int start = *start_expected;
+    int end = *end_expected;
+    int step = *step_expected;
+
+    if (step < 0) {
+        std::swap(start, end); 
+        if (!ptr->start) { --end; }
+        if (!ptr->end) { --start; }
+    }
+    auto condition = [&](int i) {
+        return (i < end && step > 0) || (i > end && step < 0);
+    };
+
+    if (var->type == TYPES::STRING_TYPE) {
+        std::string str;
+        for (int i = start; i >= 0 && i < size && condition(i); i += step) {
+            str += std::get<std::string>(var->holder)[i];
+        }
+        return Memory::MakeHolderPack(std::move(str), TYPES::STRING_TYPE);
+    } else {
+        std::vector<HolderPack> list;
+        for (int i = start; i >= 0 && i < size && condition(i); i += step) {
+            list.push_back(std::get<Memory::ListHolderPtr>(var->holder)->data[i]);
+        }
+        return Memory::MakeHolderPack(Memory::MakeList(std::move(list)), TYPES::LIST_TYPE);
+    }
 }
 
-std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var) {
+std::expected<int, Lexer::Token> Runner::IntegerRequirement(NodePtr& node) {
     auto index_expected = Visit(node);
     if (!index_expected) { return std::unexpected(index_expected.error()); }
     HolderPack& index = *index_expected;
@@ -363,21 +406,23 @@ std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var
             Errors::TypeErrors::IndexNotInteger(), node->token
         ));
     }
+    return raw_index;
+}
+
+std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var) {
+    auto raw_index = IntegerRequirement(node);
+    if (!raw_index) { return std::unexpected(raw_index.error()); }
+    int index = *raw_index;
 
     size_t var_size;
     if (var->type == TYPES::STRING_TYPE) {
         var_size = std::get<std::string>(var->holder).size();
-    } else {
-        var_size = std::get<Memory::ListHolderPtr>(var->holder)->data.size();
     }
+    else { var_size = std::get<Memory::ListHolderPtr>(var->holder)->data.size(); }
+    if (index < 0) { index = var_size + index; }
 
-    if (raw_index < 0) { raw_index = var_size + raw_index; }
-
-    if (raw_index < 0 || raw_index >= var_size) {
-        return std::unexpected(Lexer::Token(
-            OutOfRange(), node->token
-        ));
+    if (index < 0 || index >= var_size) {
+        return std::unexpected(Lexer::Token( OutOfRange(), node->token ));
     }
-
-    return raw_index;
+    return index;
 }

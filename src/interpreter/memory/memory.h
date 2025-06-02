@@ -73,6 +73,10 @@ struct FuncHolder {
 };
 
 template<typename... Args>
+HolderPack MakeHolderPack(Args... args) {
+    return std::make_shared<RawHolderPack>(std::forward<Args>(args)...);
+}
+template<typename... Args>
 ListHolderPtr MakeList(Args... args) {
     return std::make_unique<ListHolder>(std::forward<Args>(args)...);
 }

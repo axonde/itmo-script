@@ -163,6 +163,9 @@ struct Serializer {
     }
 
     json Visit(NodePtr& node) {
+        if (!node) {
+            return {};
+        }
         switch (node->node) {
             case Parser::Nodes::N_NUM_LITERAL:
                 return VisitNumLiteral(node);
