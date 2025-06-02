@@ -79,6 +79,8 @@ ListHolderPtr MakeList(Args... args) {
 
 class StackFrame {
 public:
+    StackFrame() = default;
+    StackFrame(StackFrame&&) = default;
     StackFrame(std::unordered_map<std::string, HolderPack> e, std::string&& n) : environment(std::move(e)), name(std::move(n)) {}
     StackFrame(std::unique_ptr<StackFrame>&& ptr, std::string&& n) : parent(std::move(ptr)), name(std::move(n)) {}
 
@@ -87,11 +89,11 @@ public:
     inline static std::string PrintStack(StackFrame& stack) {
         std::stringstream formatted;
         formatted << Patterns::STACK_TRACE_HEADER;
-        formatted << '\n';
-        formatted << "Scope: " << stack.name << '\n';
+        size_t count = 0;
+        formatted << "#" << count << ' ' << stack.name << '\n';
         StackFrame* ptr = stack.parent.get();
         while (ptr) {
-            formatted << "Scope: " << ptr->name << '\n';
+            formatted << "#" << ++count << ' ' << ptr->name << '\n';
             ptr = ptr->parent.get();
         }
         return formatted.str();

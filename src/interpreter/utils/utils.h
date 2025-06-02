@@ -12,7 +12,7 @@ namespace Patterns {
 
     static std::string CMD = "\e[3;34mitmo> \e[0m";
 
-    static std::string STACK_TRACE_HEADER = "STACK TRACE\n===========\n";
+    static std::string STACK_TRACE_HEADER = "STACK TRACE (from top to bottom)\n================================\n";
 
     inline void Welcome() {
         std::cout << "Welcome to " + BLUE + "ITMO SCRIPT" + WHITE + "!" << std::endl;

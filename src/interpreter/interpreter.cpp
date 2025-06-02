@@ -3,9 +3,16 @@
 namespace Interpreter {
 
 /// CONFIG
-std::unique_ptr<Memory::StackFrame> stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
+std::unique_ptr<Memory::StackFrame> stack_frame;
 std::istream* in;
 std::ostream* out;
+
+void Init() {
+    BuiltIn::InitializeBuilInFunctions();
+    stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
+    Operators::RegisterUnaryOperators();
+    Operators::RegisterBinaryOperators();
+}
 
 /// ERRORS
 void SyntaxError(const Lexer::Token& token) {
@@ -58,6 +65,7 @@ bool Interpret(std::istream& input, std::ostream& output, bool IsRepl = false) {
 bool Interpret(std::string& program, std::istream& input, std::ostream& output) {
     Interpreter::in = &input;
     Interpreter::out = &output;
+    Init();  // точка входа! без нее все летит!
     Runner runner(std::move(program));
 
     if (runner.GetRoot()->node == Parser::Nodes::N_BAD) {
@@ -76,9 +84,6 @@ bool Interpret(std::string& program, std::istream& input, std::ostream& output) 
 
 
 Runner::Expected Runner::Run() {
-    Operators::RegisterUnaryOperators();
-    Operators::RegisterBinaryOperators();
-
     return Visit(parser.root);
 }
 
@@ -325,6 +330,7 @@ Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
     return std::make_shared<RawHolderPack>();
 }
 
+
 /// HELPERS
 Runner::Expected Runner::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var) {
     auto index_computed = GetIndex(ptr->start, var);
@@ -337,7 +343,10 @@ Runner::Expected Runner::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& v
     return std::get<Memory::ListHolderPtr>(var->holder)->data[*index_computed];
 }
 
-Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {}
+Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {
+    auto start_expected = (ptr->start) ? GetIndex(ptr->start, var) : 0;
+    auto end_expected = (ptr->end) ? GetIndex(ptr->end, var) : std::get<std::string>(*var).size();
+}
 
 std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var) {
     auto index_expected = Visit(node);

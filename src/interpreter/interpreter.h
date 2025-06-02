@@ -23,6 +23,8 @@ namespace Interpreter {
     extern std::istream* in;
     extern std::ostream* out;
 
+    void Init();
+
     // ERRORS
     void SyntaxError(const Lexer::Token& token);
     void RunTimeError(const Lexer::Token&);

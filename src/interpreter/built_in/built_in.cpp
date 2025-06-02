@@ -117,7 +117,6 @@ HolderPack read = std::make_shared<RawHolderPack>(
 HolderPack stacktrace = std::make_shared<RawHolderPack>(
     std::make_unique<FuncHolder>(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
-            std::cout << "?\n";
             *Interpreter::out << Memory::StackFrame::PrintStack(*Interpreter::stack_frame);
             return std::make_shared<RawHolderPack>(TYPES::NIL_TYPE);
         })
@@ -127,40 +126,44 @@ HolderPack stacktrace = std::make_shared<RawHolderPack>(
 
 }
 
-std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS = {
-    // NUMBER AWARE FUNCTIONS
-    {"abs", BuiltIn::abs},
-    {"ceil", BuiltIn::ceil},
-    {"floor", BuiltIn::floor},
-    {"round", BuiltIn::round},
-    {"sqrt", BuiltIn::sqrt},
-    {"rnd", BuiltIn::rnd},
-    {"parse_num", BuiltIn::parse_num},
-    {"to_string", BuiltIn::to_string},
+std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS;
 
-    // STRING AWARE FUNCTIONS
-    {"len", BuiltIn::len},
-    {"lower", BuiltIn::lower},
-    {"upper", BuiltIn::upper},
-    {"split", BuiltIn::split},
-    {"join", BuiltIn::join},
-    {"replace", BuiltIn::replace},
+void BuiltIn::InitializeBuilInFunctions() {
+    BUILT_IN_FUNCTIONS = {
+        // NUMBER AWARE FUNCTIONS
+        {"abs", BuiltIn::abs},
+        {"ceil", BuiltIn::ceil},
+        {"floor", BuiltIn::floor},
+        {"round", BuiltIn::round},
+        {"sqrt", BuiltIn::sqrt},
+        {"rnd", BuiltIn::rnd},
+        {"parse_num", BuiltIn::parse_num},
+        {"to_string", BuiltIn::to_string},
 
-    // LIST AWARE FUNCTIONS
-    {"range", BuiltIn::range},
-    {"len", BuiltIn::len},
-    {"push", BuiltIn::push},
-    {"pop", BuiltIn::pop},
-    {"insert", BuiltIn::insert},
-    {"remove", BuiltIn::remove},
-    {"sort", BuiltIn::sort},
+        // STRING AWARE FUNCTIONS
+        {"len", BuiltIn::len},
+        {"lower", BuiltIn::lower},
+        {"upper", BuiltIn::upper},
+        {"split", BuiltIn::split},
+        {"join", BuiltIn::join},
+        {"replace", BuiltIn::replace},
 
-    // UNIVERSAL FUNCTIONS
-    {"copy", BuiltIn::copy},
+        // LIST AWARE FUNCTIONS
+        {"range", BuiltIn::range},
+        {"len", BuiltIn::len},
+        {"push", BuiltIn::push},
+        {"pop", BuiltIn::pop},
+        {"insert", BuiltIn::insert},
+        {"remove", BuiltIn::remove},
+        {"sort", BuiltIn::sort},
 
-    // SYSTEM FUNCTIONS
-    {"print", BuiltIn::print},
-    {"println", BuiltIn::println},
-    {"read", BuiltIn::read},
-    {"stacktrace", BuiltIn::stacktrace}
-};
+        // UNIVERSAL FUNCTIONS
+        {"copy", BuiltIn::copy},
+
+        // SYSTEM FUNCTIONS
+        {"print", BuiltIn::print},
+        {"println", BuiltIn::println},
+        {"read", BuiltIn::read},
+        {"stacktrace", BuiltIn::stacktrace}
+    };
+}

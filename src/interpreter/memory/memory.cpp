@@ -10,8 +10,6 @@ Memory::HolderPack Memory::StackFrame::Lookup(std::string_view key) {
 }
 
 Memory::HolderPack Memory::StackFrame::search(std::string_view key) {
-    std::cout << "смотрю!\n";
-    std::cout << "вот пример " << (environment.find("print") != environment.end()) << '\n';
     if (auto iter = environment.find(std::string(key)); iter != environment.end()) {
         return iter->second;
     }

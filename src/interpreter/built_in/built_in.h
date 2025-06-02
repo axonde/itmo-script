@@ -19,6 +19,8 @@ namespace BuiltIn {
 using HolderPack = Memory::HolderPack;
 using Function = Memory::Function;
 
+void InitializeBuilInFunctions();
+
 extern HolderPack abs;
 extern HolderPack ceil;
 extern HolderPack floor;
