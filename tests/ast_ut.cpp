@@ -96,7 +96,7 @@ TEST(AstSerialization, FunctionDeclaration) {
                     }},
                     {"type", "compound"}
                 }},
-                {"params", {
+                {"args", {
                     {
                         {"id", "a"},
                         {"type", "Var"}

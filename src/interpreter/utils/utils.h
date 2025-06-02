@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -156,6 +157,13 @@ namespace Errors {
         };
         struct SliceStep : Error {
             const char* what() const override { return "cannot have 0 as step"; }
+        };
+        struct WrongArgumentCount : Error {
+            const char* what() const override { return "arguments count on calling function does not match"; }
+        };
+        struct UncaughtReturn : Error {
+            const char* what() const override { return "uncaughted return statement"; }
+            std::any holder_pack;
         };
     }
 

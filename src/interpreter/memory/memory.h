@@ -60,7 +60,7 @@ using HolderPack = std::shared_ptr<RawHolderPack>;
 using BuiltInFunction = std::function<HolderPack(std::vector<HolderPack>&&)>;
 using Function = std::variant<
     BuiltInFunction,            // built in function
-    std::any                    // user set function (Parser::NodePtr)
+    std::any                    // user set function (Parser::Node*)
 >;
 
 struct ListHolder {
@@ -80,6 +80,10 @@ template<typename... Args>
 ListHolderPtr MakeList(Args... args) {
     return std::make_unique<ListHolder>(std::forward<Args>(args)...);
 }
+template<typename... Args>
+FuncHolderPtr MakeFunc(Args... args) {
+    return std::make_unique<FuncHolder>(std::forward<Args>(args)...);
+}
 
 class StackFrame {
 public:
@@ -88,7 +92,7 @@ public:
     StackFrame(std::unordered_map<std::string, HolderPack> e, std::string&& n) : environment(std::move(e)), name(std::move(n)) {}
     StackFrame(std::unique_ptr<StackFrame>&& ptr, std::string&& n) : parent(std::move(ptr)), name(std::move(n)) {}
 
-    HolderPack Lookup(std::string_view);  // throw an error otherwise
+    HolderPack Lookup(std::string_view);  // return a (not set type) if not found variable
 
     inline static std::string PrintStack(StackFrame& stack) {
         std::stringstream formatted;

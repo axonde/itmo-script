@@ -98,7 +98,7 @@ Parser::NodePtr Parser::ListExpr() {
     return list;
 }
 
-// Factor: Number | String | Bool | Nil | VarExpr | ListExpr
+// Factor: Number | String | Bool | Nil | VarExpr | ListExpr | FuncExpr
 //         | ('not' | '+' | '-') Factor
 //         | '(' expr ')'
 //         | T_BAD
@@ -137,8 +137,10 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
             return ListExpr();
         case Tokens::T_LEFT_BRACKET:
         {   if (!Eat(token.token)) { throw ParserError{}; }
-            auto expr = Expr();
-            if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw ParserError{}; }
+            NodePtr expr;
+            if (token.token != Tokens::T_RIGHT_BRACKET) { expr = Expr(); }
+            else { expr = std::make_unique<NilLiteral>(GetTraitedToken()); }
+            if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw ParserError{}; } GetTraitedToken();
             return expr; }
         case Tokens::T_BAD:
             throw Error(std::get<std::shared_ptr<Error>>(token.value)->what());
@@ -295,7 +297,7 @@ Parser::NodePtr Parser::WhileBlock() {
     return std::make_unique<While>(std::move(while_block));
 }
 
-// FuncExpr: T_FUNC '(' ((T_VAR | Func) (',' (T_VAR | Func))*)? ')' BLOCK T_END_FUNC
+// FuncExpr: T_FUNC '(' (T_VAR (',' T_VAR)*)? ')' BLOCK T_END_FUNC
 Parser::NodePtr Parser::FuncExpr() {
     if (!Eat(Lexer::Tokens::T_FUNC)) { throw ParserError{}; }
 
@@ -303,7 +305,7 @@ Parser::NodePtr Parser::FuncExpr() {
         throw Errors::ParserErrors::ExpectedLeftBracket{};
     } GetTraitedToken();
 
-    Compound params;
+    std::vector<Var> args;
 
     if (token.token != Lexer::Tokens::T_RIGHT_BRACKET) {
         bool was_comma = false;
@@ -313,10 +315,7 @@ Parser::NodePtr Parser::FuncExpr() {
                 case Lexer::Tokens::T_VAR:
                 {   std::string id = std::get<std::string>(token.value);
                     if (!Eat(token.token)) { throw ParserError{}; }
-                    params.data.push_back(std::make_unique<Var>(std::move(id), GetTraitedToken())); }
-                    break;
-                case Lexer::Tokens::T_FUNC:
-                    params.data.push_back(FuncExpr());
+                    args.push_back(Var(std::move(id), GetTraitedToken())); }
                     break;
                 default:
                     throw Errors::ParserErrors::FunctionParamsError{};
@@ -329,7 +328,7 @@ Parser::NodePtr Parser::FuncExpr() {
         throw Errors::ParserErrors::ExpectedRightBracket{};
     } GetTraitedToken();
     
-    NodePtr func = std::make_unique<Func>(std::move(params), Block(), GetTraitedToken());
+    NodePtr func = std::make_unique<Func>(std::move(args), Block(), GetTraitedToken());
     
     if (!Eat(Lexer::Tokens::T_END_FUNC)) {
         throw Errors::ParserErrors::ExpectedEndFunc{};

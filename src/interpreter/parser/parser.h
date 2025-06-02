@@ -160,11 +160,10 @@ public:
 
     /// Functions
     struct Func : Node {
-        Func(Compound&& p, NodePtr&& b, Lexer::Token&& token)
-        : Node(Nodes::N_FUNC, std::move(token)), params(std::move(p)), body(std::move(b)) {}
+        Func(std::vector<Var>&& a, NodePtr&& b, Lexer::Token&& token)
+        : Node(Nodes::N_FUNC, std::move(token)), args(std::move(a)), body(std::move(b)) {}
 
-        NodePtr id;
-        Compound params;
+        std::vector<Var> args;
         NodePtr body;
     };
     struct FuncCall : Node {

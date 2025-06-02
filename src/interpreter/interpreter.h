@@ -74,6 +74,9 @@ private:
     
     Expected VisitFunc(NodePtr&);
     Expected VisitFuncCall(NodePtr&);
+    Expected VisitUserFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
+    Expected VisitBuiltInFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
+
 
     Expected VisitCompound(NodePtr&);
 

@@ -284,9 +284,7 @@ Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
 Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
     std::cout << "visit func declaration\n";
 
-    // here we go again
-
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    return Memory::MakeHolderPack( Memory::MakeFunc(node.get()), TYPES::FUNC_TYPE );
 }
 Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
     std::cout << "visit func call\n";
@@ -298,30 +296,57 @@ Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
     if (func->type != TYPES::FUNC_TYPE) {
         return std::unexpected(Lexer::Token(Errors::TypeErrors::ExpectedFuncType(), node->token));
     }
+
+    std::vector<HolderPack> params;
+    for (auto& param : ptr->params) {
+        auto visited_expected = Visit(param);
+        if (!visited_expected) { return std::unexpected(visited_expected.error()); }
+        HolderPack& visited = *visited_expected;
+        if (visited->type == TYPES::NOT_SET_TYPE) { return std::unexpected(Lexer::Token(
+            Errors::MemoryErrors::NotFound(), std::move(param->token)
+        )); }
+        params.push_back(visited);
+    }
+
     Memory::FuncHolder& function_holder = *std::get<Memory::FuncHolderPtr>(func->holder);
     if (std::holds_alternative<std::any>(function_holder.function)) {
-        // do user func call
-    } else {
-        std::vector<HolderPack> params;
-        for (auto& param : ptr->params) {
-            auto visited_expected = Visit(param);
-            if (!visited_expected) { return std::unexpected(visited_expected.error()); }
-            HolderPack& visited = *visited_expected;
-            if (visited->type == TYPES::NOT_SET_TYPE) { return std::unexpected(Lexer::Token(
-                Errors::MemoryErrors::NotFound(), std::move(param->token)
-            )); }
-            params.push_back(visited);
-        }
-
-        auto& function = std::get<Memory::BuiltInFunction>(function_holder.function);
-        try {
-            return function(std::move(params));
-        } catch (const Error& e) {
-            return std::unexpected(Lexer::Token(Error(e.what()), node->token));
-        }
+        return VisitUserFuncCall(ptr, function_holder, params);
     }
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    return VisitBuiltInFuncCall(ptr, function_holder, params);
 }
+Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
+    std::string func_name = "<anonimous function>";
+    if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
+    Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
+
+    Parser::Func* func_instance = std::any_cast<Parser::Func*>(std::get<std::any>(function_holder.function));
+    if (func_instance->args.size() != ptr->params.size()) { return std::unexpected(Lexer::Token(
+        Errors::RunTime::WrongArgumentCount(), ptr->token
+    )); }
+
+    for (size_t i = 0; i != func_instance->args.size(); ++i) {
+        HolderPack hp = Interpreter::stack_frame->Lookup(func_instance->args[i].id);
+        hp->holder = std::move(params[i]->holder);
+        hp->type = std::move(params[i]->type);
+    }
+
+    try {
+        Visit(func_instance->body);
+    } catch(const Errors::RunTime::UncaughtReturn& e) {
+        return std::any_cast<HolderPack>(e.holder_pack);
+    }
+    return Memory::MakeHolderPack(TYPES::NIL_TYPE);
+
+}
+Runner::Expected Runner::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
+    auto& function = std::get<Memory::BuiltInFunction>(function_holder.function);
+    try {
+        return function(std::move(params));
+    } catch (const Error& e) {
+        return std::unexpected(Lexer::Token(Error(e.what()), ptr->token));
+    }
+}
+
 Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
     std::cout << "visit compound\n";
 

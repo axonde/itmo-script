@@ -118,11 +118,14 @@ struct Serializer {
     json VisitFunc(NodePtr& node) {
         Parser::Func* func = static_cast<Parser::Func*>(node.get());
         json j; j["type"] = "function";
-        json params;
-        for (auto& ptr : func->params.data) {
-            params += Visit(ptr);
+        json args;
+        for (auto& ptr : func->args) {
+            args += {
+                {"id", ptr.id},
+                {"type", "Var"}
+            };
         }
-        j["params"] = params;
+        j["args"] = args;
         j["body"] = Visit(func->body);
         return j;
     }
