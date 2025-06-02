@@ -126,7 +126,24 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
         case Tokens::T_VAR:
             return VarExpr();
         case Tokens::T_FUNC:
-            return FuncExpr();
+        {   auto func_expr = FuncExpr();
+            if (token.token == Tokens::T_LEFT_BRACKET) {
+                if (!Eat(Tokens::T_LEFT_BRACKET)) { throw ParserError{}; }
+                FuncCall func_call(std::move(func_expr), GetTraitedToken());  // warning duplicated code !
+                if (token.token != Tokens::T_RIGHT_BRACKET) {
+                    func_call.params.push_back(Expr());
+                    while (token.token == Lexer::Tokens::T_COMMA) {
+                        if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                        func_call.params.push_back(Expr());
+                    }
+                }
+                if (!Eat(Tokens::T_RIGHT_BRACKET)) {
+                    throw Errors::ParserErrors::ExpectedRightBracket{};
+                } GetTraitedToken();
+                return std::make_unique<FuncCall>(std::move(func_call));
+            }
+            return func_expr;
+        }
         case Tokens::T_MINUS:
         case Tokens::T_PLUS:
         case Tokens::T_NOT:
@@ -141,6 +158,23 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
             if (token.token != Tokens::T_RIGHT_BRACKET) { expr = Expr(); }
             else { expr = std::make_unique<NilLiteral>(GetTraitedToken()); }
             if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw ParserError{}; } GetTraitedToken();
+
+            if (token.token == Tokens::T_LEFT_BRACKET && expr->node == N_FUNC) {
+                if (!Eat(Tokens::T_LEFT_BRACKET)) { throw ParserError{}; }
+                FuncCall func_call(std::move(expr), GetTraitedToken());  // warning duplicated code !
+                if (token.token != Tokens::T_RIGHT_BRACKET) {
+                    func_call.params.push_back(Expr());
+                    while (token.token == Lexer::Tokens::T_COMMA) {
+                        if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                        func_call.params.push_back(Expr());
+                    }
+                }
+                if (!Eat(Tokens::T_RIGHT_BRACKET)) {
+                    throw Errors::ParserErrors::ExpectedRightBracket{};
+                } GetTraitedToken();
+                return std::make_unique<FuncCall>(std::move(func_call));
+            }
+            
             return expr; }
         case Tokens::T_BAD:
             throw Error(std::get<std::shared_ptr<Error>>(token.value)->what());

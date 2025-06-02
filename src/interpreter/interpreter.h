@@ -47,7 +47,7 @@ public:
 
 private:
     using Holder = Memory::Holder;
-    using NodePtr = std::unique_ptr<Parser::Node>;
+    using NodePtr = Parser::NodePtr;
     using RawHolderPack = Memory::RawHolderPack;
 
     Expected Visit(NodePtr&);

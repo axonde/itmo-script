@@ -106,9 +106,9 @@ public:
         }
         return formatted.str();
     }
+    std::unique_ptr<StackFrame> parent;
 private:
     std::string name;
-    std::unique_ptr<StackFrame> parent;
     std::unordered_map<std::string, HolderPack> environment;
 
     HolderPack search(std::string_view);

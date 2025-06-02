@@ -319,7 +319,11 @@ Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHo
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
     Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
 
-    Parser::Func* func_instance = std::any_cast<Parser::Func*>(std::get<std::any>(function_holder.function));
+    Parser::Func* func_instance = std::move(
+        static_cast<Parser::Func*>(std::any_cast<Parser::Node*>(
+            std::get<std::any>(function_holder.function)
+        ))
+    );
     if (func_instance->args.size() != ptr->params.size()) { return std::unexpected(Lexer::Token(
         Errors::RunTime::WrongArgumentCount(), ptr->token
     )); }
@@ -330,13 +334,15 @@ Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHo
         hp->type = std::move(params[i]->type);
     }
 
+    HolderPack result = Memory::MakeHolderPack(TYPES::NIL_TYPE);
     try {
         Visit(func_instance->body);
-    } catch(const Errors::RunTime::UncaughtReturn& e) {
-        return std::any_cast<HolderPack>(e.holder_pack);
+    } catch (const Errors::RunTime::UncaughtReturn& e) {
+        result = std::any_cast<HolderPack>(e.holder_pack);
     }
-    return Memory::MakeHolderPack(TYPES::NIL_TYPE);
-
+    
+    Interpreter::stack_frame = std::move(Interpreter::stack_frame->parent);
+    return result;
 }
 Runner::Expected Runner::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
     auto& function = std::get<Memory::BuiltInFunction>(function_holder.function);
