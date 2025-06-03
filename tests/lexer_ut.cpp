@@ -51,6 +51,15 @@ TEST(LexerTokenizerTest, SimpleCalculator) {
     ASSERT_EQ(computed, expected);
 }
 
+TEST(LexerTokenizerTest, FiveByThree) {
+    std::string program = R"(5 / 3)";
+
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+
+    std::vector<Tokens> expected = {T_NUMBER, T_DIV, T_NUMBER, T_EOF};
+    ASSERT_EQ(computed, expected);
+}
+
 TEST(LexerTokenizerTest, SimpleWrongSyntax) {
     std::string program = R"(###)";
 

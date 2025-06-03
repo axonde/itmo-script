@@ -25,47 +25,20 @@ void RunTimeError(const Lexer::Token& token) {
 }
 
 /// INTERPRET
-bool Interpret(std::istream& input, std::ostream& output, bool IsRepl = false) {
-    // IsRepl is not the Interpret deal.
-    Interpreter::in = &input;
-    Interpreter::out = &output;
-    if (IsRepl) {
-        std::string line;
-        do {
-            std::cout << Patterns::CMD;
-            std::getline(input, line);
-        } while (line.size() == 0);
-
-        Lexer::Tokenizer tokenizer(line);
-
-        Lexer::Token token;
-        tokenizer >> token;
-        while (token.token != Lexer::Tokens::T_EOF) {
-            std::cout << token.token << " ; ";
-            if (token.token == Lexer::Tokens::T_BAD) {
-                SyntaxError(token);
-                return false;
-            }
-            tokenizer >> token;
-        }
-        std::cout << '\n';
-
-        return true;
-    }
-
-    // reorganize readness from file. it it not interpreter work.
+bool Interpret(std::istream& input, std::ostream& output) {
+    input.seekg(0, std::ios::end);
     size_t size = input.tellg();
     input.seekg(0);
     std::string program(size, '\0');
     input.read(&program[0], size);
 
-    return Interpret(program, std::cin, std::cout);
+    return Interpret(program, input, output);
 }
 
 bool Interpret(std::string& program, std::istream& input, std::ostream& output) {
     Interpreter::in = &input;
     Interpreter::out = &output;
-    Init();  // точка входа! без нее все летит!
+    Init();  // caution! this initialization is steadfastly obligatory
     Runner runner(std::move(program));
 
     if (runner.GetRoot()->node == Parser::Nodes::N_BAD) {

@@ -16,7 +16,7 @@
 #include "memory.h"
 
 namespace Interpreter {
-    bool Interpret(std::istream&, std::ostream&, bool);
+    bool Interpret(std::istream&, std::ostream&);
     bool Interpret(std::string&, std::istream&, std::ostream&);
 
     extern std::unique_ptr<Memory::StackFrame> stack_frame;

@@ -34,3 +34,5 @@ target_include_directories(itmoscript_tests PUBLIC ${PROJECT_SOURCE_DIR}/src/int
 include(GoogleTest)
 
 gtest_discover_tests(itmoscript_tests)
+
+add_subdirectory(operators)

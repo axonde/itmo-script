@@ -187,6 +187,7 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
 Parser::NodePtr Parser::Term() {
     NodePtr term = Factor();
     while (token.token == Lexer::Tokens::T_MULT
+    || token.token == Lexer::Tokens::T_DIV
     || token.token == Lexer::Tokens::T_MOD
     || token.token == Lexer::Tokens::T_XOR
     || token.token == Lexer::Tokens::T_AND) {
