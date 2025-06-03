@@ -78,16 +78,29 @@ Parser::NodePtr Parser::VarExpr() {
     return var;
 }
 
-// ListExpr: '[' (Expr (, Expr)* )? ']'
+// ListExpr: '[' (T_EOL)* (Expr (T_EOL)* (, (T_EOL)* Expr (T_EOL)*)* )? (,)? (T_EOL)* ']'
 Parser::NodePtr Parser::ListExpr() {
     if (!Eat(Lexer::Tokens::T_LEFT_SQUARE_BRACKET)) { throw Errors::ParserErrors::ExpectedLeftSquareBracket{}; }
 
+    auto skip_eol = [&]() {
+        while (token.token == Lexer::Tokens::T_EOL) {
+            if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+        }
+    };
+
     auto list = std::make_unique<List>(GetTraitedToken());
+    skip_eol();
+
     if (token.token != Lexer::Tokens::T_RIGHT_SQUARE_BRACKET) {
         list->data.push_back(Expr());
+        skip_eol();
         while (token.token == Lexer::T_COMMA) {
             if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
-            list->data.push_back(Expr());
+            skip_eol();
+            if (token.token != Lexer::Tokens::T_RIGHT_SQUARE_BRACKET) {
+                list->data.push_back(Expr());
+            }
+            skip_eol();
         }
     }
 
@@ -98,7 +111,7 @@ Parser::NodePtr Parser::ListExpr() {
     return list;
 }
 
-// Factor: Number | String | Bool | Nil | VarExpr | ListExpr | FuncExpr
+// Factor: T_EOL* Number | String | Bool | Nil | VarExpr | ListExpr | FuncExpr
 //         | ('not' | '+' | '-') Factor
 //         | '(' expr ')'
 //         | T_BAD

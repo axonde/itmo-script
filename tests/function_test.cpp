@@ -72,7 +72,7 @@ TEST(FunctionTestSuite, NestedFunctionTest) {
     ASSERT_EQ(output.str(), expected);
 }
 
-TEST(FunctionTestSuite, FunnySyntaxTest) {
+TEST(FunctionTestSuite, FunnySyntaxTestInWidth) {
     std::string code = R"(
         funcs = [function() return 1 end function, function() return 2 end function, function() return 3 end function]
 
@@ -90,24 +90,24 @@ TEST(FunctionTestSuite, FunnySyntaxTest) {
     ASSERT_EQ(output.str(), expected);
 }
 
-// TEST(FunctionTestSuite, FunnySyntaxTest) {
-//     std::string code = R"(
-//         funcs = [
-//             function() return 1 end function,
-//             function() return 2 end function,   // need to add \n support
-//             function() return 3 end function,
-//         ]
+TEST(FunctionTestSuite, FunnySyntaxTestInDepth) {
+    std::string code = R"(
+        funcs = [
+            function() return 1 end function,
+            function() return 2 end function,   // support space initializing
+            function() return 3 end function,
+        ]
 
-//         print(funcs[0]())
-//         print(funcs[1]())
-//         print(funcs[2]())
-//     )";
+        print(funcs[0]())
+        print(funcs[1]())
+        print(funcs[2]())
+    )";
 
-//     std::string expected = "123";
+    std::string expected = "123";
 
-//     std::istringstream input(code);
-//     std::ostringstream output;
+    std::istringstream input(code);
+    std::ostringstream output;
 
-//     ASSERT_TRUE(Interpret(input, output));
-//     ASSERT_EQ(output.str(), expected);
-// }
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
