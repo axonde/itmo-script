@@ -275,8 +275,8 @@ Parser::NodePtr Parser::Statement() {
     }
 }
 
-// IfBlock: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
-Parser::NodePtr Parser::IfBlock() {
+// IfExpr: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
+Parser::NodePtr Parser::IfExpr() {
     if (!Eat(Lexer::Tokens::T_IF)) { throw ParserError{}; }
 
     auto condition = std::make_unique<BinaryOp>(
@@ -289,8 +289,8 @@ Parser::NodePtr Parser::IfBlock() {
         throw Errors::ParserErrors::ExpectedThen{};
     } GetTraitedToken();
 
-    Compound if_block;
-    if_block.data.push_back(std::make_unique<If>(std::move(condition), Block(), GetTraitedToken()));
+    IfBlock if_block;
+    if_block.data.push_back(If(std::move(condition), Block(), GetTraitedToken()));
     
     while (token.token == Lexer::Tokens::T_ELSE_IF) {
         if (!Eat(token.token)) { throw ParserError{}; }
@@ -304,7 +304,7 @@ Parser::NodePtr Parser::IfBlock() {
         if (!Eat(Lexer::Tokens::T_THEN)) {
             throw Errors::ParserErrors::ExpectedThen{};
         } GetTraitedToken();
-        if_block.data.push_back(std::make_unique<If>(std::move(condition), Block(), GetTraitedToken()));
+        if_block.data.push_back(If(std::move(condition), Block(), GetTraitedToken()));
     }
     if (token.token == Lexer::Tokens::T_ELSE) {
         if (!Eat(token.token)) { throw ParserError{}; }
@@ -316,14 +316,14 @@ Parser::NodePtr Parser::IfBlock() {
             GetTraitedToken()
         );
 
-        if_block.data.push_back(std::make_unique<If>(
+        if_block.data.push_back(If(
             std::move(condition),
             Block(),
             GetTraitedToken()
         ));
     }
     if (!Eat(Lexer::Tokens::T_END_IF)) { throw Errors::ParserErrors::ExpectedEndIf{}; }
-    return std::make_unique<Compound>(std::move(if_block));
+    return std::make_unique<IfBlock>(std::move(if_block));
 }
 
 // ForBlock: T_FOR Expr T_IN Expr BLOCK T_FOR_END
@@ -399,7 +399,7 @@ Parser::NodePtr Parser::FuncExpr() {
 Parser::NodePtr Parser::StatementList() {
     switch (token.token) {
         case Lexer::Tokens::T_IF:
-            return IfBlock();
+            return IfExpr();
         case Lexer::Tokens::T_FOR:
             return ForBlock();
         case Lexer::Tokens::T_WHILE:

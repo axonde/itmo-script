@@ -89,8 +89,10 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
         case Parser::Nodes::N_SUBSCRIPT:
             return VisitSubscript(node);
         
-        case Parser::Nodes::N_IF:
+        case Parser::Nodes::N_IF_BLOCK:
             return VisitIf(node);
+        // case Parser::Nodes::N_IF:
+        //     return VisitIf(node);
         case Parser::Nodes::N_FOR:
             return VisitFor(node);
         case Parser::Nodes::N_WHILE:
@@ -215,13 +217,17 @@ Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
 
 /// BLOCKS
 Runner::Expected Runner::VisitIf(Parser::NodePtr& node) {
-    Parser::If* ptr = static_cast<Parser::If*>(node.get());
-    auto condition_expected = Visit(ptr->condition);
-    if (!condition_expected) { return std::unexpected(condition_expected.error()); }
+    Parser::IfBlock* ptr = static_cast<Parser::IfBlock*>(node.get());
 
-    if (std::get<bool>((*condition_expected)->holder)) {
-        if (auto expected = Visit(ptr->body); !expected) {
-            return std::unexpected(expected.error());
+    for (Parser::If& variant : ptr->data) {
+        auto condition_expected = Visit(variant.condition);
+        if (!condition_expected) { return std::unexpected(condition_expected.error()); }
+
+        if (std::get<bool>((*condition_expected)->holder)) {
+            if (auto expected = Visit(variant.body); !expected) {
+                return std::unexpected(expected.error());
+            }
+            break;
         }
     }
     return Memory::MakeHolderPack();

@@ -50,7 +50,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (!Interpreter::Interpret(file, std::cout)) {
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    file.seekg(0);
+    std::string program(size, '\0');
+    file.read(&program[0], size);
+
+    if (!Interpreter::Interpret(program, std::cin, std::cout)) {
         return 1;
     }
 

@@ -2,6 +2,8 @@ add_executable(
   itmoscript_operator_tests
 	unary_operators_ut.cpp
 	binary_operators_ut.cpp
+	comparators_ut.cpp
+	slices_ut.cpp
 )
 
 target_link_libraries(

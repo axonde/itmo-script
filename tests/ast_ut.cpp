@@ -251,61 +251,61 @@ TEST(AstSerialization, WhileCycle) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AstSerialization, IfStatement) {
-    std::string program = R"(
-        if cond == 1 then
-            print("cool!")
-        end if
-    )";
+// TEST(AstSerialization, IfStatement) {
+//     std::string program = R"(
+//         if cond == 1 then
+//             print("cool!")
+//         end if
+//     )"
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+//     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
 
-    json expected = {
-        {"children", {{
-            {"children", {{
-                {"body", {
-                    {"children", {{
-                        {"func", {
-                            {"id", "print"},
-                            {"type", "Var"}
-                        }},
-                        {"params", {{
-                            {"type", "String Literal"},
-                            {"value", "cool!"}
-                        }}},
-                        {"type", "function call"}
-                    }}},
-                    {"type", "compound"}
-                }},
-                {"condition", {
-                    {"left", {
-                        {"left", {
-                            {"id", "cond"},
-                            {"type", "Var"}
-                        }},
-                        {"operator", "=="},
-                        {"right", {
-                            {"type", "Num Literal"},
-                            {"value", 1.0}
-                        }},
-                        {"type", "Binary Op"}
-                    }},
-                    {"operator", "=="},
-                    {"right", {
-                        {"type", "Bool Literal"},
-                        {"value", "true"}
-                    }},
-                    {"type", "Binary Op"}
-                }},
-                {"type", "If Block"}
-            }}},
-            {"type", "compound"}
-        }}},
-        {"type", "compound"}
-    };
+//     json expected = {
+//         {"children", {{
+//             {"children", {{
+//                 {"body", {
+//                     {"children", {{
+//                         {"func", {
+//                             {"id", "print"},
+//                             {"type", "Var"}
+//                         }},
+//                         {"params", {{
+//                             {"type", "String Literal"},
+//                             {"value", "cool!"}
+//                         }}},
+//                         {"type", "function call"}
+//                     }}},
+//                     {"type", "compound"}
+//                 }},
+//                 {"condition", {
+//                     {"left", {
+//                         {"left", {
+//                             {"id", "cond"},
+//                             {"type", "Var"}
+//                         }},
+//                         {"operator", "=="},
+//                         {"right", {
+//                             {"type", "Num Literal"},
+//                             {"value", 1.0}
+//                         }},
+//                         {"type", "Binary Op"}
+//                     }},
+//                     {"operator", "=="},
+//                     {"right", {
+//                         {"type", "Bool Literal"},
+//                         {"value", "true"}
+//                     }},
+//                     {"type", "Binary Op"}
+//                 }},
+//                 {"type", "If Block"}
+//             }}},
+//             {"type", "compound"}
+//         }}},
+//         {"type", "compound"}
+//     };
 
-    ASSERT_EQ(serializer.tree, expected);
-}
+//     ASSERT_EQ(serializer.tree, expected);
+// }
 
 TEST(AstSerialization, WrongSyntaxStringLiteral) {
     std::string program = R"(

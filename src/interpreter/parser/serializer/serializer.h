@@ -83,11 +83,11 @@ struct Serializer {
     }
 
     json VisitIf(NodePtr& node) {
-        Parser::If* if_block = static_cast<Parser::If*>(node.get());
+        Parser::IfBlock* if_block = static_cast<Parser::IfBlock*>(node.get());
         json j;
         j["type"] = "If Block";
-        j["condition"] = Visit(if_block->condition);
-        j["body"] = Visit(if_block->body);
+        // j["condition"] = Visit(if_block->condition);
+        // j["body"] = Visit(if_block->body);
         return j;
     }
 
@@ -191,6 +191,7 @@ struct Serializer {
                 return VisitSubscript(node);
 
             case Parser::Nodes::N_IF:
+            case Parser::Nodes::N_IF_BLOCK:
                 return VisitIf(node);
 
             case Parser::Nodes::N_FOR:

@@ -49,10 +49,28 @@ HolderPack sort;
 
 // UNIVERSAL FUNCTIONS
 HolderPack copy;
-HolderPack len;
+HolderPack len = Memory::MakeHolderPack(
+    std::make_unique<FuncHolder>(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type == TYPES::STRING_TYPE) {
+                return Memory::MakeHolderPack(
+                    static_cast<double>(std::get<std::string>(params[0]->holder).size()),
+                    TYPES::NUM_TYPE);
+            }
+            if (params[0]->type == TYPES::LIST_TYPE) {
+                return Memory::MakeHolderPack(
+                    static_cast<double>(std::get<Memory::ListHolderPtr>(params[0]->holder)->data.size()),
+                    TYPES::NUM_TYPE);
+            }
+            throw Errors::TypeErrors::TypeErrorStringOrList();
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
 
 // SYSTEM FUNCTIONS
-HolderPack print = std::make_shared<RawHolderPack>(
+HolderPack print = Memory::MakeHolderPack(
     std::make_unique<FuncHolder>(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             bool need_space = false;

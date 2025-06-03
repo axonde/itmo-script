@@ -22,7 +22,7 @@ namespace Patterns {
 
 namespace Errors {
     inline void ErrorOpenFile() {
-        std::cout << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
+        std::cerr << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
     }
 
     struct Error {
@@ -154,6 +154,9 @@ namespace Errors {
         struct ExpectedZeroArgs : Error {
             const char* what() const override { return "expected no args for call"; }
         };
+        struct ExpectedOneArg : Error {
+            const char* what() const override { return "expected one arg for call"; }
+        };
         struct SliceStep : Error {
             const char* what() const override { return "cannot have 0 as step"; }
         };
@@ -178,7 +181,7 @@ namespace Errors {
     }
 
 inline void PrintError(std::string header, Errors::Error* error, size_t pos, size_t line) {
-    std::cout << Patterns::RED << header << Patterns::WHITE << ": "
+    std::cerr << Patterns::RED << header << Patterns::WHITE << ": "
                 << error->what() << " at " << Patterns::WHITEBOLD 
                 << "line " << line << ", col " << pos << Patterns::WHITE << std::endl;
 }

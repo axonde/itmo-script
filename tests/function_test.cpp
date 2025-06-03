@@ -1,5 +1,7 @@
-#include <lib/interpreter.h>
+#include <interpreter>
 #include <gtest/gtest.h>
+
+using namespace Interpreter;
 
 TEST(FunctionTestSuite, SimpleFunctionTest) {
     std::string code = R"(
@@ -16,7 +18,7 @@ TEST(FunctionTestSuite, SimpleFunctionTest) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(interpret(input, output));
+    ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -40,7 +42,7 @@ TEST(FunctionTestSuite, FunctionAsArgTest) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(interpret(input, output));
+    ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -66,18 +68,13 @@ TEST(FunctionTestSuite, NestedFunctionTest) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(interpret(input, output));
+    ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
 
-
 TEST(FunctionTestSuite, FunnySyntaxTest) {
     std::string code = R"(
-        funcs = [
-            function() return 1 end function,
-            function() return 2 end function,
-            function() return 3 end function,
-        ]
+        funcs = [function() return 1 end function, function() return 2 end function, function() return 3 end function]
 
         print(funcs[0]())
         print(funcs[1]())
@@ -89,6 +86,28 @@ TEST(FunctionTestSuite, FunnySyntaxTest) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(interpret(input, output));
+    ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
+
+// TEST(FunctionTestSuite, FunnySyntaxTest) {
+//     std::string code = R"(
+//         funcs = [
+//             function() return 1 end function,
+//             function() return 2 end function,   // need to add \n support
+//             function() return 3 end function,
+//         ]
+
+//         print(funcs[0]())
+//         print(funcs[1]())
+//         print(funcs[2]())
+//     )";
+
+//     std::string expected = "123";
+
+//     std::istringstream input(code);
+//     std::ostringstream output;
+
+//     ASSERT_TRUE(Interpret(input, output));
+//     ASSERT_EQ(output.str(), expected);
+// }

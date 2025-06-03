@@ -84,7 +84,7 @@ void Lexer::Tokenizer::SkipWhiteSpaces() {
 }
 void Lexer::Tokenizer::SkipComment() {
     if (pos < text.size() - 1 && text[pos] == '/' && text[pos + 1] == '/') {
-        pos = text.size();
+        while (pos < text.size() && text[pos] != '\n') { Inc(); }
     }
 }
 
@@ -165,15 +165,15 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryLiterals() {
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryComparators() {
     using namespace Lexer;
+    if (pos + 1 < text.size()) {
+        if (text[pos] == '=' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_EQUAL, column, lineno); }
+        if (text[pos] == '!' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_NON_EQUAL, column, lineno); }
+        if (text[pos] == '<' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_SMALLER_OR_EQ, column, lineno); }
+        if (text[pos] == '>' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_GREATER_OR_EQ, column, lineno); }
+    }
+
     if (text[pos] == '<') { Inc(); return Token(Tokens::T_COMP_SMALLER, column, lineno); }
     if (text[pos] == '>') { Inc(); return Token(Tokens::T_COMP_GREATER, column, lineno); }
-
-    if (pos + 1 == text.size()) return {};
-
-    if (text[pos] == '=' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_EQUAL, column, lineno); }
-    if (text[pos] == '!' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_NON_EQUAL, column, lineno); }
-    if (text[pos] == '<' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_SMALLER_OR_EQ, column, lineno); }
-    if (text[pos] == '>' && text[pos + 1] == '=') { DoubleInc(); return Token(Tokens::T_COMP_GREATER_OR_EQ, column, lineno); }
 
     return {};
 }

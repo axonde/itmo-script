@@ -44,6 +44,7 @@ void RegisterBinaryBoolOperators() noexcept;
 void RegisterBinaryNilOperators() noexcept;
 void RegisterBinaryStringOperators() noexcept;
 void RegisterBinaryListOperators() noexcept;
+void RegisterBinaryFuncOperators() noexcept;
 
 void RegisterBinaryOperators() noexcept;
 
