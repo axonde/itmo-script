@@ -13,8 +13,8 @@ namespace Operators {
 using RawHolderPack = Memory::RawHolderPack;
 using Holder = Memory::Holder;
 using HolderPack = Memory::HolderPack;
-using UnaryFunction = std::function<HolderPack(HolderPack&&)>;
-using BinaryFunction = std::function<HolderPack(HolderPack&&, HolderPack&&)>;
+using UnaryFunction = std::function<HolderPack(HolderPack)>;
+using BinaryFunction = std::function<HolderPack(HolderPack, HolderPack)>;
 using Expected = std::expected<HolderPack, Lexer::Token>;
 
 struct UnaryOpTableKey {
@@ -40,14 +40,16 @@ void RegisterUnaryNilOperators() noexcept;
 void RegisterUnaryOperators() noexcept;
 
 void RegisterBinaryNumOperators() noexcept;
-void RegisterBinaryStringOperators() noexcept;
 void RegisterBinaryBoolOperators() noexcept;
 void RegisterBinaryNilOperators() noexcept;
+void RegisterBinaryStringOperators() noexcept;
+void RegisterBinaryListOperators() noexcept;
 
 void RegisterBinaryOperators() noexcept;
 
-[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, HolderPack&& computed);
-[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, HolderPack&& computed_left, HolderPack&& computed_right);
+[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack);
+[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack, HolderPack);
+[[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens, Parser::NodePtr&, HolderPack, HolderPack);
 
 } // end Operators
 

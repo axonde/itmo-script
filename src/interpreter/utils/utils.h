@@ -160,6 +160,12 @@ namespace Errors {
         struct WrongArgumentCount : Error {
             const char* what() const override { return "arguments count on calling function does not match"; }
         };
+        struct AssignLiteral : Error {
+            const char* what() const override { return "cannot assign to literal"; }
+        };
+        struct NotEvaluatedSequence : Error {
+            const char* what() const override { return "the evaluated expression must be a sequence"; }
+        };
     }
 
     namespace InternalErrors {

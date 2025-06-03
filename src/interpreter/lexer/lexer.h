@@ -203,8 +203,11 @@ private:
         {"and", Tokens::T_AND},
         {"or", Tokens::T_OR},
         {"not", Tokens::T_NOT},
+
+    // literals
         {"false", Tokens::T_FALSE},
-        {"true", Tokens::T_TRUE}
+        {"true", Tokens::T_TRUE},
+        {"nil", Tokens::T_NIL}
     };
 };
 

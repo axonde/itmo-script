@@ -263,27 +263,84 @@ Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
 
 /// BLOCKS
 Runner::Expected Runner::VisitIf(Parser::NodePtr& node) {
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    Parser::If* ptr = static_cast<Parser::If*>(node.get());
+    auto condition_expected = Visit(ptr->condition);
+    if (!condition_expected) { return std::unexpected(condition_expected.error()); }
+
+    if (std::get<bool>((*condition_expected)->holder)) {
+        if (auto expected = Visit(ptr->body); !expected) {
+            return std::unexpected(expected.error());
+        }
+    }
+    return Memory::MakeHolderPack();
 }
 Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    auto ptr = static_cast<Parser::For*>(node.get());
+    auto iterator_expected = Visit(ptr->iterator);
+    if (!iterator_expected) { return std::unexpected(iterator_expected.error()); }
+    auto range_expected = Visit(ptr->range);
+    if (!range_expected) { return std::unexpected(range_expected.error()); }
+
+    HolderPack iterator = *iterator_expected;
+    HolderPack range = *range_expected;
+
+    if (range->type != TYPES::STRING_TYPE && range->type != TYPES::LIST_TYPE) {
+        return std::unexpected(Lexer::Token(Errors::RunTime::NotEvaluatedSequence(), node->token));
+    }
+    size_t size;
+    if (range->type == TYPES::STRING_TYPE) { size = std::get<std::string>(range->holder).size(); }
+    else { size = std::get<Memory::ListHolderPtr>(range->holder)->data.size(); }
+
+    for (size_t i = 0; i < size; ++i) {
+        if (range->type == TYPES::STRING_TYPE) {
+            iterator_expected = Operators::ExecBinaryOperation(
+                Lexer::Tokens::T_EQUAL, node, HolderPack(iterator),
+                Memory::MakeHolderPack(
+                    std::to_string(std::get<std::string>(range->holder)[i]),
+                    TYPES::STRING_TYPE)
+            );
+        } else {
+            iterator_expected = Operators::ExecBinaryOperation(
+                Lexer::Tokens::T_EQUAL, node, HolderPack(iterator),
+                HolderPack(std::get<Memory::ListHolderPtr>(range->holder)->data[i])
+            );
+        }
+        if (!iterator_expected) { return std::unexpected(iterator_expected.error()); }
+        try {
+            if (auto visited = Visit(ptr->body); !visited) {
+                return std::unexpected(visited.error());
+            }
+        }
+        catch (Closures::Break&) { break; }
+        catch (Closures::Continue&) { continue; }
+    }
+    return Memory::MakeHolderPack();
 }
 Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
+
+    // here we go again
+
     return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
 }
 
 /// CLOSURE STATEMENTS
 Runner::Expected Runner::VisitReturn(Parser::NodePtr& node) {
+    std::cout << "visit return\n";
+
     Parser::Return* ptr = static_cast<Parser::Return*>(node.get());
     auto expr_expected = Visit(ptr->expr);
     if (!expr_expected) { return std::unexpected(expr_expected.error()); }
     throw Closures::Return(std::move(*expr_expected), node->token);
 }
 Runner::Expected Runner::VisitBreak(Parser::NodePtr& node) {
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    std::cout << "visit Break\n";
+
+    throw Closures::Break(node->token);
 }
 Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    std::cout << "visit continue\n";
+
+    throw Closures::Continue(node->token);
 }
 
 /// FUNCTIONS
@@ -325,11 +382,9 @@ Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHo
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
     Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
 
-    Parser::Func* func_instance = std::move(
-        static_cast<Parser::Func*>(std::any_cast<Parser::Node*>(
-            std::get<std::any>(function_holder.function)
-        ))
-    );
+    Parser::Func* func_instance = static_cast<Parser::Func*>(std::any_cast<Parser::Node*>(
+        std::get<std::any>(function_holder.function)
+    ));
     if (func_instance->args.size() != ptr->params.size()) { return std::unexpected(Lexer::Token(
         Errors::RunTime::WrongArgumentCount(), ptr->token
     )); }

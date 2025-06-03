@@ -55,7 +55,9 @@ HolderPack len;
 HolderPack print = std::make_shared<RawHolderPack>(
     std::make_unique<FuncHolder>(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
+            bool need_space = false;
             for (auto& holderpack : params) {
+                if (need_space) { *Interpreter::out << ' '; }
                 switch (holderpack->type) {
                     case TYPES::NUM_TYPE:
                         *Interpreter::out << std::get<double>(holderpack->holder); break;
@@ -71,16 +73,16 @@ HolderPack print = std::make_shared<RawHolderPack>(
                         *Interpreter::out << "<function>"; break;
                     case TYPES::LIST_TYPE:
                     { *Interpreter::out << '['; bool not_first = false;
-                        for (auto& hp : std::get<ListHolderPtr>(holderpack->holder)->data) {
+                        for (auto hp : std::get<ListHolderPtr>(holderpack->holder)->data) {
                             if (not_first) { *Interpreter::out << ", "; } not_first = true;
                             std::get<BuiltInFunction>(
                                 std::get<FuncHolderPtr>(print->holder)->function
-                            )({std::move(hp)});
+                            )({hp});
                         } *Interpreter::out << ']'; }
                         break;
                     case TYPES::NOT_SET_TYPE:
                         *Interpreter::out << "(not set type)"; break;
-                }
+                } need_space = true;
             }
             return std::make_shared<RawHolderPack>(TYPES::NIL_TYPE);
         })

@@ -83,7 +83,7 @@ Parser::NodePtr Parser::ListExpr() {
     if (!Eat(Lexer::Tokens::T_LEFT_SQUARE_BRACKET)) { throw Errors::ParserErrors::ExpectedLeftSquareBracket{}; }
 
     auto list = std::make_unique<List>(GetTraitedToken());
-    if (token.token != Lexer::Tokens::T_LEFT_SQUARE_BRACKET) {
+    if (token.token != Lexer::Tokens::T_RIGHT_SQUARE_BRACKET) {
         list->data.push_back(Expr());
         while (token.token == Lexer::T_COMMA) {
             if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
@@ -153,10 +153,10 @@ Parser::NodePtr Parser::Factor() {   // add support for list literals.
         case Tokens::T_LEFT_SQUARE_BRACKET:
             return ListExpr();
         case Tokens::T_LEFT_BRACKET:
-        {   if (!Eat(token.token)) { throw ParserError{}; }
+        {   if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
             NodePtr expr;
             if (token.token != Tokens::T_RIGHT_BRACKET) { expr = Expr(); }
-            else { expr = std::make_unique<NilLiteral>(GetTraitedToken()); }
+            else { expr = std::make_unique<NilLiteral>(token); }
             if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw ParserError{}; } GetTraitedToken();
 
             if (token.token == Tokens::T_LEFT_BRACKET && expr->node == N_FUNC) {
@@ -278,7 +278,12 @@ Parser::NodePtr Parser::Statement() {
 Parser::NodePtr Parser::IfBlock() {
     if (!Eat(Lexer::Tokens::T_IF)) { throw ParserError{}; }
 
-    auto condition = Expr();
+    auto condition = std::make_unique<BinaryOp>(
+        Lexer::Tokens::T_COMP_EQUAL,
+        Expr(),
+        std::make_unique<BoolLiteral>(true, token),
+        token
+    );
     if (!Eat(Lexer::Tokens::T_THEN)) {
         throw Errors::ParserErrors::ExpectedThen{};
     } GetTraitedToken();
@@ -289,7 +294,12 @@ Parser::NodePtr Parser::IfBlock() {
     while (token.token == Lexer::Tokens::T_ELSE_IF) {
         if (!Eat(token.token)) { throw ParserError{}; }
 
-        condition = Expr();
+        condition = std::make_unique<BinaryOp>(
+            Lexer::Tokens::T_COMP_EQUAL,
+            Expr(),
+            std::make_unique<BoolLiteral>(true, token),
+            GetTraitedToken()
+        );
         if (!Eat(Lexer::Tokens::T_THEN)) {
             throw Errors::ParserErrors::ExpectedThen{};
         } GetTraitedToken();
@@ -298,8 +308,15 @@ Parser::NodePtr Parser::IfBlock() {
     if (token.token == Lexer::Tokens::T_ELSE) {
         if (!Eat(token.token)) { throw ParserError{}; }
 
+        condition = std::make_unique<BinaryOp>(
+            Lexer::Tokens::T_COMP_EQUAL,
+            std::make_unique<BoolLiteral>(true, token),
+            std::make_unique<BoolLiteral>(true, token),
+            GetTraitedToken()
+        );
+
         if_block.data.push_back(std::make_unique<If>(
-            std::make_unique<BoolLiteral>(true, Lexer::Token(token)),
+            std::move(condition),
             Block(),
             GetTraitedToken()
         ));
@@ -308,13 +325,13 @@ Parser::NodePtr Parser::IfBlock() {
     return std::make_unique<Compound>(std::move(if_block));
 }
 
-// ForBlock: T_FOR VarExpr T_IN VarExpr BLOCK T_FOR_END
+// ForBlock: T_FOR Expr T_IN Expr BLOCK T_FOR_END
 Parser::NodePtr Parser::ForBlock() {
     if (!Eat(Lexer::Tokens::T_FOR)) { throw ParserError{}; }
 
-    auto iterator = VarExpr();
+    auto iterator = Expr();
     if (!Eat(Lexer::Tokens::T_IN)) { throw Errors::ParserErrors::ExpectedIn{}; } GetTraitedToken();
-    auto range = VarExpr();
+    auto range = Expr();
 
     For for_block = For(std::move(iterator), std::move(range), Block(), GetTraitedToken());
     if (!Eat(Lexer::Tokens::T_END_FOR)) { throw Errors::ParserErrors::ExpectedEndFor{}; } GetTraitedToken();
@@ -393,7 +410,7 @@ Parser::NodePtr Parser::Block() {
     && token.token != Lexer::Tokens::T_END_FOR && token.token != Lexer::Tokens::T_END_FUNC
     && token.token != Lexer::Tokens::T_EOF) {
         if (token.token == Lexer::Tokens::T_EOL) {
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
         } else {
             node.data.push_back(StatementList());
         }

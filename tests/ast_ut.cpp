@@ -271,13 +271,21 @@ TEST(AstSerialization, IfStatement) {
                 }},
                 {"condition", {
                     {"left", {
-                        {"id", "cond"},
-                        {"type", "Var"}
+                        {"left", {
+                            {"id", "cond"},
+                            {"type", "Var"}
+                        }},
+                        {"operator", "=="},
+                        {"right", {
+                            {"type", "Num Literal"},
+                            {"value", 1.0}
+                        }},
+                        {"type", "Binary Op"}
                     }},
                     {"operator", "=="},
                     {"right", {
-                        {"type", "Num Literal"},
-                        {"value", 1.0}
+                        {"type", "Bool Literal"},
+                        {"value", "true"}
                     }},
                     {"type", "Binary Op"}
                 }},

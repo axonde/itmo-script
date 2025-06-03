@@ -42,7 +42,9 @@ public:
     struct Node {
         Node(Nodes n) : node(n) {}
         Node(Nodes n, Lexer::Token&& t) : node(n), type(TYPES::NOT_SET_TYPE), token(std::move(t)) {}
+        Node(Nodes n, const Lexer::Token& t) : node(n), type(TYPES::NOT_SET_TYPE), token(t) {}
         Node(Nodes n, TYPES t, Lexer::Token&& tkn) : node(n), type(t), token(std::move(tkn)) {}
+        Node(Nodes n, TYPES t, const Lexer::Token& tkn) : node(n), type(t), token(tkn) {}
 
         Nodes node;
         TYPES type;
@@ -76,13 +78,17 @@ public:
         std::string value;
     };
     struct BoolLiteral : Node {
+        BoolLiteral(bool v, const Lexer::Token& token)
+        : Node(Nodes::N_BOOL_LITERAL, TYPES::BOOL_TYPE, token), value(v) {}
         BoolLiteral(bool v, Lexer::Token&& token)
         : Node(Nodes::N_BOOL_LITERAL, TYPES::BOOL_TYPE, std::move(token)), value(v) {}
         
         bool value;
     };
     struct NilLiteral : Node {
-        NilLiteral(Lexer::Token&& token) : Node(Nodes::N_NIL_LITERAL, TYPES::NIL_TYPE, std::move(token)) {}
+        template<typename T>
+        requires std::same_as<std::remove_cvref_t<T>, Lexer::Token>
+        NilLiteral(T&& token) : Node(Nodes::N_NIL_LITERAL, TYPES::NIL_TYPE, std::forward<T>(token)) {}
     };
     struct Var : Node {
         Var(const std::string& id, Lexer::Token&& token) : Node(Nodes::N_VAR, std::move(token)), id(id) {}
@@ -105,9 +111,10 @@ public:
         NodePtr operand;
     };
     struct BinaryOp : Node {
-        BinaryOp(Lexer::Tokens o, NodePtr&& l, NodePtr&& r, Lexer::Token&& token)
-        : Node(Nodes::N_BINARY_OP, std::move(token))
-        , op(o), left(std::move(l)), right(std::move(r)) {}
+        template<typename T>
+        requires std::same_as<std::remove_cvref_t<T>, Lexer::Token>
+        BinaryOp(Lexer::Tokens o, NodePtr&& l, NodePtr&& r, T&& token)
+        : Node(Nodes::N_BINARY_OP, std::forward<T>(token)), op(o), left(std::move(l)), right(std::move(r)) {}
 
         Lexer::Tokens op;
         NodePtr left;
@@ -129,7 +136,7 @@ public:
         If(NodePtr&& c, NodePtr&& b, Lexer::Token token)
         : Node(Nodes::N_IF, std::move(token)), condition(std::move(c)), body(std::move(b)) {}
 
-        NodePtr condition;  // should be a bool type in run-time
+        NodePtr condition;
         NodePtr body;
     };
 
@@ -139,7 +146,7 @@ public:
         For(NodePtr&& i, NodePtr&& r, NodePtr&& b, Lexer::Token token)
         : Node(Nodes::N_FOR, std::move(token)), iterator(std::move(i)), range(std::move(r)), body(std::move(b)) {}
         
-        NodePtr iterator;  // should be a var symbol (+ num type) in run-time
+        NodePtr iterator;
         NodePtr range;
         NodePtr body;
     };

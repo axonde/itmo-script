@@ -94,7 +94,7 @@ TEST(LoopTestSuit, ForLoop) {
 TEST(LoopTestSuit, WhileLoop) {
     std::string code = R"(
         s = "ITMO"
-        while  len(s) < 12
+        while len(s) < 12
             s = s * 2
         end while
         print(s)
