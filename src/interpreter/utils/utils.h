@@ -25,7 +25,6 @@ namespace Errors {
         std::cout << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
     }
 
-// переделать на строковые литералы const char*
     struct Error {
         Error() = default;
         Error(const std::string& e) : error(e) {}
@@ -161,10 +160,6 @@ namespace Errors {
         struct WrongArgumentCount : Error {
             const char* what() const override { return "arguments count on calling function does not match"; }
         };
-        struct UncaughtReturn : Error {
-            const char* what() const override { return "uncaughted return statement"; }
-            std::any holder_pack;
-        };
     }
 
     namespace InternalErrors {
@@ -184,7 +179,38 @@ inline void PrintError(std::string header, Errors::Error* error, size_t pos, siz
 
 } // end Errors
 
+namespace Closures {
+
+struct Closure {
+    Closure(std::any t) : token(std::move(t)) {}
+    virtual const char* what() const { return closure.c_str(); }
+    virtual ~Closure() = default;
+
+    std::string closure = "uncaughted ? closure";
+    std::any token;
+};
+
+struct Return : Closure {
+    Return(std::any hp, std::any t) : Closure(std::move(t)), holder_pack(std::move(hp)) {}
+    const char* what() const override { return "uncaught return closure"; }
+    std::any holder_pack;
+};
+
+struct Break : Closure {
+    Break(std::any t) : Closure(std::move(t)) {}
+    const char* what() const override { return "uncaught break closure"; }
+};
+
+struct Continue : Closure {
+    Continue(std::any t) : Closure(std::move(t)) {}
+    const char* what() const override { return "uncaught continue closure"; }
+};
+
+} // end Closures
+
 using Error = Errors::Error;
 using ParserError = Errors::ParserErrors::Panic;
 using InternalError = Errors::InternalErrors::InternalError;
 using OutOfRange = Errors::RunTime::OutOfRange;
+
+using Closure = Closures::Closure;

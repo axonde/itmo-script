@@ -84,7 +84,13 @@ bool Interpret(std::string& program, std::istream& input, std::ostream& output) 
 
 
 Runner::Expected Runner::Run() {
-    return Visit(parser.root);
+    try {
+        return Visit(parser.root);
+    } catch (Closure& c) {
+        return std::unexpected(Lexer::Token(
+            Error(c.what()), std::any_cast<Lexer::Token&>(c.token)
+        ));
+    }
 }
 
 Runner::Expected Runner::Visit(Runner::NodePtr& node) {
@@ -176,10 +182,7 @@ Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
         return Interpreter::stack_frame->Lookup(id);
     } catch (Errors::MemoryErrors::NotFound e) {
         return std::unexpected(Lexer::Token(std::move(e), node->token));
-     } //catch (...) {
-    //     std::cout << "gabella"
-    //     return std::unexpected(Lexer::Token(InternalError(), node->token));
-    // }
+    }
 }
 Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
     std::cout << "visit list\n";
@@ -271,7 +274,10 @@ Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
 
 /// CLOSURE STATEMENTS
 Runner::Expected Runner::VisitReturn(Parser::NodePtr& node) {
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    Parser::Return* ptr = static_cast<Parser::Return*>(node.get());
+    auto expr_expected = Visit(ptr->expr);
+    if (!expr_expected) { return std::unexpected(expr_expected.error()); }
+    throw Closures::Return(std::move(*expr_expected), node->token);
 }
 Runner::Expected Runner::VisitBreak(Parser::NodePtr& node) {
     return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
@@ -337,8 +343,8 @@ Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHo
     HolderPack result = Memory::MakeHolderPack(TYPES::NIL_TYPE);
     try {
         Visit(func_instance->body);
-    } catch (const Errors::RunTime::UncaughtReturn& e) {
-        result = std::any_cast<HolderPack>(e.holder_pack);
+    } catch (Closures::Return& r) {
+        result = std::any_cast<HolderPack&>(r.holder_pack);
     }
     
     Interpreter::stack_frame = std::move(Interpreter::stack_frame->parent);

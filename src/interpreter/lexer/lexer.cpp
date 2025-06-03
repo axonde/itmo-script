@@ -237,9 +237,9 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryKeyWords(std::string str) {
     }
 
     if (auto iter = key_words_.find(str); iter == key_words_.end()) {
-        return Token(Errors::LexerErrors::LexerKeyWordError(), pos, lineno);
+        return Token(Errors::LexerErrors::LexerKeyWordError(), column, lineno);
     } else {
-        return Token(static_cast<Tokens>(iter->second), pos, lineno);
+        return Token(static_cast<Tokens>(iter->second), column, lineno);
     }
 }
 

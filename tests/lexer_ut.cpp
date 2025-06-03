@@ -171,3 +171,33 @@ TEST(LexerTokenTest, MultiLinePosTrackerWithSpace) {
 
     ASSERT_EQ(positions, expected_positions);
 }
+
+TEST(LexerTokenTest, MultiLinePosTrackerFunction) {
+     std::string program = R"(function(a, b)
+  a = 1
+end function)";
+
+    std::vector<Token> computed = MakeTokensVector(std::move(program));
+    auto transformed = computed | std::views::transform([](const Lexer::Token& token) {
+        return std::make_pair(token.lineno, token.column);
+    });
+    std::vector<std::pair<size_t, size_t>> positions(transformed.begin(), transformed.end());
+
+    std::vector<std::pair<size_t, size_t>> expected_positions = {
+        {1, 9},     // T_FUNC
+        {1, 10},    // T_LEFT_BRACKET
+        {1, 11},    // T_VAR
+        {1, 12},    // T_COMMA
+        {1, 14},    // T_VAR
+        {1, 15},    // T_RIGHT_BRACKET
+        {2, 1},     // T_EOL
+        {2, 4},     // T_VAR
+        {2, 6},     // T_EQUAL
+        {2, 8},     // T_NUM
+        {3, 1},     // T_EOL
+        {3, 13},    // T_END_FUNC
+        {3, 13}     // T_EOF
+    };
+
+    ASSERT_EQ(positions, expected_positions);
+}
