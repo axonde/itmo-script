@@ -24,7 +24,6 @@ public:
         N_BINARY_OP,
         N_SUBSCRIPT,
 
-        N_IF_BLOCK,
         N_IF,
 
         N_FOR,
@@ -134,17 +133,18 @@ public:
     };
 
     struct If : Node {
-        If(NodePtr&& c, NodePtr&& b, Lexer::Token&& token)
-        : Node(Nodes::N_IF, std::move(token)), condition(std::move(c)), body(std::move(b)) {}
+        If() : Node(Nodes::N_IF) {}
+        If(If&&) = default;
 
-        NodePtr condition;
-        NodePtr body;
-    };
-    struct IfBlock : Node {
-        IfBlock() : Node(Nodes::N_IF_BLOCK) {}
-        IfBlock(IfBlock&&) = default;
+        struct IfCase {
+            IfCase(NodePtr&& c, NodePtr&& b)
+            : condition(std::move(c)), body(std::move(b)) {}
 
-        std::vector<If> data;
+            NodePtr condition;
+            NodePtr body;
+        };
+
+        std::vector<IfCase> cases;
     };
 
     /// Cycles
@@ -213,7 +213,7 @@ public:
     NodePtr ContinueExpr();
 
     NodePtr Statement();
-    NodePtr IfExpr();
+    NodePtr IfBlock();
     NodePtr ForBlock();
     NodePtr WhileBlock();
 

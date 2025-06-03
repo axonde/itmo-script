@@ -276,22 +276,22 @@ Parser::NodePtr Parser::Statement() {
 }
 
 // IfExpr: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
-Parser::NodePtr Parser::IfExpr() {
+Parser::NodePtr Parser::IfBlock() {
     if (!Eat(Lexer::Tokens::T_IF)) { throw ParserError{}; }
 
     auto condition = std::make_unique<BinaryOp>(
         Lexer::Tokens::T_COMP_EQUAL,
         Expr(),
         std::make_unique<BoolLiteral>(true, token),
-        token
+        GetTraitedToken()
     );
     if (!Eat(Lexer::Tokens::T_THEN)) {
         throw Errors::ParserErrors::ExpectedThen{};
     } GetTraitedToken();
 
-    IfBlock if_block;
-    if_block.data.push_back(If(std::move(condition), Block(), GetTraitedToken()));
-    
+    If if_block;
+    if_block.cases.push_back(If::IfCase(std::move(condition), Block()));
+
     while (token.token == Lexer::Tokens::T_ELSE_IF) {
         if (!Eat(token.token)) { throw ParserError{}; }
 
@@ -299,12 +299,12 @@ Parser::NodePtr Parser::IfExpr() {
             Lexer::Tokens::T_COMP_EQUAL,
             Expr(),
             std::make_unique<BoolLiteral>(true, token),
-            token
+            GetTraitedToken()
         );
         if (!Eat(Lexer::Tokens::T_THEN)) {
             throw Errors::ParserErrors::ExpectedThen{};
         } GetTraitedToken();
-        if_block.data.push_back(If(std::move(condition), Block(), GetTraitedToken()));
+        if_block.cases.push_back(If::IfCase(std::move(condition), Block()));
     }
     if (token.token == Lexer::Tokens::T_ELSE) {
         if (!Eat(token.token)) { throw ParserError{}; }
@@ -316,14 +316,15 @@ Parser::NodePtr Parser::IfExpr() {
             GetTraitedToken()
         );
 
-        if_block.data.push_back(If(
+        if_block.cases.push_back(If::IfCase(
             std::move(condition),
-            Block(),
-            GetTraitedToken()
+            Block()
         ));
     }
-    if (!Eat(Lexer::Tokens::T_END_IF)) { throw Errors::ParserErrors::ExpectedEndIf{}; }
-    return std::make_unique<IfBlock>(std::move(if_block));
+    if (!Eat(Lexer::Tokens::T_END_IF)) {
+        throw Errors::ParserErrors::ExpectedEndIf{};
+    } GetTraitedToken();
+    return std::make_unique<If>(std::move(if_block));
 }
 
 // ForBlock: T_FOR Expr T_IN Expr BLOCK T_FOR_END
@@ -399,7 +400,7 @@ Parser::NodePtr Parser::FuncExpr() {
 Parser::NodePtr Parser::StatementList() {
     switch (token.token) {
         case Lexer::Tokens::T_IF:
-            return IfExpr();
+            return IfBlock();
         case Lexer::Tokens::T_FOR:
             return ForBlock();
         case Lexer::Tokens::T_WHILE:
