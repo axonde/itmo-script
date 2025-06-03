@@ -155,7 +155,7 @@ public:
         While(NodePtr&& c, NodePtr&& b, Lexer::Token token)
         : Node(Nodes::N_WHILE, std::move(token)), condition(std::move(c)), body(std::move(b)) {}
         
-        NodePtr condition;  // should be a bool type in run-time
+        NodePtr condition;
         NodePtr body;
     };
     struct Break : Node {

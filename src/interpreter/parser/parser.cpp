@@ -298,7 +298,7 @@ Parser::NodePtr Parser::IfBlock() {
             Lexer::Tokens::T_COMP_EQUAL,
             Expr(),
             std::make_unique<BoolLiteral>(true, token),
-            GetTraitedToken()
+            token
         );
         if (!Eat(Lexer::Tokens::T_THEN)) {
             throw Errors::ParserErrors::ExpectedThen{};
@@ -342,7 +342,13 @@ Parser::NodePtr Parser::ForBlock() {
 Parser::NodePtr Parser::WhileBlock() {
     if (!Eat(Lexer::Tokens::T_WHILE)) { throw ParserError{}; }
 
-    auto condition = Expr();
+    auto condition = std::make_unique<BinaryOp>(
+        Lexer::Tokens::T_COMP_EQUAL,
+        Expr(),
+        std::make_unique<BoolLiteral>(true, token),
+        token
+    );
+
     While while_block = While(std::move(condition), Block(), GetTraitedToken());
     if (!Eat(Lexer::Tokens::T_END_WHILE)) { throw Errors::ParserErrors::ExpectedEndWhile{}; } GetTraitedToken();
     return std::make_unique<While>(std::move(while_block));

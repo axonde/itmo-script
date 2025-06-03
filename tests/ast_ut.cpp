@@ -232,8 +232,16 @@ TEST(AstSerialization, WhileCycle) {
                 {"type", "compound"}
             }},
             {"condition", {
-                {"type", "Bool Literal"},
-                {"value", "true"}
+                {"left", {
+                    {"type", "Bool Literal"},
+                    {"value", "true"}
+                }},
+                {"operator", "=="},
+                {"right", {
+                    {"type", "Bool Literal"},
+                    {"value", "true"}
+                }},
+                {"type", "Binary Op"}
             }},
             {"type", "While Block"}
         }}},
@@ -421,7 +429,7 @@ TEST(AstSerialization, WrongSyntaxForStatementExpr) {
     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
 
     json expected = {
-        {"error", "expected variable expression"},
+        {"error", "cannot correctly evaluate expression"},
         {"type", "BAD"}
     };
 
@@ -438,7 +446,7 @@ TEST(AstSerialization, WrongSyntaxForStatementRange) {
     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
 
     json expected = {
-        {"error", "expected variable expression"},
+        {"error", "cannot correctly evaluate expression"},
         {"type", "BAD"}
     };
 

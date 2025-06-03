@@ -94,8 +94,6 @@ Runner::Expected Runner::Run() {
 }
 
 Runner::Expected Runner::Visit(Runner::NodePtr& node) {
-    std::cout << "visit ...\n\t";
-
     switch (node->node) {
         case Parser::Nodes::N_NUM_LITERAL:
             return VisitNumLiteral(node);
@@ -147,36 +145,26 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
 
 /// LITERALS
 Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
-    std::cout << "visit num literal\n";
-
     Parser::NumLiteral* num_literal = static_cast<Parser::NumLiteral*>(node.get());
     return { std::make_shared<RawHolderPack>(num_literal->value, TYPES::NUM_TYPE) };
 }
 
 Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
-    std::cout << "visit str literal\n";
-
     Parser::StringLiteral* str_literal = static_cast<Parser::StringLiteral*>(node.get());
     return { std::make_shared<RawHolderPack>(str_literal->value, TYPES::STRING_TYPE) };
 }
 
 Runner::Expected Runner::VisitBoolLiteral(Runner::NodePtr& node) {
-    std::cout << "visit bool literal\n";
-
     Parser::BoolLiteral* bool_literal = static_cast<Parser::BoolLiteral*>(node.get());
     return { std::make_shared<RawHolderPack>(bool_literal->value, TYPES::BOOL_TYPE) };
 }
 
 Runner::Expected Runner::VisitNilLiteral(Runner::NodePtr& node) {
-    std::cout << "visit nil literal\n";
-
-    return { std::make_shared<RawHolderPack>(TYPES::NIL_TYPE) };
+    return { Memory::MakeHolderPack(TYPES::NIL_TYPE) };
 }
 
 /// LITERAL EXPR
 Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
-    std::cout << "visit var\n";
-
     std::string_view id = static_cast<Parser::Var*>(node.get())->id;
     try {
         return Interpreter::stack_frame->Lookup(id);
@@ -185,8 +173,6 @@ Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
     }
 }
 Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
-    std::cout << "visit list\n";
-
     Parser::List* list = static_cast<Parser::List*>(node.get());
     std::vector<HolderPack> data;
     for (auto& child : list->data) {
@@ -197,7 +183,7 @@ Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
             return std::unexpected(visited.error());
         }
     }
-    return { std::make_shared<RawHolderPack>(
+    return { Memory::MakeHolderPack(
         Memory::MakeList(std::move(data)),
         TYPES::LIST_TYPE
     ) };
@@ -205,8 +191,6 @@ Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
 
 /// OPERATIONS
 Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
-    std::cout << "visit unary\n";
-
     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
     auto computed_operand = Visit(ptr->operand);
     if (computed_operand) {
@@ -220,8 +204,6 @@ Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
     }
 }
 Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
-    std::cout << "visit binary\n";
-
     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
     auto computed_left = Visit(ptr->left);
     auto computed_right = Visit(ptr->right);
@@ -234,15 +216,12 @@ Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
         }
     } else {
         if (!computed_left) {
-            // we need to create instance!
             return std::unexpected(std::move(computed_left.error()));
         }
         return std::unexpected(std::move(computed_right.error()));
     }
 }
 Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
-    std::cout << "visit subscript\n";
-
     Parser::Subscript* ptr = static_cast<Parser::Subscript*>(node.get());
 
     Expected var_expr_exp = Visit(ptr->var_expr);
@@ -317,41 +296,47 @@ Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
     return Memory::MakeHolderPack();
 }
 Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
+    auto ptr = static_cast<Parser::While*>(node.get());
 
-    // here we go again
-
-    return std::unexpected(Lexer::Token(Errors::InternalErrors::NotImplemented(), node->token));
+    Runner::Expected condition_expected;
+    while (true) {
+        condition_expected = Visit(ptr->condition);
+        if (!condition_expected) { return std::unexpected(condition_expected.error()); }
+        auto condition = *condition_expected;
+        if (std::get<bool>(condition->holder)) {
+            try {
+                if (auto visited = Visit(ptr->body); !visited) {
+                    return std::unexpected(visited.error());
+                }
+            }
+            catch (Closures::Break&) { break; }
+            catch (Closures::Continue&) {}  // continue too.
+            continue;
+        }
+        break;
+    }
+    return Memory::MakeHolderPack();
 }
 
 /// CLOSURE STATEMENTS
 Runner::Expected Runner::VisitReturn(Parser::NodePtr& node) {
-    std::cout << "visit return\n";
-
     Parser::Return* ptr = static_cast<Parser::Return*>(node.get());
     auto expr_expected = Visit(ptr->expr);
     if (!expr_expected) { return std::unexpected(expr_expected.error()); }
     throw Closures::Return(std::move(*expr_expected), node->token);
 }
 Runner::Expected Runner::VisitBreak(Parser::NodePtr& node) {
-    std::cout << "visit Break\n";
-
     throw Closures::Break(node->token);
 }
 Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
-    std::cout << "visit continue\n";
-
     throw Closures::Continue(node->token);
 }
 
 /// FUNCTIONS
 Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
-    std::cout << "visit func declaration\n";
-
     return Memory::MakeHolderPack( Memory::MakeFunc(node.get()), TYPES::FUNC_TYPE );
 }
 Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
-    std::cout << "visit func call\n";
-
     auto ptr = static_cast<Parser::FuncCall*>(node.get());
     auto func_expected = Visit(ptr->func);
     if (!func_expected) { return std::unexpected(func_expected.error()); }
@@ -415,8 +400,6 @@ Runner::Expected Runner::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::Fun
 }
 
 Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
-    std::cout << "visit compound\n";
-
     Parser::Compound* cmpd = static_cast<Parser::Compound*>(node.get());
     for (auto& child : cmpd->data) {
         if (auto visited = Visit(child); !visited) {
