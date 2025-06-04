@@ -174,10 +174,80 @@ HolderPack to_string = HolderPack(
 );
 
 // STRING AWARE FUNCTIONS
-HolderPack lower;
-HolderPack upper;
-HolderPack split;
-HolderPack join;
+/// @brief  lower(str)
+/// @return create a lowercase-ed str
+HolderPack lower = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+            auto range = std::get<std::string>(params[0]->holder)
+            | std::views::transform([](unsigned char s) { return std::tolower(s); });
+
+            return HolderPack(std::string(range.begin(), range.end()), TYPES::STRING_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  upper(str)
+/// @return create a uppercase-ed str
+HolderPack upper = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+            auto range = std::get<std::string>(params[0]->holder)
+            | std::views::transform([](unsigned char s) { return std::toupper(s); });
+            
+            return HolderPack(std::string(range.begin(), range.end()), TYPES::STRING_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  split(str)
+/// @return split a string by blank characters
+HolderPack split = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+            std::vector<std::string> splitted = Utils::Split(std::get<std::string>(params[0]->holder), &std::isblank);
+            auto range = splitted | std::views::transform([](std::string s) {
+                return HolderPack(std::move(s), TYPES::STRING_TYPE); });
+            
+            return HolderPack(MakeListHolder(std::vector(range.begin(), range.end())), TYPES::LIST_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  join(list, delim[default=""])
+/// @return assemble a string by giving parts in list by delim
+HolderPack join = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() < 1 || params.size() > 2) { throw Errors::RunTime::ExpectedFromOneOrTwoArgs(); }
+            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+            std::string delim;
+            if (params.size() > 1) {
+                if (params[1]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+                delim = std::get<std::string>(params[1]->holder);
+            }
+            std::string result;
+            bool first = true;
+            for (auto& hp : std::get<ListHolderPtr>(params[0]->holder)->data) {
+                if (!first) { result += delim; }
+                if (hp->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+                result += std::get<std::string>(hp->holder);
+                first = false;
+            }
+            return HolderPack(std::move(result), TYPES::STRING_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief   replace(str, old, new)
+/// @return  find the closest to left str and change it to a new
+/// @details return new string
 HolderPack replace;
 
 // LIST AWARE FUNCTIONS

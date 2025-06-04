@@ -3,6 +3,7 @@
 
 using namespace Interpreter;
 
+// NUM
 TEST(NumStandartLibraryTest, Abs) {
     std::string code = R"( print(abs(-1)) )";
 
@@ -14,7 +15,6 @@ TEST(NumStandartLibraryTest, Abs) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
 TEST(NumStandartLibraryTest, Ceil) {
     std::string code = R"( print(ceil(4.43)) )";
 
@@ -26,7 +26,6 @@ TEST(NumStandartLibraryTest, Ceil) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
 TEST(NumStandartLibraryTest, Floor) {
     std::string code = R"(
         print(floor(2.5))
@@ -40,8 +39,6 @@ TEST(NumStandartLibraryTest, Floor) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
-
 TEST(NumStandartLibraryTest, Round) {
     std::string code = R"(
         print(round(2.5), round(2.4))
@@ -55,7 +52,6 @@ TEST(NumStandartLibraryTest, Round) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
 TEST(NumStandartLibraryTest, Sqrt) {
     std::string code = R"(
         print(sqrt(4), sqrt(2))
@@ -69,7 +65,6 @@ TEST(NumStandartLibraryTest, Sqrt) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
 TEST(NumStandartLibraryTest, Rnd) {
     std::string code = R"(
         a = rnd(100)
@@ -86,7 +81,6 @@ TEST(NumStandartLibraryTest, Rnd) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
 TEST(NumStandartLibraryTest, ParseNum) {
     std::string code = R"(
         a = "12.23"
@@ -101,7 +95,6 @@ TEST(NumStandartLibraryTest, ParseNum) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-
 TEST(NumStandartLibraryTest, ToString) {
     std::string code = R"(
         a = 12.23
@@ -109,6 +102,78 @@ TEST(NumStandartLibraryTest, ToString) {
     )";
 
     std::string expected = "\"12.230000\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+
+// STRING
+TEST(StringStandartLibraryTest, Lower) {
+    std::string code = R"(
+        a = "ITMO IS MORE THAN A UNIVERSITY"
+        print(lower(a))
+    )";
+
+    std::string expected = "\"itmo is more than a university\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(StringStandartLibraryTest, Upper) {
+    std::string code = R"(
+        a = "itmo is more than a university"
+        print(upper(a))
+    )";
+
+    std::string expected = "\"ITMO IS MORE THAN A UNIVERSITY\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(StringStandartLibraryTest, Split) {
+    std::string code = R"(
+        a = "itmo is more"
+        print(split(a))
+    )";
+
+    std::string expected = "[\"itmo\", \"is\", \"more\"]";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(StringStandartLibraryTest, Join) {
+    std::string code = R"(
+        list = ["itmo", "is", "more"]
+        print(join(list, " * "))
+    )";
+
+    std::string expected = "\"itmo * is * more\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(StringStandartLibraryTest, Replace) {
+    std::string code = R"(
+        a = "itmo is more"
+        print(split(a))
+    )";
+
+    std::string expected = "[\"itmo\", \"is\", \"more\"]";
 
     std::istringstream input(code);
     std::ostringstream output;

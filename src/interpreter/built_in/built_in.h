@@ -1,9 +1,10 @@
 #pragma once
-#include <any>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <functional>
 #include <random>
+#include <ranges>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -22,6 +23,7 @@ namespace BuiltIn {
 using HolderPack = Memory::HolderPack;
 using BuiltInFunction = Memory::BuiltInFunction;
 using Memory::MakeFuncHolder;
+using Memory::MakeListHolder;
 
 using ListHolderPtr = Memory::ListHolderPtr;
 using FuncHolderPtr = Memory::FuncHolderPtr;

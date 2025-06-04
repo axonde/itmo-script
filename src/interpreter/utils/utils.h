@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace Patterns {
     static std::string RED = "\e[1;31m";
@@ -133,7 +134,7 @@ namespace Errors {
 
     namespace TypeErrors {
         struct TypeErrorNum : Error {
-            const char* what() const override { return "expression must to be a number"; }
+            const char* what() const override { return "expression should be a number"; }
         };
         struct NonPositiveNumber : Error {
             const char* what() const override { return "number should be positive"; }
@@ -143,11 +144,15 @@ namespace Errors {
         };
 
         struct TypeErrorString : Error {
-            const char* what() const override { return "expression must to be a string"; }
+            const char* what() const override { return "expression should be a string"; }
         };
 
-        struct ExpectedFuncType : Error {
-            const char* what() const override { return "expected function type"; }
+        struct TypeErrorList : Error {
+            const char* what() const override { return "expression should be a list"; }
+        };
+
+        struct TypeErrorFunc : Error {
+            const char* what() const override { return "expression should be a func"; }
         };
 
         struct TypeErrorStringOrList : Error {
@@ -167,6 +172,9 @@ namespace Errors {
         };
         struct ExpectedAtLeastOneArg : Error {
             const char* what() const override { return "expected at lease one arg for call"; }
+        };
+        struct ExpectedFromOneOrTwoArgs : Error {
+            const char* what() const override { return "expected one or two args for call"; }
         };
         struct ExpectedFromOneToThreeArgs : Error {
             const char* what() const override { return "expected from one to three args for call"; }
@@ -237,3 +245,20 @@ using InternalError = Errors::InternalErrors::InternalError;
 using OutOfRange = Errors::RunTime::OutOfRange;
 
 using Closure = Closures::Closure;
+
+namespace Utils {
+
+template<typename Comp>
+std::vector<std::string> Split(const std::string& string, const Comp& comp) {
+    std::vector<std::string> splitted_string;
+    int l = 0;
+    for (int r = 0; r != string.size() + 1; r++) {
+        if (r == string.size() || comp(string[r])) {
+            splitted_string.push_back(string.substr(l, r - l));
+            l = r + 1;
+        }
+    }
+    return splitted_string;
+}
+
+}  // end Utils

@@ -319,7 +319,7 @@ Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
     if (!func_expected) { return std::unexpected(func_expected.error()); }
     HolderPack& func = *func_expected;
     if (func->type != TYPES::FUNC_TYPE) {
-        return std::unexpected(Lexer::Token(Errors::TypeErrors::ExpectedFuncType(), node->token));
+        return std::unexpected(Lexer::Token(Errors::TypeErrors::TypeErrorFunc(), node->token));
     }
 
     std::vector<HolderPack> params;
