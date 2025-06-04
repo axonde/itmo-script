@@ -19,6 +19,7 @@ add_executable(
   function_test.cpp
   types_test.cpp
   loop_and_branch_test.cpp
+  standart_library_ut.cpp
 )
 
 target_link_libraries(

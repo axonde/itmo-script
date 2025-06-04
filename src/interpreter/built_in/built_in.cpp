@@ -14,11 +14,110 @@ std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
 namespace BuiltIn {
 
 // NUMBER AWARE FUNCTIONS
-HolderPack abs;
-HolderPack ceil;
-HolderPack floor;
-HolderPack round;
-HolderPack sqrt;
+/// @brief  absolute value of num (abs)
+/// @return single number if one argument is addressed
+/// @return list of abs values otherwise
+HolderPack abs = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() == 0) { throw Errors::RunTime::ExpectedAtLeastOneArg(); }
+            for (auto& holderpack : params) {
+                if (holderpack->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            }
+            if (params.size() == 1) {
+                return {std::abs(std::get<double>(params[0]->holder)), TYPES::NUM_TYPE};
+            }
+            std::vector<HolderPack> calcs;
+            for (auto& hp : params) {
+                calcs.emplace_back(std::abs(std::get<double>(hp->holder)), TYPES::NUM_TYPE);
+            }
+            return HolderPack(MakeListHolder(std::move(calcs)), TYPES::LIST_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  ceil value of num
+/// @return single number if one argument is addressed
+/// @return list of ceil values otherwise
+HolderPack ceil = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() == 0) { throw Errors::RunTime::ExpectedAtLeastOneArg(); }
+            for (auto& holderpack : params) {
+                if (holderpack->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            }
+            if (params.size() == 1) {
+                return {std::ceil(std::get<double>(params[0]->holder)), TYPES::NUM_TYPE};
+            }
+            std::vector<HolderPack> calcs;
+            for (auto& hp : params) {
+                calcs.emplace_back(std::ceil(std::get<double>(hp->holder)), TYPES::NUM_TYPE);
+            }
+            return HolderPack(MakeListHolder(std::move(calcs)), TYPES::LIST_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  floor value of num
+/// @return single number if one argument is addressed
+/// @return list of floor values otherwise
+HolderPack floor = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() == 0) { throw Errors::RunTime::ExpectedAtLeastOneArg(); }
+            for (auto& holderpack : params) {
+                if (holderpack->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            }
+            if (params.size() == 1) {
+                return {std::floor(std::get<double>(params[0]->holder)), TYPES::NUM_TYPE};
+            }
+            std::vector<HolderPack> calcs;
+            for (auto& hp : params) {
+                calcs.emplace_back(std::floor(std::get<double>(hp->holder)), TYPES::NUM_TYPE);
+            }
+            return HolderPack(MakeListHolder(std::move(calcs)), TYPES::LIST_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+HolderPack round = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() == 0) { throw Errors::RunTime::ExpectedAtLeastOneArg(); }
+            for (auto& holderpack : params) {
+                if (holderpack->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            }
+            if (params.size() == 1) {
+                return {std::round(std::get<double>(params[0]->holder)), TYPES::NUM_TYPE};
+            }
+            std::vector<HolderPack> calcs;
+            for (auto& hp : params) {
+                calcs.emplace_back(std::round(std::get<double>(hp->holder)), TYPES::NUM_TYPE);
+            }
+            return HolderPack(MakeListHolder(std::move(calcs)), TYPES::LIST_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+HolderPack sqrt = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() == 0) { throw Errors::RunTime::ExpectedAtLeastOneArg(); }
+            for (auto& holderpack : params) {
+                if (holderpack->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            }
+            if (params.size() == 1) {
+                return {std::sqrt(std::get<double>(params[0]->holder)), TYPES::NUM_TYPE};
+            }
+            std::vector<HolderPack> calcs;
+            for (auto& hp : params) {
+                calcs.emplace_back(std::sqrt(std::get<double>(hp->holder)), TYPES::NUM_TYPE);
+            }
+            return HolderPack(MakeListHolder(std::move(calcs)), TYPES::LIST_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
 HolderPack rnd;
 HolderPack parse_num;
 HolderPack to_string;

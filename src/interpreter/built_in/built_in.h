@@ -1,5 +1,6 @@
 #pragma once
 #include <any>
+#include <cmath>
 #include <functional>
 #include <span>
 #include <string>

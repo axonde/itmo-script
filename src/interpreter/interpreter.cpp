@@ -359,7 +359,9 @@ Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& fu
 
     HolderPack result = HolderPack(TYPES::NIL_TYPE);
     try {
-        Visit(func_instance->body);
+        if (auto visited = Visit(func_instance->body); !visited) {
+            return std::unexpected(visited.error());
+        }
     } catch (Closures::Return& r) {
         result = std::move(std::any_cast<HolderPack&>(r.holder_pack));
     }
