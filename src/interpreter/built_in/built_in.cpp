@@ -246,9 +246,29 @@ HolderPack join = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief   replace(str, old, new)
-/// @return  find the closest to left str and change it to a new
+/// @return  finds the closest to left str and changes it to a new (or do not change otherwise)
 /// @details return new string
-HolderPack replace;
+HolderPack replace = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 3) { throw Errors::RunTime::ExpectedThreeArg(); }
+            for (auto& hp : params) {
+                if (hp->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+            }
+            auto& str = std::get<std::string>(params[0]->holder);
+            auto& to_delete = std::get<std::string>(params[1]->holder);
+            auto& to_replace = std::get<std::string>(params[2]->holder);
+            if (size_t pos = str.find(to_delete); pos != std::string::npos) {
+                return HolderPack(
+                    str.substr(0, pos) + to_replace + str.substr(pos + to_delete.size(), str.size()),
+                    TYPES::STRING_TYPE
+                );
+            }
+            return HolderPack(str, TYPES::STRING_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
 
 // LIST AWARE FUNCTIONS
 /// @brief  range(start[default = 0], step, step[default = 1])

@@ -170,6 +170,9 @@ namespace Errors {
         struct ExpectedOneArg : Error {
             const char* what() const override { return "expected one arg for call"; }
         };
+        struct ExpectedThreeArg : Error {
+            const char* what() const override { return "expected three args for call"; }
+        };
         struct ExpectedAtLeastOneArg : Error {
             const char* what() const override { return "expected at lease one arg for call"; }
         };

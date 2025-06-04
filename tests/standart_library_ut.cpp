@@ -169,11 +169,11 @@ TEST(StringStandartLibraryTest, Join) {
 }
 TEST(StringStandartLibraryTest, Replace) {
     std::string code = R"(
-        a = "itmo is more"
-        print(split(a))
+        a = "itmo is more than an university!"
+        print(replace(a, "more", "better"))
     )";
 
-    std::string expected = "[\"itmo\", \"is\", \"more\"]";
+    std::string expected = "\"itmo is better than an university!\"";
 
     std::istringstream input(code);
     std::ostringstream output;
