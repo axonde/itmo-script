@@ -6,10 +6,11 @@ project(
 )
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(lib)
-add_subdirectory(lib)
-add_subdirectory(bin)
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
 
-enable_testing()
+add_subdirectory(src)
+
 add_subdirectory(tests)

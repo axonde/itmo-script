@@ -1,6 +1,7 @@
-#include <lib/interpreter.h>
+#include <interpreter>
 #include <gtest/gtest.h>
 
+using namespace Interpreter;
 
 TEST(TypesTestSuite, IntTest) {
     std::string code = R"(
@@ -15,6 +16,6 @@ TEST(TypesTestSuite, IntTest) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(interpret(input, output));
+    ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }

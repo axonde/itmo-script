@@ -1,0 +1,24 @@
+#include "memory.h"
+
+bool Memory::HolderPack::operator<(const Memory::HolderPack& other) const {
+    return std::get<bool>(
+        Operators::ExecBinaryOperation(Lexer::T_COMP_SMALLER, HolderPack(*this), HolderPack(other))->holder
+    );
+}
+
+Memory::HolderPack Memory::StackFrame::Lookup(std::string_view key) {
+    try {
+        return search(key);
+    } catch (const Errors::MemoryErrors::NotFound&) {
+        environment[std::string(key)] = HolderPack();
+        return environment[std::string(key)];
+    }
+}
+
+Memory::HolderPack Memory::StackFrame::search(std::string_view key) {
+    if (auto iter = environment.find(std::string(key)); iter != environment.end()) {
+        return iter->second;
+    }
+    if (parent != nullptr) { return parent->search(key); }
+    throw Errors::MemoryErrors::NotFound();
+}
