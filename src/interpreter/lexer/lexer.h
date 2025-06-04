@@ -197,6 +197,7 @@ private:
         {"function", Tokens::T_FUNC},
         {"return", Tokens::T_RETURN},
         {"end function", Tokens::T_END_FUNC},
+        {"end", Tokens::T_BAD},
 
     // logics
         {"and", Tokens::T_AND},

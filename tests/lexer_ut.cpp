@@ -98,7 +98,7 @@ TEST(LexerTokenizerTest, ForCycle) {
 
 TEST(LexerTokenizerTest, Functions) {
     std::string program = R"(
-        function calc(a, b)
+        function(a, b)
             return a + b
         end function
     )";
@@ -107,9 +107,21 @@ TEST(LexerTokenizerTest, Functions) {
 
     std::vector<Tokens> expected = {
         T_EOL,
-        T_FUNC, T_VAR, T_LEFT_BRACKET, T_VAR, T_COMMA, T_VAR, T_RIGHT_BRACKET, T_EOL,
+        T_FUNC, T_LEFT_BRACKET, T_VAR, T_COMMA, T_VAR, T_RIGHT_BRACKET, T_EOL,
         T_RETURN, T_VAR, T_PLUS, T_VAR, T_EOL,
         T_END_FUNC, T_EOL, T_EOF
+    };
+    ASSERT_EQ(computed, expected);
+}
+
+
+TEST(LexerTokenizerTest, EmptyFunction) {
+    std::string program = R"(function() end function)";
+
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+
+    std::vector<Tokens> expected = {
+        T_FUNC, T_LEFT_BRACKET, T_RIGHT_BRACKET, T_END_FUNC, T_EOF
     };
     ASSERT_EQ(computed, expected);
 }
