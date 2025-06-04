@@ -405,7 +405,7 @@ Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& va
     auto step_expected = (ptr->step) ? IntegerRequirement(ptr->step) : 1;
     if (!step_expected) { return std::unexpected(step_expected.error()); }
     if (*step_expected == 0) { return std::unexpected(Lexer::Token(
-        Errors::RunTime::SliceStep(), ptr->token
+        Errors::RunTime::ZeroStep(), ptr->token
     )); }
 
     int size;
@@ -449,7 +449,7 @@ std::expected<int, Lexer::Token> Runner::IntegerRequirement(NodePtr& node) {
     HolderPack& index = *index_expected;
     if (index->type != TYPES::NUM_TYPE) {
         return std::unexpected(Lexer::Token(
-            Errors::TypeErrors::TypeErrorInt(), node->token
+            Errors::TypeErrors::TypeErrorNum(), node->token
         ));
     }
     double raw_index = std::get<double>(index->holder);

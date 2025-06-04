@@ -44,35 +44,35 @@ TEST(SlicesTest, SliceConcept) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-// TEST(SlicesTest, SimpleCopy) {  /// NEED TO FIX CODE TO DOUBLE INDIRECTION PRINCIPE
-//     std::string code = R"(
-//         a = [1, 2, 3]
-//         b = a[:]
-//         c = a[::]
-//         print((b == a) and (c == a))
-//     )";
+TEST(SlicesTest, SimpleCopy) {
+    std::string code = R"(
+        a = [1, 2, 3]
+        b = a[:]
+        c = a[::]
+        print((b == a) and (c == a))
+    )";
 
-//     std::string expected = "true";
+    std::string expected = "true";
 
-//     std::istringstream input(code);
-//     std::ostringstream output;
+    std::istringstream input(code);
+    std::ostringstream output;
 
-//     ASSERT_TRUE(Interpret(input, output));
-//     ASSERT_EQ(output.str(), expected);
-// }
-// TEST(SlicesTest, CopyByRef) {
-//     std::string code = R"(
-//         a = [1, 2, 3]
-//         b = a[0:2]
-//         b = [5, 5]
-//         print(a)
-//     )";
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(SlicesTest, AssignmentNewInstance) {
+    std::string code = R"(
+        a = [1, 2, 3]
+        b = a[0:2]
+        b = [5, 5]
+        print(a)
+    )";
 
-//     std::string expected = "";
+    std::string expected = "[1, 2, 3]";
 
-//     std::istringstream input(code);
-//     std::ostringstream output;
+    std::istringstream input(code);
+    std::ostringstream output;
 
-//     ASSERT_TRUE(Interpret(input, output));
-//     ASSERT_EQ(output.str(), expected);
-// }
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}

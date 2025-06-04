@@ -132,7 +132,7 @@ namespace Errors {
     }
 
     namespace TypeErrors {
-        struct TypeErrorInt : Error {
+        struct TypeErrorNum : Error {
             const char* what() const override { return "expression must to be a number"; }
         };
         struct IndexNotInteger : Error {
@@ -157,7 +157,10 @@ namespace Errors {
         struct ExpectedOneArg : Error {
             const char* what() const override { return "expected one arg for call"; }
         };
-        struct SliceStep : Error {
+        struct ExpectedTwoOrThreeArgs : Error {
+            const char* what() const override { return "expected two or three args for call"; }
+        };
+        struct ZeroStep : Error {
             const char* what() const override { return "cannot have 0 as step"; }
         };
         struct WrongArgumentCount : Error {

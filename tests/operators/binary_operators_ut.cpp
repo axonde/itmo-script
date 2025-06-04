@@ -115,21 +115,21 @@ TEST(StringBinaryTest, AssignString) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
-// TEST(StringBinaryTest, ReassignString) {   // need to fix core memory system
-//     std::string code = R"(
-//         a = "abc"
-//         a = "123"
-//         print(a)
-//     )";
+TEST(StringBinaryTest, ReassignString) {
+    std::string code = R"(
+        a = "abc"
+        a = "123"
+        print(a)
+    )";
 
-//     std::string expected = "\"123\"";
+    std::string expected = "\"123\"";
 
-//     std::istringstream input(code);
-//     std::ostringstream output;
+    std::istringstream input(code);
+    std::ostringstream output;
 
-//     ASSERT_TRUE(Interpret(input, output));
-//     ASSERT_EQ(output.str(), expected);
-// }
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
 TEST(StringBinaryTest, StringPlusString) {
     std::string code = R"(print("abc" + "123"))";
 

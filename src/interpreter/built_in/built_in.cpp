@@ -31,7 +31,34 @@ HolderPack join;
 HolderPack replace;
 
 // LIST AWARE FUNCTIONS
-HolderPack range;
+HolderPack range = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 2 && params.size() != 3) { throw Errors::RunTime::ExpectedTwoOrThreeArgs(); }
+            if (params[0]->type != NUM_TYPE || params[1]->type != NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            double start = std::get<double>(params[0]->holder);
+            double end = std::get<double>(params[1]->holder);
+            double step = 1;
+            if (params.size() > 2) {
+                if (params[2]->type != NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+                step = std::get<double>(params[2]->holder);
+            }
+            if (step == 0) { throw Errors::RunTime::ZeroStep(); }
+            std::vector<HolderPack> range;
+            if (start < end) {
+                for (double i = start; i < end; i += step) {
+                    range.push_back(HolderPack(i, TYPES::NUM_TYPE));
+                }
+            } else {
+                for (double i = start; i > end; i += step) {
+                    range.push_back(HolderPack(i, TYPES::NUM_TYPE));
+                }
+            }
+            return {MakeListHolder(std::move(range)), TYPES::LIST_TYPE};
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
 HolderPack push;
 HolderPack pop;
 HolderPack insert;
