@@ -1,7 +1,9 @@
 #pragma once
 #include <any>
 #include <cmath>
+#include <cstdint>
 #include <functional>
+#include <random>
 #include <span>
 #include <string>
 #include <unordered_map>

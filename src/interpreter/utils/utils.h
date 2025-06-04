@@ -135,15 +135,23 @@ namespace Errors {
         struct TypeErrorNum : Error {
             const char* what() const override { return "expression must to be a number"; }
         };
+        struct NonPositiveNumber : Error {
+            const char* what() const override { return "number should be positive"; }
+        };
         struct IndexNotInteger : Error {
             const char* what() const override { return "index must be an integer"; }
         };
-        struct TypeErrorStringOrList : Error {
-            const char* what() const override { return "variable must be a string or list"; }
+
+        struct TypeErrorString : Error {
+            const char* what() const override { return "expression must to be a string"; }
         };
 
         struct ExpectedFuncType : Error {
             const char* what() const override { return "expected function type"; }
+        };
+
+        struct TypeErrorStringOrList : Error {
+            const char* what() const override { return "variable must be a string or list"; }
         };
     }
 
@@ -160,8 +168,8 @@ namespace Errors {
         struct ExpectedAtLeastOneArg : Error {
             const char* what() const override { return "expected at lease one arg for call"; }
         };
-        struct ExpectedTwoOrThreeArgs : Error {
-            const char* what() const override { return "expected two or three args for call"; }
+        struct ExpectedFromOneToThreeArgs : Error {
+            const char* what() const override { return "expected from one to three args for call"; }
         };
         struct ZeroStep : Error {
             const char* what() const override { return "cannot have 0 as step"; }

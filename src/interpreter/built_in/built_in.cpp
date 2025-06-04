@@ -80,6 +80,9 @@ HolderPack floor = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  round value of num
+/// @return single number if one argument is addressed
+/// @return list of round values otherwise
 HolderPack round = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -99,6 +102,9 @@ HolderPack round = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  sqrt value of num
+/// @return single number if one argument is addressed
+/// @return list of sqrt values otherwise
 HolderPack sqrt = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -118,9 +124,54 @@ HolderPack sqrt = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
-HolderPack rnd;
-HolderPack parse_num;
-HolderPack to_string;
+/// @brief  rnd(n)
+/// @brief  generate a random number from 0 to n - 1
+/// @return single number if one argument is addressed
+/// @return list of sqrt values otherwise
+HolderPack rnd = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            if (std::get<double>(params[0]->holder) <= 0) { throw Errors::TypeErrors::NonPositiveNumber(); }
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> distrib(0, static_cast<int64_t>(std::get<double>(params[0]->holder)));
+            return {static_cast<double>(distrib(gen)), TYPES::NUM_TYPE};
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  parse_num(str)
+/// @return convert str to number - if it possible
+/// @return nil - otherwise
+HolderPack parse_num = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
+            try {
+                double value = std::stod(std::get<std::string>(params[0]->holder));
+                return HolderPack(value, TYPES::NUM_TYPE);
+            } catch (...) {
+                return HolderPack(TYPES::NIL_TYPE);
+            }
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
+/// @brief  to_string(n)
+/// @return convert number to str
+HolderPack to_string = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            return HolderPack(std::to_string(std::get<double>(params[0]->holder)), TYPES::STRING_TYPE);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
 
 // STRING AWARE FUNCTIONS
 HolderPack lower;
@@ -130,13 +181,15 @@ HolderPack join;
 HolderPack replace;
 
 // LIST AWARE FUNCTIONS
+/// @brief  range(start[default = 0], step, step[default = 1])
+/// @return list of numbers (start, start + step, start + 2 * step, ...)
 HolderPack range = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
-            if (params.size() != 2 && params.size() != 3) { throw Errors::RunTime::ExpectedTwoOrThreeArgs(); }
-            if (params[0]->type != NUM_TYPE || params[1]->type != NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
-            double start = std::get<double>(params[0]->holder);
-            double end = std::get<double>(params[1]->holder);
+            if (params.size() < 1 || params.size() > 3) { throw Errors::RunTime::ExpectedFromOneToThreeArgs(); }
+            if (params[0]->type != NUM_TYPE || params.size() > 1 && params[1]->type != NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
+            double start = (params.size() > 1) ? std::get<double>(params[0]->holder) : 0;
+            double end = (params.size() > 1) ? std::get<double>(params[1]->holder) : std::get<double>(params[0]->holder);
             double step = 1;
             if (params.size() > 2) {
                 if (params[2]->type != NUM_TYPE) { throw Errors::TypeErrors::TypeErrorNum(); }
