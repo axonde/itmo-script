@@ -181,3 +181,34 @@ TEST(StringStandartLibraryTest, Replace) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
+
+// LIST
+TEST(ListStandartLibraryTest, Push) {
+    std::string code = R"(
+        a = ["base", true]
+        push(a, 9)
+        print(a)
+    )";
+
+    std::string expected = "[\"base\", true, 9]";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(ListStandartLibraryTest, Pop) {
+    std::string code = R"(
+        a = ["base", true]
+        print(pop(a))
+    )";
+
+    std::string expected = "true";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}

@@ -251,7 +251,7 @@ HolderPack join = HolderPack(
 HolderPack replace = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
-            if (params.size() != 3) { throw Errors::RunTime::ExpectedThreeArg(); }
+            if (params.size() != 3) { throw Errors::RunTime::ExpectedThreeArgs(); }
             for (auto& hp : params) {
                 if (hp->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
             }
@@ -301,13 +301,46 @@ HolderPack range = HolderPack(
     )),
     TYPES::FUNC_TYPE
 );
-HolderPack push;
-HolderPack pop;
+/// @brief  push(list, elem)
+/// @return modified list with added elem
+HolderPack push = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 2) { throw Errors::RunTime::ExpectedTwoArgs(); }
+            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+            if (params[1]->type == TYPES::NOT_SET_TYPE) { throw Errors::MemoryErrors::NotFound(); }
+
+            std::get<ListHolderPtr>(params[0]->holder)->data.push_back(std::move(params[1]));
+            return params[0];
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
+/// @brief  pop(list)
+/// @brief  modified list by delete last elem
+/// @return deleted element if list is not empty, nil otherwise
+HolderPack pop = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+            
+            auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
+            if (list.size() == 0) { return {TYPES::NIL_TYPE}; }
+            auto last = list.back(); list.pop_back();
+            return last;
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
 HolderPack insert;
 HolderPack remove;
+/// @brief  sort(list)
+/// @brief  sort the given list by comparators defined in operators
+/// @return the sorted given list (modify)
 HolderPack sort;
 
-// UNIVERSAL FUNCTIONS
+// UNIVERSAL FUNCTIONS STRING / LIST
 HolderPack copy;
 HolderPack len = HolderPack(
     MakeFuncHolder(BuiltInFunction(
