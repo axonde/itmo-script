@@ -192,7 +192,6 @@ private:
         {"end for", Tokens::T_END_FOR},
         {"break", Tokens::T_BREAK},
         {"continue", Tokens::T_CONTINUE},
-        {"end", Tokens::T_BAD},
 
     // functions
         {"function", Tokens::T_FUNC},

@@ -115,7 +115,7 @@ Parser::NodePtr Parser::ListExpr() {
 //         | ('not' | '+' | '-') Factor
 //         | '(' expr ')'
 //         | T_BAD
-Parser::NodePtr Parser::Factor() {   // add support for list literals.
+Parser::NodePtr Parser::Factor() {
     using namespace Lexer;
 
     switch (token.token) {
@@ -423,7 +423,7 @@ Parser::NodePtr Parser::StatementList() {
     }
 }
 
-// Block: StatementList (T_EOL | StatementList)*
+// Block: (StatementList)? (T_EOL | StatementList)*
 Parser::NodePtr Parser::Block() {
     Compound node;
     while ( token.token != Lexer::Tokens::T_ELSE_IF && token.token != Lexer::Tokens::T_ELSE
