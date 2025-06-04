@@ -212,3 +212,28 @@ TEST(ListStandartLibraryTest, Pop) {
     ASSERT_TRUE(Interpret(input, output));
     ASSERT_EQ(output.str(), expected);
 }
+TEST(ListStandartLibraryTest, Sort) {
+    std::string code = R"(
+        a = [5, 4, 3, 2]
+        print(sort(a))
+    )";
+
+    std::string expected = "[2, 3, 4, 5]";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_TRUE(Interpret(input, output));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(ListStandartLibraryTest, WrongSort) {
+    std::string code = R"(
+        a = [5, 4, 3, "123"]
+        print(sort(a))
+    )";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    ASSERT_FALSE(Interpret(input, output));
+}

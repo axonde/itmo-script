@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 
-#include "utils.h"
+#include "lexer.h"
 
 enum TYPES : uint16_t {
     NUM_TYPE,
@@ -58,12 +58,26 @@ struct HolderData {
     TYPES type = TYPES::NOT_SET_TYPE;
 };
 
+class HolderPack;
+
+} // end Memory
+
+namespace Operators {
+
+// need to forward declare to avoid compare between HolderPack
+[[nodiscard]] Memory::HolderPack ExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
+
+} // end Operators
+
+namespace Memory {
+
 using RawHolderPack = std::shared_ptr<HolderData>;
 struct HolderPack {
     template<typename... Args>
     HolderPack(Args... args) {
         pack = std::make_shared<RawHolderPack>(std::make_shared<HolderData>(std::forward<Args>(args)...));
     }
+    bool operator<(const HolderPack&) const;
     HolderData* operator->() { return (*pack).get(); }
     std::shared_ptr<RawHolderPack> pack;
 };

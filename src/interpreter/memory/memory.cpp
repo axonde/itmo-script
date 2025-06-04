@@ -1,5 +1,11 @@
 #include "memory.h"
 
+bool Memory::HolderPack::operator<(const Memory::HolderPack& other) const {
+    return std::get<bool>(
+        Operators::ExecBinaryOperation(Lexer::T_COMP_SMALLER, HolderPack(*this), HolderPack(other))->holder
+    );
+}
+
 Memory::HolderPack Memory::StackFrame::Lookup(std::string_view key) {
     try {
         return search(key);

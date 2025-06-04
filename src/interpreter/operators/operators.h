@@ -49,7 +49,7 @@ void RegisterBinaryOperators() noexcept;
 [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&) noexcept;
 [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&) noexcept;
 [[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens, Parser::NodePtr&, HolderPack&&, HolderPack&&) noexcept;
-[[nodiscard]] HolderPack ExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);
+[[nodiscard]] HolderPack ExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // can throw
 
 } // end Operators
 

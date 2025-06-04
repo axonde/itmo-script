@@ -328,7 +328,7 @@ HolderPack pop = HolderPack(
             auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
             if (list.size() == 0) { return {TYPES::NIL_TYPE}; }
             auto last = list.back(); list.pop_back();
-            return last;
+            return std::move(last);
         }
     )),
     TYPES::FUNC_TYPE
@@ -338,7 +338,19 @@ HolderPack remove;
 /// @brief  sort(list)
 /// @brief  sort the given list by comparators defined in operators
 /// @return the sorted given list (modify)
-HolderPack sort;
+HolderPack sort = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+            
+            auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
+            std::sort(list.begin(), list.end());
+            return params[0];
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
 
 // UNIVERSAL FUNCTIONS STRING / LIST
 HolderPack copy;
