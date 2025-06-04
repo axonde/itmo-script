@@ -46,9 +46,11 @@ public:
     Parser::NodePtr& GetRoot() { return parser.root; }
 
 private:
-    using Holder = Memory::Holder;
     using NodePtr = Parser::NodePtr;
-    using RawHolderPack = Memory::RawHolderPack;
+    using ListHolderPtr = Memory::ListHolderPtr;
+    using FuncHolderPtr = Memory::FuncHolderPtr;
+    
+    using FuncHolder = Memory::FuncHolder;
 
     Expected Visit(NodePtr&);
 

@@ -13,15 +13,6 @@ std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
 
 namespace BuiltIn {
 
-using RawHolderPack = Memory::RawHolderPack;
-using BuiltInFunction = Memory::BuiltInFunction;
-
-using ListHolder = Memory::ListHolder;
-using FuncHolder = Memory::FuncHolder;
-
-using ListHolderPtr = Memory::ListHolderPtr;
-using FuncHolderPtr = Memory::FuncHolderPtr;
-
 // NUMBER AWARE FUNCTIONS
 HolderPack abs;
 HolderPack ceil;
@@ -49,17 +40,17 @@ HolderPack sort;
 
 // UNIVERSAL FUNCTIONS
 HolderPack copy;
-HolderPack len = Memory::MakeHolderPack(
-    std::make_unique<FuncHolder>(BuiltInFunction(
+HolderPack len = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
             if (params[0]->type == TYPES::STRING_TYPE) {
-                return Memory::MakeHolderPack(
+                return HolderPack(
                     static_cast<double>(std::get<std::string>(params[0]->holder).size()),
                     TYPES::NUM_TYPE);
             }
             if (params[0]->type == TYPES::LIST_TYPE) {
-                return Memory::MakeHolderPack(
+                return HolderPack(
                     static_cast<double>(std::get<Memory::ListHolderPtr>(params[0]->holder)->data.size()),
                     TYPES::NUM_TYPE);
             }
@@ -70,8 +61,8 @@ HolderPack len = Memory::MakeHolderPack(
 );
 
 // SYSTEM FUNCTIONS
-HolderPack print = Memory::MakeHolderPack(
-    std::make_unique<FuncHolder>(BuiltInFunction(
+HolderPack print = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             bool need_space = false;
             for (auto& holderpack : params) {
@@ -95,20 +86,20 @@ HolderPack print = Memory::MakeHolderPack(
                             if (not_first) { *Interpreter::out << ", "; } not_first = true;
                             std::get<BuiltInFunction>(
                                 std::get<FuncHolderPtr>(print->holder)->function
-                            )({hp});
+                            )({std::move(hp)});
                         } *Interpreter::out << ']'; }
                         break;
                     case TYPES::NOT_SET_TYPE:
                         *Interpreter::out << "(not set type)"; break;
                 } need_space = true;
             }
-            return std::make_shared<RawHolderPack>(TYPES::NIL_TYPE);
+            return HolderPack(TYPES::NIL_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
-HolderPack println = std::make_shared<RawHolderPack>(
-    std::make_unique<FuncHolder>(BuiltInFunction(
+HolderPack println = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             for (auto& holderpack : params) {
                 std::get<BuiltInFunction>(
@@ -116,29 +107,27 @@ HolderPack println = std::make_shared<RawHolderPack>(
                 )({std::move(holderpack)});
                 *Interpreter::out << std::endl;
             }
-            return std::make_shared<RawHolderPack>(TYPES::NIL_TYPE);
+            return HolderPack(TYPES::NIL_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
-HolderPack read = std::make_shared<RawHolderPack>(
-    std::make_unique<FuncHolder>(BuiltInFunction(
+HolderPack read = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() > 0) { throw Errors::RunTime::ExpectedZeroArgs(); }
             std::string str;
             std::getline(*Interpreter::in, str);
-            return std::make_shared<RawHolderPack>(
-                std::move(str), TYPES::STRING_TYPE
-            );
+            return HolderPack(std::move(str), TYPES::STRING_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
-HolderPack stacktrace = std::make_shared<RawHolderPack>(
-    std::make_unique<FuncHolder>(BuiltInFunction(
+HolderPack stacktrace = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             *Interpreter::out << Memory::StackFrame::PrintStack(*Interpreter::stack_frame);
-            return std::make_shared<RawHolderPack>(TYPES::NIL_TYPE);
+            return HolderPack(TYPES::NIL_TYPE);
         })
     ),
     TYPES::FUNC_TYPE

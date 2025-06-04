@@ -30,6 +30,8 @@ struct FuncHolder;
 using ListHolderPtr = std::unique_ptr<ListHolder>;
 using FuncHolderPtr = std::unique_ptr<FuncHolder>;
 
+/// Holder -> HolderData -> RawHolderPack -> HolderPack
+
 /// HOLDER
 /// - std::monostate    > nil type / (not set type)
 /// - double            > number type
@@ -37,6 +39,7 @@ using FuncHolderPtr = std::unique_ptr<FuncHolder>;
 /// - std::string       > string type
 /// - ListHolder        > list type
 /// - FuncHolder        > func type
+
 using Holder = std::variant<
     std::monostate,
     double,
@@ -46,16 +49,24 @@ using Holder = std::variant<
     FuncHolderPtr
 >;
 
-struct RawHolderPack {
-    RawHolderPack() = default;
-    RawHolderPack(TYPES t) : type(t) {}
-    RawHolderPack(Holder&& h) : holder(std::move(h)) {}
-    RawHolderPack(Holder&& h, TYPES t) : holder(std::move(h)), type(t) {}
+struct HolderData {
+    HolderData() = default;
+    HolderData(TYPES t) : type(t) {}
+    HolderData(Holder&& h) : holder(std::move(h)) {}
+    HolderData(Holder&& h, TYPES t) : holder(std::move(h)), type(t) {}
     Holder holder;
     TYPES type = TYPES::NOT_SET_TYPE;
 };
 
-using HolderPack = std::shared_ptr<RawHolderPack>;
+using RawHolderPack = std::shared_ptr<HolderData>;
+struct HolderPack {
+    template<typename... Args>
+    HolderPack(Args... args) {
+        pack = std::make_shared<RawHolderPack>(std::make_shared<HolderData>(std::forward<Args>(args)...));
+    }
+    HolderData* operator->() { return (*pack).get(); }
+    std::shared_ptr<RawHolderPack> pack;
+};
 
 using BuiltInFunction = std::function<HolderPack(std::vector<HolderPack>&&)>;
 using Function = std::variant<
@@ -73,15 +84,11 @@ struct FuncHolder {
 };
 
 template<typename... Args>
-HolderPack MakeHolderPack(Args... args) {
-    return std::make_shared<RawHolderPack>(std::forward<Args>(args)...);
-}
-template<typename... Args>
-ListHolderPtr MakeList(Args... args) {
+ListHolderPtr MakeListHolder(Args... args) {
     return std::make_unique<ListHolder>(std::forward<Args>(args)...);
 }
 template<typename... Args>
-FuncHolderPtr MakeFunc(Args... args) {
+FuncHolderPtr MakeFuncHolder(Args... args) {
     return std::make_unique<FuncHolder>(std::forward<Args>(args)...);
 }
 

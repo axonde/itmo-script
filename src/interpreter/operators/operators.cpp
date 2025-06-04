@@ -9,19 +9,19 @@ namespace Operators {
         // + NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg->holder),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // - NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_MINUS, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     -std::get<double>(arg->holder),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
     }
@@ -38,33 +38,31 @@ namespace Operators {
         // not NUM
         UNARY_OP_TABLE[{Lexer::Tokens::T_NOT, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     !(std::get<double>(arg->holder) != 0),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // not STRING
         UNARY_OP_TABLE[{Lexer::Tokens::T_NOT, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg->holder).size() == 0,
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // not BOOL
         UNARY_OP_TABLE[{Lexer::Tokens::T_NOT, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
-                    !(std::get<bool>(arg->holder)), TYPES::BOOL_TYPE
-                );
+                return {!(std::get<bool>(arg->holder)), TYPES::BOOL_TYPE};
             }
         };
         // not NIL
         UNARY_OP_TABLE[{Lexer::Tokens::T_NOT, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(TYPES::NIL_TYPE);
+                return {TYPES::NIL_TYPE};
             }
         };
     }
@@ -101,128 +99,163 @@ namespace Operators {
         // (not set type) = NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                arg_left->holder = std::move(arg_right->holder);
+                arg_left->holder = std::get<double>(arg_right->holder);  // (copy by value)
                 arg_left->type = TYPES::NUM_TYPE;
                 return arg_left;
             }
         };
+        
         // NUM (setted) = NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                if (arg_left.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
-                arg_left->holder = std::get<double>(arg_right->holder);
-                arg_left->type = TYPES::NUM_TYPE;
-                return arg_left;
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
+        // STRING (setted) = NUM
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::STRING_TYPE, TYPES::NUM_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // BOOL (setted) = NUM
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::BOOL_TYPE, TYPES::NUM_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // NIL (setted) = NUM
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NIL_TYPE, TYPES::NUM_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // LIST (setted) = NUM
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::LIST_TYPE, TYPES::NUM_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // FUNC (setted) = NUM
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::FUNC_TYPE, TYPES::NUM_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+
         // NUM + NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) + std::get<double>(arg_right->holder),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // NUM - NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_MINUS, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) - std::get<double>(arg_right->holder),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // NUM * NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_MULT, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) * std::get<double>(arg_right->holder),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // NUM / NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_DIV, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) / std::get<double>(arg_right->holder),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // NUM % NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_MOD, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     static_cast<double>(
                         static_cast<int>(std::get<double>(arg_left->holder)) % static_cast<int>(std::get<double>(arg_right->holder))
                     ),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // NUM ^ NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_XOR, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::pow(std::get<double>(arg_left->holder), std::get<double>(arg_right->holder)),
                     TYPES::NUM_TYPE
-                );
+                };
             }
         };
         // NUM == NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) == std::get<double>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // NUM != NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_NON_EQUAL, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) != std::get<double>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // NUM < NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_SMALLER, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) < std::get<double>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // NUM <= NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_SMALLER_OR_EQ, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) <= std::get<double>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // NUM > NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_GREATER, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) > std::get<double>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // NUM >= NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_GREATER_OR_EQ, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<double>(arg_left->holder) >= std::get<double>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
     }
@@ -230,26 +263,61 @@ namespace Operators {
         // (not set type) = STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                arg_left->holder = std::move(arg_right->holder);
-                arg_left->type = TYPES::STRING_TYPE;
+                *arg_left.pack = *arg_right.pack;
                 return arg_left;
+            }
+        };
+
+        // NUM (setted) = STRING
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::STRING_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
         // STRING (setted) = STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                if (arg_left.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
-                arg_left = arg_right;
-                return arg_left;
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
+        // BOOL (setted) = STRING
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::BOOL_TYPE, TYPES::STRING_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // NIL (setted) = STRING
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NIL_TYPE, TYPES::STRING_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // LIST (setted) = STRING
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::LIST_TYPE, TYPES::STRING_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // FUNC (setted) = STRING
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::FUNC_TYPE, TYPES::STRING_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::STRING_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+
         // STRING + STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) + std::get<std::string>(arg_right->holder),
                     TYPES::STRING_TYPE
-                );
+                };
             }
         };
         // STRING - STRING
@@ -258,9 +326,7 @@ namespace Operators {
                 std::string& left_str = std::get<std::string>(arg_left->holder);
                 std::string& right_str = std::get<std::string>(arg_right->holder);
                 if (size_t i = left_str.rfind(right_str); i != std::string::npos) {
-                    return Memory::MakeHolderPack(
-                        left_str.substr(0, i), TYPES::STRING_TYPE
-                    );
+                    return {left_str.substr(0, i), TYPES::STRING_TYPE};
                 }
                 return arg_left;
             }
@@ -274,7 +340,7 @@ namespace Operators {
                 for (double i = 0; i < left_str.size() * count; ++i) {
                     result += left_str[static_cast<size_t>(i) % left_str.size()];
                 }
-                return Memory::MakeHolderPack(result, TYPES::STRING_TYPE);
+                return {std::move(result), TYPES::STRING_TYPE};
             }
         };
         // NUM * STRING
@@ -286,55 +352,55 @@ namespace Operators {
         // STRING == STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) == std::get<std::string>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // STRING != STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_NON_EQUAL, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) != std::get<std::string>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // STRING < STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_SMALLER, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) < std::get<std::string>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // STRING <= STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_SMALLER_OR_EQ, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) <= std::get<std::string>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // STRING > STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_GREATER, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) > std::get<std::string>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // STRING >= STRING
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_GREATER_OR_EQ, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<std::string>(arg_left->holder) >= std::get<std::string>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
     }
@@ -342,37 +408,72 @@ namespace Operators {
         // (not set type) = BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                arg_left->holder = std::move(arg_right->holder);
+                arg_left->holder = std::get<bool>(arg_right->holder);
                 arg_left->type = TYPES::BOOL_TYPE;
                 return arg_left;
+            }
+        };
+        
+        // NUM (setted) = BOOL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::BOOL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // STRING (setted) = BOOL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::STRING_TYPE, TYPES::BOOL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
         // BOOL (setted) = BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::BOOL_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                if (arg_left.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
-                arg_left->holder = std::get<bool>(arg_right->holder);
-                return arg_left;
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // NIL (setted) = BOOL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NIL_TYPE, TYPES::BOOL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // LIST (setted) = BOOL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::LIST_TYPE, TYPES::BOOL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // FUNC (setted) = BOOL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::FUNC_TYPE, TYPES::BOOL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::BOOL_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
 
         // BOOL == BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::BOOL_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<bool>(arg_left->holder) == std::get<bool>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
 
         // NUM == BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NUM_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     (std::get<double>(arg_left->holder) != 0) == std::get<bool>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // BOOL == NUM
@@ -386,10 +487,10 @@ namespace Operators {
         // STRING == BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::STRING_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     (std::get<std::string>(arg_left->holder).size() != 0) == std::get<bool>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // BOOL == STRING
@@ -403,19 +504,19 @@ namespace Operators {
         // BOOL and BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_AND, TYPES::BOOL_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<bool>(arg_left->holder) && std::get<bool>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
         // BOOL or BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_OR, TYPES::BOOL_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(
+                return {
                     std::get<bool>(arg_left->holder) || std::get<bool>(arg_right->holder),
                     TYPES::BOOL_TYPE
-                );
+                };
             }
         };
     }
@@ -423,28 +524,63 @@ namespace Operators {
         // (not set type) = NIL
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(TYPES::NIL_TYPE);
+                return {TYPES::NIL_TYPE};
+            }
+        };
+        
+        // NUM (setted) = NIL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::NIL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // STRING (setted) = NIL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::STRING_TYPE, TYPES::NIL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // BOOL (setted) = NIL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::BOOL_TYPE, TYPES::NIL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
         // NIL (setted) = NIL
-        BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NIL_TYPE, TYPES::NIL_TYPE}] = {
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NIL_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                if (arg_left.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
-                arg_left = arg_right;
-                return arg_left;
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // LIST (setted) = NIL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::LIST_TYPE, TYPES::NIL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // FUNC (setted) = NIL
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::FUNC_TYPE, TYPES::NIL_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
         
         // NIL == NIL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NIL_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(true, TYPES::BOOL_TYPE);
+                return {true, TYPES::BOOL_TYPE};
             }
         };
         // NIL == NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NIL_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(false, TYPES::BOOL_TYPE);
+                return {false, TYPES::BOOL_TYPE};
             }
         };
         // NUM == NIL
@@ -457,7 +593,7 @@ namespace Operators {
         // STRING == NIL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::STRING_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(false, TYPES::BOOL_TYPE);
+                return {false, TYPES::BOOL_TYPE};
             }
         };
         // NIL == STRING
@@ -470,7 +606,7 @@ namespace Operators {
         // NIL == BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NIL_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(false, TYPES::BOOL_TYPE);
+                return {false, TYPES::BOOL_TYPE};
             }
         };
         // BOOL == NIL
@@ -483,7 +619,7 @@ namespace Operators {
         // LIST == NIL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::LIST_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(false, TYPES::BOOL_TYPE);
+                return {false, TYPES::BOOL_TYPE};
             }
         };
         // NIL == LIST
@@ -496,7 +632,7 @@ namespace Operators {
         // FUNC == NIL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::FUNC_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                return Memory::MakeHolderPack(false, TYPES::BOOL_TYPE);
+                return {false, TYPES::BOOL_TYPE};
             }
         };
         // NIL == FUNC
@@ -512,17 +648,51 @@ namespace Operators {
         // (not set type) = LIST
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                arg_left->holder = std::move(arg_right->holder);
-                arg_left->type = TYPES::LIST_TYPE;
+                *arg_left.pack = *arg_right.pack;
                 return arg_left;
             }
         };
-        // LIST = LIST
+        
+        // NUM (setted) = LIST
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::LIST_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // STRING (setted) = LIST
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::STRING_TYPE, TYPES::LIST_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // BOOL (setted) = LIST
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::BOOL_TYPE, TYPES::LIST_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // NIL (setted) = LIST
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NIL_TYPE, TYPES::LIST_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // LIST (setted) = LIST
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::LIST_TYPE, TYPES::LIST_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
-                if (arg_left.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
-                arg_left = arg_right;
-                return arg_left;
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // FUNC (setted) = LIST
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::FUNC_TYPE, TYPES::LIST_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::LIST_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
 
@@ -532,19 +702,19 @@ namespace Operators {
                 std::vector<HolderPack>& ls_left = std::get<Memory::ListHolderPtr>(arg_left->holder)->data;
                 std::vector<HolderPack>& ls_right = std::get<Memory::ListHolderPtr>(arg_right->holder)->data;
 
-                auto exit_false = Memory::MakeHolderPack(false, TYPES::BOOL_TYPE);
-                auto exit_true = Memory::MakeHolderPack(true, TYPES::BOOL_TYPE);
+                auto exit_false = HolderPack(false, TYPES::BOOL_TYPE);
+                auto exit_true = HolderPack(true, TYPES::BOOL_TYPE);
 
                 if (ls_left.size() != ls_right.size()) { return std::move(exit_false); }
                 
                 for (size_t i = 0; i != ls_left.size(); ++i) {
                     if (ls_left[i]->type != ls_right[i]->type) { return std::move(exit_false); }
-                    BinaryOpTableKey key = {Lexer::Tokens::T_COMP_EQUAL, ls_left[i]->type, ls_right[i]->type};
-                    auto iter = BINARY_OP_TABLE.find(std::move(key));
-                    if (iter == BINARY_OP_TABLE.end()) { return std::move(exit_false); }
-                    if (!iter->second(std::move(ls_left[i]), std::move(ls_right[i]))) {
-                        return std::move(exit_false);
-                    }
+                    try {
+                        auto hp = ExecBinaryOperation(Lexer::Tokens::T_COMP_EQUAL, HolderPack(ls_left[i]), HolderPack(ls_right[i]));
+                        if (!std::get<bool>(hp->holder)) {
+                            return std::move(exit_false);
+                        }
+                    } catch (...) { return std::move(exit_false); }
                 }
                 return std::move(exit_true);
             }
@@ -555,9 +725,51 @@ namespace Operators {
         // (not set type) = FUNC
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-                arg_left->holder = std::move(arg_right->holder);
-                arg_left->type = TYPES::FUNC_TYPE;
+                *arg_left.pack = *arg_right.pack;
                 return arg_left;
+            }
+        };
+
+        // NUM (setted) = FUNC
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::FUNC_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // STRING (setted) = FUNC
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::STRING_TYPE, TYPES::FUNC_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // BOOL (setted) = FUNC
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::BOOL_TYPE, TYPES::FUNC_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // NIL (setted) = FUNC
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NIL_TYPE, TYPES::FUNC_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // LIST (setted) = FUNC
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::LIST_TYPE, TYPES::FUNC_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}](std::move(arg_left), std::move(arg_right));
+            }
+        };
+        // FUNC (setted) = FUNC
+        BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::FUNC_TYPE, TYPES::FUNC_TYPE}] = {
+            [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+                if (arg_left.pack.use_count() == 1) { throw Errors::RunTime::AssignLiteral(); }
+                return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
     }
@@ -571,7 +783,7 @@ namespace Operators {
         RegisterBinaryFuncOperators();
     }
 
-    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, HolderPack&& computed) {
+    [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp* node, HolderPack&& computed) noexcept {
         UnaryOpTableKey key = {node->op, computed->type};
         auto iter = UNARY_OP_TABLE.find(std::move(key));
         if (iter == UNARY_OP_TABLE.end()) {
@@ -582,7 +794,7 @@ namespace Operators {
         return iter->second(std::move(computed));
     }
 
-    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, HolderPack&& computed_left, HolderPack&& computed_right) {
+    [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp* node, HolderPack&& computed_left, HolderPack&& computed_right) noexcept {
         BinaryOpTableKey key = {node->op, computed_left->type, computed_right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {
@@ -598,7 +810,7 @@ namespace Operators {
                 node->token});
         }
     }
-    [[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens op, Parser::NodePtr& node, HolderPack&& computed_left, HolderPack&& computed_right) {
+    [[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens op, Parser::NodePtr& node, HolderPack&& computed_left, HolderPack&& computed_right) noexcept {
         BinaryOpTableKey key = {op, computed_left->type, computed_right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {
@@ -613,5 +825,14 @@ namespace Operators {
                 Error(e.what()),
                 node->token});
         }
+    }
+    [[nodiscard]] HolderPack ExecBinaryOperation(Lexer::Tokens op, HolderPack&& computed_left, HolderPack&& computed_right) {
+        BinaryOpTableKey key = {op, computed_left->type, computed_right->type};
+        auto iter = BINARY_OP_TABLE.find(std::move(key));
+        if (iter == BINARY_OP_TABLE.end()) {
+            throw Errors::OperatorErrors::OperatorBinaryError(Lexer::TOKENS_TO_STR[op], TYPE_TO_STR[computed_left->type], TYPE_TO_STR[computed_right->type]);
+        }
+        try { return iter->second(std::move(computed_left), std::move(computed_right)); }
+        catch (Error& e) { throw Error(e.what()); }
     }
 }

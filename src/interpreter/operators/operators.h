@@ -10,8 +10,6 @@
 
 namespace Operators {
 
-using RawHolderPack = Memory::RawHolderPack;
-using Holder = Memory::Holder;
 using HolderPack = Memory::HolderPack;
 using UnaryFunction = std::function<HolderPack(HolderPack&&)>;
 using BinaryFunction = std::function<HolderPack(HolderPack&&, HolderPack&&)>;
@@ -48,9 +46,10 @@ void RegisterBinaryFuncOperators() noexcept;
 
 void RegisterBinaryOperators() noexcept;
 
-[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&);
-[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&);
-[[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens, Parser::NodePtr&, HolderPack&&, HolderPack&&);
+[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&) noexcept;
+[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&) noexcept;
+[[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens, Parser::NodePtr&, HolderPack&&, HolderPack&&) noexcept;
+[[nodiscard]] HolderPack ExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);
 
 } // end Operators
 

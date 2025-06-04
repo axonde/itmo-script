@@ -4,7 +4,7 @@ Memory::HolderPack Memory::StackFrame::Lookup(std::string_view key) {
     try {
         return search(key);
     } catch (const Errors::MemoryErrors::NotFound&) {
-        environment[std::string(key)] = std::make_shared<RawHolderPack>();
+        environment[std::string(key)] = HolderPack();
         return environment[std::string(key)];
     }
 }

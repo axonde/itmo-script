@@ -55,6 +55,8 @@ bool Interpret(std::string& program, std::istream& input, std::ostream& output) 
 
 } // end Interpreter
 
+using Memory::MakeListHolder;
+using Memory::MakeFuncHolder;
 
 Runner::Expected Runner::Run() {
     try {
@@ -121,21 +123,21 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
 /// LITERALS
 Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
     Parser::NumLiteral* num_literal = static_cast<Parser::NumLiteral*>(node.get());
-    return { std::make_shared<RawHolderPack>(num_literal->value, TYPES::NUM_TYPE) };
+    return HolderPack(num_literal->value, TYPES::NUM_TYPE);
 }
 
 Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
     Parser::StringLiteral* str_literal = static_cast<Parser::StringLiteral*>(node.get());
-    return { std::make_shared<RawHolderPack>(str_literal->value, TYPES::STRING_TYPE) };
+    return HolderPack(str_literal->value, TYPES::STRING_TYPE);
 }
 
 Runner::Expected Runner::VisitBoolLiteral(Runner::NodePtr& node) {
     Parser::BoolLiteral* bool_literal = static_cast<Parser::BoolLiteral*>(node.get());
-    return { std::make_shared<RawHolderPack>(bool_literal->value, TYPES::BOOL_TYPE) };
+    return HolderPack(bool_literal->value, TYPES::BOOL_TYPE);
 }
 
 Runner::Expected Runner::VisitNilLiteral(Runner::NodePtr& node) {
-    return { Memory::MakeHolderPack(TYPES::NIL_TYPE) };
+    return HolderPack(TYPES::NIL_TYPE);
 }
 
 /// LITERAL EXPR
@@ -158,10 +160,7 @@ Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
             return std::unexpected(visited.error());
         }
     }
-    return { Memory::MakeHolderPack(
-        Memory::MakeList(std::move(data)),
-        TYPES::LIST_TYPE
-    ) };
+    return { HolderPack(MakeListHolder(std::move(data)), TYPES::LIST_TYPE) };
 }
 
 /// OPERATIONS
@@ -231,7 +230,7 @@ Runner::Expected Runner::VisitIf(Parser::NodePtr& node) {
             break;
         }
     }
-    return Memory::MakeHolderPack();
+    return HolderPack();
 }
 Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
     auto ptr = static_cast<Parser::For*>(node.get());
@@ -248,20 +247,18 @@ Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
     }
     size_t size;
     if (range->type == TYPES::STRING_TYPE) { size = std::get<std::string>(range->holder).size(); }
-    else { size = std::get<Memory::ListHolderPtr>(range->holder)->data.size(); }
+    else { size = std::get<ListHolderPtr>(range->holder)->data.size(); }
 
     for (size_t i = 0; i < size; ++i) {
         if (range->type == TYPES::STRING_TYPE) {
             iterator_expected = Operators::ExecBinaryOperation(
                 Lexer::Tokens::T_EQUAL, node, HolderPack(iterator),
-                Memory::MakeHolderPack(
-                    std::to_string(std::get<std::string>(range->holder)[i]),
-                    TYPES::STRING_TYPE)
+                HolderPack(std::to_string(std::get<std::string>(range->holder)[i]), TYPES::STRING_TYPE)
             );
         } else {
             iterator_expected = Operators::ExecBinaryOperation(
                 Lexer::Tokens::T_EQUAL, node, HolderPack(iterator),
-                HolderPack(std::get<Memory::ListHolderPtr>(range->holder)->data[i])
+                HolderPack(std::get<ListHolderPtr>(range->holder)->data[i])
             );
         }
         if (!iterator_expected) { return std::unexpected(iterator_expected.error()); }
@@ -273,7 +270,7 @@ Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
         catch (Closures::Break&) { break; }
         catch (Closures::Continue&) { continue; }
     }
-    return Memory::MakeHolderPack();
+    return HolderPack();
 }
 Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
     auto ptr = static_cast<Parser::While*>(node.get());
@@ -295,7 +292,7 @@ Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
         }
         break;
     }
-    return Memory::MakeHolderPack();
+    return HolderPack();
 }
 
 /// CLOSURE STATEMENTS
@@ -314,7 +311,7 @@ Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
 
 /// FUNCTIONS
 Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
-    return Memory::MakeHolderPack( Memory::MakeFunc(node.get()), TYPES::FUNC_TYPE );
+    return HolderPack( MakeFuncHolder(node.get()), TYPES::FUNC_TYPE );
 }
 Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
     auto ptr = static_cast<Parser::FuncCall*>(node.get());
@@ -336,13 +333,13 @@ Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
         params.push_back(visited);
     }
 
-    Memory::FuncHolder& function_holder = *std::get<Memory::FuncHolderPtr>(func->holder);
+    FuncHolder& function_holder = *std::get<FuncHolderPtr>(func->holder);
     if (std::holds_alternative<std::any>(function_holder.function)) {
         return VisitUserFuncCall(ptr, function_holder, params);
     }
     return VisitBuiltInFuncCall(ptr, function_holder, params);
 }
-Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
+Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& function_holder, std::vector<HolderPack>& params) {
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
     Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
@@ -360,11 +357,11 @@ Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, Memory::FuncHo
         hp->type = std::move(params[i]->type);
     }
 
-    HolderPack result = Memory::MakeHolderPack(TYPES::NIL_TYPE);
+    HolderPack result = HolderPack(TYPES::NIL_TYPE);
     try {
         Visit(func_instance->body);
     } catch (Closures::Return& r) {
-        result = std::any_cast<HolderPack&>(r.holder_pack);
+        result = std::move(std::any_cast<HolderPack&>(r.holder_pack));
     }
     
     Interpreter::stack_frame = std::move(Interpreter::stack_frame->parent);
@@ -386,7 +383,7 @@ Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
             return std::unexpected(visited.error());
         }
     }
-    return std::make_shared<RawHolderPack>();
+    return HolderPack();
 }
 
 
@@ -395,11 +392,11 @@ Runner::Expected Runner::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& v
     auto index_computed = GetIndex(ptr->start, var);
     if (!index_computed) { return std::unexpected(index_computed.error()); }
     if (var->type == TYPES::STRING_TYPE) {
-        return std::make_shared<RawHolderPack>(
+        return HolderPack(
             std::string{std::get<std::string>(var->holder)[*index_computed]},
             TYPES::STRING_TYPE
-        ); };
-    return std::get<Memory::ListHolderPtr>(var->holder)->data[*index_computed];
+        ); }
+    return std::get<ListHolderPtr>(var->holder)->data[*index_computed];
 }
 
 Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {
@@ -413,7 +410,7 @@ Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& va
 
     int size;
     if (var->type == TYPES::STRING_TYPE) { size = std::get<std::string>(var->holder).size(); }
-    else { size = std::get<Memory::ListHolderPtr>(var->holder)->data.size(); }
+    else { size = std::get<ListHolderPtr>(var->holder)->data.size(); }
     
     auto end_expected = (ptr->end) ? IntegerRequirement(ptr->end) : size;
     if (!end_expected) { return std::unexpected(end_expected.error()); }
@@ -436,13 +433,13 @@ Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& va
         for (int i = start; i >= 0 && i < size && condition(i); i += step) {
             str += std::get<std::string>(var->holder)[i];
         }
-        return Memory::MakeHolderPack(std::move(str), TYPES::STRING_TYPE);
+        return HolderPack(std::move(str), TYPES::STRING_TYPE);
     } else {
         std::vector<HolderPack> list;
         for (int i = start; i >= 0 && i < size && condition(i); i += step) {
             list.push_back(std::get<Memory::ListHolderPtr>(var->holder)->data[i]);
         }
-        return Memory::MakeHolderPack(Memory::MakeList(std::move(list)), TYPES::LIST_TYPE);
+        return HolderPack(MakeListHolder(std::move(list)), TYPES::LIST_TYPE);
     }
 }
 

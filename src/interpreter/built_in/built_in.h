@@ -17,7 +17,11 @@ extern std::unordered_map<TYPES, std::string> TYPE_TO_STR;
 namespace BuiltIn {
 
 using HolderPack = Memory::HolderPack;
-using Function = Memory::Function;
+using BuiltInFunction = Memory::BuiltInFunction;
+using Memory::MakeFuncHolder;
+
+using ListHolderPtr = Memory::ListHolderPtr;
+using FuncHolderPtr = Memory::FuncHolderPtr;
 
 void InitializeBuilInFunctions();
 
