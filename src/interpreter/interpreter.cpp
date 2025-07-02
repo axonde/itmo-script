@@ -62,8 +62,8 @@ Runner::Expected Runner::Run() {
     try {
         return Visit(parser.root);
     } catch (Closure& c) {
-        return std::unexpected(Lexer::Token(
-            Error(c.what()), std::any_cast<Lexer::Token&>(c.token)
+        return std::unexpected(Lexer::Token(Error(
+            c.what()), std::any_cast<Lexer::Token&>(c.token)
         ));
     }
 }

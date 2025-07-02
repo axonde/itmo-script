@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <queue>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -94,8 +95,8 @@ public:
 
     template<typename T>
     requires std::derived_from<T, Error>
-    Token(T&& e, size_t c, size_t l)
-    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), column(c), lineno(l) {}
+    Token(T&& e)
+    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))) {}
 
     template<typename T>
     requires std::derived_from<T, Error>
@@ -128,19 +129,10 @@ public:
 // Lexical Analyzer
 class Tokenizer {
 public:
-    Tokenizer(const std::string& str) : text(str) {}
+    Tokenizer() {}
 
-    Tokenizer& operator<<(const std::string& str) {
-        pos = 0;
-        text = str;
-        Token token;
-        do {
-            token = Advance();
-            tokens.push(Advance());
-        } while(tokens.back().token != Tokens::T_EOF);
-    }
-
-    Tokenizer& operator>>(Lexer::Token& token);
+    Tokenizer& operator<<(const std::string&);
+    Tokenizer& operator>>(Lexer::Token&);
     Lexer::Token Peek();
 
 private:
@@ -149,7 +141,8 @@ private:
     size_t pos;
     size_t column = 1;
     size_t lineno = 1;
-    const std::string& text;
+    const std::string* text;
+    std::stack<Token> closures;
 
     Lexer::Token Advance();
     void Inc();
