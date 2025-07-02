@@ -73,7 +73,7 @@ private:
     Expected VisitReturn(NodePtr&);
     Expected VisitBreak(NodePtr&);
     Expected VisitContinue(NodePtr&);
-    
+
     Expected VisitFunc(NodePtr&);
     Expected VisitFuncCall(NodePtr&);
     Expected VisitUserFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);

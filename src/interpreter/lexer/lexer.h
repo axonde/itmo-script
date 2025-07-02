@@ -2,12 +2,10 @@
 #include <concepts>
 #include <cctype>
 #include <cstdint>
-#include <iostream>
 #include <memory>
 #include <optional>
-#include <regex>
+#include <queue>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -132,14 +130,26 @@ class Tokenizer {
 public:
     Tokenizer(const std::string& str) : text(str) {}
 
+    Tokenizer& operator<<(const std::string& str) {
+        pos = 0;
+        text = str;
+        Token token;
+        do {
+            token = Advance();
+            tokens.push(Advance());
+        } while(tokens.back().token != Tokens::T_EOF);
+    }
+
     Tokenizer& operator>>(Lexer::Token& token);
     Lexer::Token Peek();
 
 private:
-    size_t pos = 0;
+    std::queue<Token> tokens;
+
+    size_t pos;
     size_t column = 1;
     size_t lineno = 1;
-    std::string text;
+    const std::string& text;
 
     Lexer::Token Advance();
     void Inc();
@@ -212,4 +222,4 @@ private:
 };
 
 
-}
+} // end Lexer

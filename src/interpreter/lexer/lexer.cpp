@@ -1,3 +1,4 @@
+#include <regex>
 #include "lexer.h"
 
 namespace Lexer {
@@ -76,6 +77,7 @@ Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t c, size
         return;
     }
     value = *opt;
+    int i;
 }
 
 /// SKIPPERS

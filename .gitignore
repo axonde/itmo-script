@@ -35,6 +35,7 @@
 build/
 sandbox/
 .vscode/
+.cache/
 
 # MAC OS system files
 .DS_Store
