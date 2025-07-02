@@ -134,13 +134,14 @@ public:
     Tokenizer& operator<<(const std::string&);
     Tokenizer& operator>>(Lexer::Token&);
     Lexer::Token Peek();
+    size_t GetClosuresSize() const;
 
 private:
     std::queue<Token> tokens;
 
     size_t pos;
-    size_t column = 1;
     size_t lineno = 1;
+    size_t column = 1;
     const std::string* text;
     std::stack<Token> closures;
 

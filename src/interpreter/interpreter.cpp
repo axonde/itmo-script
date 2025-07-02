@@ -146,7 +146,9 @@ Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
     try {
         return Interpreter::stack_frame->Lookup(id);
     } catch (Errors::MemoryErrors::NotFound e) {
-        return std::unexpected(Lexer::Token(std::move(e), node->token));
+        // return std::unexpected(Lexer::Token(std::move(e), node->token));
+        return std::unexpected(Error(e.what(), node->token.lineno, node->token.column));
+
     }
 }
 Runner::Expected Runner::VisitList(Runner::NodePtr& node) {

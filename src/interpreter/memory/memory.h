@@ -4,7 +4,6 @@
 #include <memory>
 #include <string_view>
 #include <sstream>
-#include <optional>
 #include <variant>
 #include <vector>
 

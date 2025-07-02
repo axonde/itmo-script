@@ -26,14 +26,15 @@ inline void Welcome() {
 namespace Errors {
 
 struct Error {
+    Error() = default;
     Error(size_t l, size_t c) : lineno(l), column(c) {}
     Error(const std::string& e, size_t l, size_t c) : error(e), lineno(l), column(c) {}
     virtual const char* what() const { return error.c_str(); }
     virtual ~Error() = default;
 
-    std::string error;
-    size_t lineno;
-    size_t column;
+    std::string error = "Panic!";
+    size_t lineno = 1;
+    size_t column = 1;
 };
 
 namespace CommonErrors {
@@ -164,7 +165,6 @@ struct OperatorBinaryError final : Error {
 namespace MemoryErrors {
 
 struct NotFound final : Error {
-    NotFound(size_t lineno, size_t column) : Error(lineno, column) {}
     const char* what() const override { return "variable is not declared"; }
 };
 
