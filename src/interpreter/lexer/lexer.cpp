@@ -348,3 +348,7 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {
     return *this;
 }
 
+size_t Lexer::Tokenizer::GetClosuresSize() const {
+    return closures.size();
+}
+

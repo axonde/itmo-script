@@ -1,18 +1,8 @@
 #pragma once
-#include <algorithm>
 #include <cctype>
-#include <cmath>
-#include <cstdint>
-#include <functional>
-#include <random>
-#include <ranges>
-#include <span>
+#include <iostream>
 #include <string>
 #include <unordered_map>
-#include <variant>
-#include <vector>
-
-#include <iostream>
 
 #include "memory.h"
 
@@ -31,6 +21,7 @@ using FuncHolderPtr = Memory::FuncHolderPtr;
 
 void InitializeBuilInFunctions();
 
+// MATH FUNCTIONS
 extern HolderPack abs;
 extern HolderPack ceil;
 extern HolderPack floor;
@@ -65,10 +56,14 @@ extern HolderPack println;
 extern HolderPack read;
 extern HolderPack stacktrace;
 
-} // BuiltIn
+} // end BuiltIn
 
 namespace Interpreter {
-    extern std::unique_ptr<Memory::StackFrame> stack_frame;
-    extern std::istream* in;
-    extern std::ostream* out;
-} // Interpreter
+
+// forward declaration for work some system function of built in functions.
+extern std::unique_ptr<Memory::StackFrame> stack_frame;
+extern std::istream* in;
+extern std::ostream* out;
+
+} // end Interpreter
+

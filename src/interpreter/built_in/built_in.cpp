@@ -1,5 +1,12 @@
 #include "built_in.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <random>
+#include <ranges>
+#include <vector>
+
 std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
     {TYPES::NUM_TYPE, "number"},
     {TYPES::STRING_TYPE, "string"},
@@ -324,7 +331,7 @@ HolderPack pop = HolderPack(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
             if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
-            
+
             auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
             if (list.size() == 0) { return {TYPES::NIL_TYPE}; }
             auto last = list.back(); list.pop_back();
@@ -343,7 +350,7 @@ HolderPack sort = HolderPack(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
             if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
-            
+
             auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
             std::sort(list.begin(), list.end());
             return params[0];
@@ -375,6 +382,9 @@ HolderPack len = HolderPack(
 );
 
 // SYSTEM FUNCTIONS
+/// @brief  print(...)
+/// @brief  prints to *Interpreter::out the passed objects to the terminal (delim = ' ' between objects)
+/// @return nil
 HolderPack print = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -412,6 +422,9 @@ HolderPack print = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  print(...)
+/// @brief  prints to *Interpreter::out the passed objects to the terminal (delim = '\n' between objects)
+/// @return nil
 HolderPack println = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -426,6 +439,9 @@ HolderPack println = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  read()
+/// @brief  read text from *Interpreter::in;
+/// @return string
 HolderPack read = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -437,6 +453,18 @@ HolderPack read = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  stacktrace()
+/// @brief  print to *Interpreter::out the current stack trace in next format:
+///
+/// STACK TRACE (from top to bottom)
+/// ================================
+/// #n nest n
+/// ...
+/// #2 nest 2
+/// #1 nest 1
+/// #0 global
+///
+/// @return nil
 HolderPack stacktrace = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {

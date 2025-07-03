@@ -84,7 +84,7 @@ struct HolderPack {
 using BuiltInFunction = std::function<HolderPack(std::vector<HolderPack>&&)>;
 using Function = std::variant<
     BuiltInFunction,            // built in function
-    std::any                    // user set function (Parser::Node*)
+    std::any                    // user set function (Parser::Node*) TODO think how fix this problem by forwarding declarations ?
 >;
 
 struct ListHolder {
