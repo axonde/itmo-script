@@ -1,5 +1,12 @@
 #include "parser.h"
 
+/// HELP
+template<typename T>
+requires std::derived_from<T, Error>
+T Parser::MakeError() {
+    return T(token.lineno, token.column);
+}
+
 /// ADVANCE
 bool Parser::Eat(Lexer::Tokens token_type) {
     tokens_traits.push(token);
@@ -21,17 +28,17 @@ Lexer::Token Parser::GetTraitedToken() {
 // Var: T_VAR ( ('[' (Expr)? 1(':' | ':' (Expr)? 2(':' | ':' (Expr)? )? )? ) ']')
 //            | ('(' (expr (',' expr)* )? ')') )*
 Parser::NodePtr Parser::VarExpr() {
-    if (token.token != Lexer::Tokens::T_VAR) { throw Errors::ParserErrors::ExpectedVarExpr{}; }
+    if (token.token != Lexer::Tokens::T_VAR) { throw Errors::ParserErrors::ExpectedVarExpr{token.lineno, token.column}; }
 
     std::string id = std::get<std::string>(token.value);
-    if (!Eat(token.token)) { throw ParserError{}; }
+    if (!Eat(token.token)) { throw MakeError<ParserError>(); }
     NodePtr var = std::make_unique<Var>(std::move(id), GetTraitedToken());
 
     using namespace Lexer;
 
     while (token.token == Tokens::T_LEFT_SQUARE_BRACKET || token.token == Tokens::T_LEFT_BRACKET) {
         if (token.token == Tokens::T_LEFT_SQUARE_BRACKET) {
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             NodePtr expr_start, expr_end, expr_step;
             bool is_slice = (token.token == Tokens::T_RIGHT_SQUARE_BRACKET);
 
@@ -39,7 +46,7 @@ Parser::NodePtr Parser::VarExpr() {
                 expr_start = Expr();
             }
             if (token.token == Tokens::T_COLON) {
-                if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
                 is_slice = true;
 
                 if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET && token.token != Tokens::T_COLON) {
@@ -47,29 +54,29 @@ Parser::NodePtr Parser::VarExpr() {
                 }
 
                 if (token.token == Tokens::T_COLON) {
-                    if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
-                    
+                    if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
+
                     if (token.token != Tokens::T_RIGHT_SQUARE_BRACKET) {
                         expr_step = Expr();
                     }
                 }
             }
 
-            if (!Eat(Tokens::T_RIGHT_SQUARE_BRACKET)) { throw Errors::ParserErrors::ExpectedRightSquareBracket{}; } GetTraitedToken();
+            if (!Eat(Tokens::T_RIGHT_SQUARE_BRACKET)) { throw MakeError<Errors::ParserErrors::ExpectedRightSquareBracket>(); } GetTraitedToken();
             var = std::make_unique<Subscript>(std::move(var), std::move(expr_start), std::move(expr_end), std::move(expr_step), is_slice, GetTraitedToken());
         }
         else {
-            if (!Eat(Tokens::T_LEFT_BRACKET)) { throw ParserError{}; }
+            if (!Eat(Tokens::T_LEFT_BRACKET)) { throw MakeError<ParserError>(); }
             FuncCall func_call(std::move(var), GetTraitedToken());
             if (token.token != Tokens::T_RIGHT_BRACKET) {
                 func_call.params.push_back(Expr());
                 while (token.token == Lexer::Tokens::T_COMMA) {
-                    if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                    if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
                     func_call.params.push_back(Expr());
                 }
             }
             if (!Eat(Tokens::T_RIGHT_BRACKET)) {
-                throw Errors::ParserErrors::ExpectedRightBracket{};
+                throw MakeError<Errors::ParserErrors::ExpectedRightBracket>();
             } GetTraitedToken();
             var = std::make_unique<FuncCall>(std::move(func_call));
         }
@@ -80,11 +87,11 @@ Parser::NodePtr Parser::VarExpr() {
 
 // ListExpr: '[' (T_EOL)* (Expr (T_EOL)* (, (T_EOL)* Expr (T_EOL)*)* )? (,)? (T_EOL)* ']'
 Parser::NodePtr Parser::ListExpr() {
-    if (!Eat(Lexer::Tokens::T_LEFT_SQUARE_BRACKET)) { throw Errors::ParserErrors::ExpectedLeftSquareBracket{}; }
+    if (!Eat(Lexer::Tokens::T_LEFT_SQUARE_BRACKET)) { throw MakeError<Errors::ParserErrors::ExpectedLeftSquareBracket>(); }
 
     auto skip_eol = [&]() {
         while (token.token == Lexer::Tokens::T_EOL) {
-            if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
         }
     };
 
@@ -95,7 +102,7 @@ Parser::NodePtr Parser::ListExpr() {
         list->data.push_back(Expr());
         skip_eol();
         while (token.token == Lexer::T_COMMA) {
-            if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
             skip_eol();
             if (token.token != Lexer::Tokens::T_RIGHT_SQUARE_BRACKET) {
                 list->data.push_back(Expr());
@@ -105,7 +112,7 @@ Parser::NodePtr Parser::ListExpr() {
     }
 
     if (!Eat(Lexer::Tokens::T_RIGHT_SQUARE_BRACKET)) {
-        throw Errors::ParserErrors::ExpectedRightSquareBracket{};
+        throw MakeError<Errors::ParserErrors::ExpectedRightSquareBracket>();
     } GetTraitedToken();
 
     return list;
@@ -121,37 +128,37 @@ Parser::NodePtr Parser::Factor() {
     switch (token.token) {
         case Tokens::T_NUMBER:
         {   double value = std::get<double>(token.value);
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<NumLiteral>(std::move(value), GetTraitedToken()); }
         case Tokens::T_STRING:
         {   std::string value = std::get<std::string>(token.value);
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<StringLiteral>(std::move(value), GetTraitedToken()); }
         case Tokens::T_FALSE:
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<BoolLiteral>(false, GetTraitedToken());
         case Tokens::T_TRUE:
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<BoolLiteral>(true, GetTraitedToken());
         case Tokens::T_NIL:
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<NilLiteral>(GetTraitedToken());
         case Tokens::T_VAR:
             return VarExpr();
         case Tokens::T_FUNC:
         {   auto func_expr = FuncExpr();
             if (token.token == Tokens::T_LEFT_BRACKET) {
-                if (!Eat(Tokens::T_LEFT_BRACKET)) { throw ParserError{}; }
+                if (!Eat(Tokens::T_LEFT_BRACKET)) { throw MakeError<ParserError>(); }
                 FuncCall func_call(std::move(func_expr), GetTraitedToken());  // warning duplicated code !
                 if (token.token != Tokens::T_RIGHT_BRACKET) {
                     func_call.params.push_back(Expr());
                     while (token.token == Lexer::Tokens::T_COMMA) {
-                        if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                        if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
                         func_call.params.push_back(Expr());
                     }
                 }
                 if (!Eat(Tokens::T_RIGHT_BRACKET)) {
-                    throw Errors::ParserErrors::ExpectedRightBracket{};
+                    throw MakeError<Errors::ParserErrors::ExpectedRightBracket>();
                 } GetTraitedToken();
                 return std::make_unique<FuncCall>(std::move(func_call));
             }
@@ -161,38 +168,38 @@ Parser::NodePtr Parser::Factor() {
         case Tokens::T_PLUS:
         case Tokens::T_NOT:
         {   Tokens op = token.token;
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<UnaryOp>(op, Factor(), GetTraitedToken()); }
         case Tokens::T_LEFT_SQUARE_BRACKET:
             return ListExpr();
         case Tokens::T_LEFT_BRACKET:
-        {   if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+        {   if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
             NodePtr expr;
             if (token.token != Tokens::T_RIGHT_BRACKET) { expr = Expr(); }
             else { expr = std::make_unique<NilLiteral>(token); }
-            if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw ParserError{}; } GetTraitedToken();
+            if (!Eat(Tokens::T_RIGHT_BRACKET)) { throw MakeError<ParserError>(); } GetTraitedToken();
 
             if (token.token == Tokens::T_LEFT_BRACKET && expr->node == N_FUNC) {
-                if (!Eat(Tokens::T_LEFT_BRACKET)) { throw ParserError{}; }
+                if (!Eat(Tokens::T_LEFT_BRACKET)) { throw MakeError<ParserError>(); }
                 FuncCall func_call(std::move(expr), GetTraitedToken());  // warning duplicated code !
                 if (token.token != Tokens::T_RIGHT_BRACKET) {
                     func_call.params.push_back(Expr());
                     while (token.token == Lexer::Tokens::T_COMMA) {
-                        if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+                        if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
                         func_call.params.push_back(Expr());
                     }
                 }
                 if (!Eat(Tokens::T_RIGHT_BRACKET)) {
-                    throw Errors::ParserErrors::ExpectedRightBracket{};
+                    throw MakeError<Errors::ParserErrors::ExpectedRightBracket>();
                 } GetTraitedToken();
                 return std::make_unique<FuncCall>(std::move(func_call));
             }
-            
+
             return expr; }
         case Tokens::T_BAD:
-            throw Error(std::get<std::shared_ptr<Error>>(token.value)->what());
+            throw Error(std::get<std::shared_ptr<Error>>(token.value)->what(), token.lineno, token.column);
         default:
-            throw Errors::ParserErrors::FactorError{};
+            throw MakeError<Errors::ParserErrors::FactorError>();
     }
 }
 
@@ -205,7 +212,7 @@ Parser::NodePtr Parser::Term() {
     || token.token == Lexer::Tokens::T_XOR
     || token.token == Lexer::Tokens::T_AND) {
         auto op = token.token;
-        if (!Eat(token.token)) { throw ParserError{}; }
+        if (!Eat(token.token)) { throw MakeError<ParserError>(); }
         term = std::make_unique<BinaryOp>(op, std::move(term), Term(), GetTraitedToken());
     }
     return term;
@@ -226,7 +233,7 @@ Parser::NodePtr Parser::Expr() {
     || token.token == Tokens::T_COMP_SMALLER_OR_EQ
     || token.token == Tokens::T_COMP_GREATER_OR_EQ) {
         auto op = token.token;
-        if (!Eat(token.token)) { throw ParserError{}; }
+        if (!Eat(token.token)) { throw MakeError<ParserError>(); }
         expr = std::make_unique<BinaryOp>(op, std::move(expr), Term(), GetTraitedToken());
     }
     return expr;
@@ -245,28 +252,28 @@ Parser::NodePtr Parser::Assignment() {
         case Tokens::T_EQUAL_MOD:
         case Tokens::T_EQUAL_XOR:
         {   auto op = token.token;
-            if (!Eat(token.token)) { throw ParserError{}; }
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); }
             return std::make_unique<BinaryOp>(op, std::move(var), Expr(), GetTraitedToken()); }
         default:
-            throw Errors::ParserErrors::ExpectedAssignment{};
+            throw MakeError<Errors::ParserErrors::ExpectedAssignment>();
     }
 }
 
 // BreakExpr: T_BREAK
 Parser::NodePtr Parser::BreakExpr() {
-    if (!Eat(Lexer::Tokens::T_BREAK)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_BREAK)) { throw MakeError<ParserError>(); }
     return std::make_unique<Break>(GetTraitedToken());
 }
 
 // ContinueExpr: T_CONTINUE
 Parser::NodePtr Parser::ContinueExpr() {
-    if (!Eat(Lexer::Tokens::T_CONTINUE)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_CONTINUE)) { throw MakeError<ParserError>(); }
     return std::make_unique<Continue>(GetTraitedToken());
 }
 
 // ReturnExpr: 'return' Expr
 Parser::NodePtr Parser::ReturnExpr() {
-    if (!Eat(Lexer::Tokens::T_RETURN)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_RETURN)) { throw MakeError<ParserError>(); }
     return std::make_unique<Return>(Expr(), GetTraitedToken());
 }
 
@@ -290,7 +297,7 @@ Parser::NodePtr Parser::Statement() {
 
 // IfExpr: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
 Parser::NodePtr Parser::IfBlock() {
-    if (!Eat(Lexer::Tokens::T_IF)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_IF)) { throw MakeError<ParserError>(); }
 
     auto condition = std::make_unique<BinaryOp>(
         Lexer::Tokens::T_COMP_EQUAL,
@@ -299,14 +306,14 @@ Parser::NodePtr Parser::IfBlock() {
         GetTraitedToken()
     );
     if (!Eat(Lexer::Tokens::T_THEN)) {
-        throw Errors::ParserErrors::ExpectedThen{};
+        throw MakeError<Errors::ParserErrors::ExpectedThen>();
     } GetTraitedToken();
 
     If if_block;
     if_block.cases.push_back(If::IfCase(std::move(condition), Block()));
 
     while (token.token == Lexer::Tokens::T_ELSE_IF) {
-        if (!Eat(token.token)) { throw ParserError{}; }
+        if (!Eat(token.token)) { throw MakeError<ParserError>(); }
 
         condition = std::make_unique<BinaryOp>(
             Lexer::Tokens::T_COMP_EQUAL,
@@ -315,12 +322,12 @@ Parser::NodePtr Parser::IfBlock() {
             GetTraitedToken()
         );
         if (!Eat(Lexer::Tokens::T_THEN)) {
-            throw Errors::ParserErrors::ExpectedThen{};
+            throw MakeError<Errors::ParserErrors::ExpectedThen>();
         } GetTraitedToken();
         if_block.cases.push_back(If::IfCase(std::move(condition), Block()));
     }
     if (token.token == Lexer::Tokens::T_ELSE) {
-        if (!Eat(token.token)) { throw ParserError{}; }
+        if (!Eat(token.token)) { throw MakeError<ParserError>(); }
 
         condition = std::make_unique<BinaryOp>(
             Lexer::Tokens::T_COMP_EQUAL,
@@ -335,27 +342,27 @@ Parser::NodePtr Parser::IfBlock() {
         ));
     }
     if (!Eat(Lexer::Tokens::T_END_IF)) {
-        throw Errors::ParserErrors::ExpectedEndIf{};
+        throw MakeError<Errors::ParserErrors::ExpectedEndIf>();
     } GetTraitedToken();
     return std::make_unique<If>(std::move(if_block));
 }
 
 // ForBlock: T_FOR Expr T_IN Expr BLOCK T_FOR_END
 Parser::NodePtr Parser::ForBlock() {
-    if (!Eat(Lexer::Tokens::T_FOR)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_FOR)) { throw MakeError<ParserError>(); }
 
     auto iterator = Expr();
-    if (!Eat(Lexer::Tokens::T_IN)) { throw Errors::ParserErrors::ExpectedIn{}; } GetTraitedToken();
+    if (!Eat(Lexer::Tokens::T_IN)) { throw MakeError<Errors::ParserErrors::ExpectedIn>(); } GetTraitedToken();
     auto range = Expr();
 
     For for_block = For(std::move(iterator), std::move(range), Block(), GetTraitedToken());
-    if (!Eat(Lexer::Tokens::T_END_FOR)) { throw Errors::ParserErrors::ExpectedEndFor{}; } GetTraitedToken();
+    if (!Eat(Lexer::Tokens::T_END_FOR)) { throw MakeError<Errors::ParserErrors::ExpectedEndFor>(); } GetTraitedToken();
     return std::make_unique<For>(std::move(for_block));
 }
 
 // WhileBlock: T_WHILE Expr BLOCK T_END_WHILE
 Parser::NodePtr Parser::WhileBlock() {
-    if (!Eat(Lexer::Tokens::T_WHILE)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_WHILE)) { throw MakeError<ParserError>(); }
 
     auto condition = std::make_unique<BinaryOp>(
         Lexer::Tokens::T_COMP_EQUAL,
@@ -365,16 +372,16 @@ Parser::NodePtr Parser::WhileBlock() {
     );
 
     While while_block = While(std::move(condition), Block(), GetTraitedToken());
-    if (!Eat(Lexer::Tokens::T_END_WHILE)) { throw Errors::ParserErrors::ExpectedEndWhile{}; } GetTraitedToken();
+    if (!Eat(Lexer::Tokens::T_END_WHILE)) { throw MakeError<Errors::ParserErrors::ExpectedEndWhile>(); } GetTraitedToken();
     return std::make_unique<While>(std::move(while_block));
 }
 
 // FuncExpr: T_FUNC '(' (T_VAR (',' T_VAR)*)? ')' BLOCK T_END_FUNC
 Parser::NodePtr Parser::FuncExpr() {
-    if (!Eat(Lexer::Tokens::T_FUNC)) { throw ParserError{}; }
+    if (!Eat(Lexer::Tokens::T_FUNC)) { throw MakeError<ParserError>(); }
 
     if (!Eat(Lexer::Tokens::T_LEFT_BRACKET)) {
-        throw Errors::ParserErrors::ExpectedLeftBracket{};
+        throw MakeError<Errors::ParserErrors::ExpectedLeftBracket>();
     } GetTraitedToken();
 
     std::vector<Var> args;
@@ -386,24 +393,24 @@ Parser::NodePtr Parser::FuncExpr() {
             switch (token.token) {
                 case Lexer::Tokens::T_VAR:
                 {   std::string id = std::get<std::string>(token.value);
-                    if (!Eat(token.token)) { throw ParserError{}; }
+                    if (!Eat(token.token)) { throw MakeError<ParserError>(); }
                     args.push_back(Var(std::move(id), GetTraitedToken())); }
                     break;
                 default:
-                    throw Errors::ParserErrors::FunctionParamsError{};
+                    throw MakeError<Errors::ParserErrors::FunctionParamsError>();
             }
             was_comma = true;
         } while (Eat(Lexer::Tokens::T_COMMA));
     }
 
     if (!Eat(Lexer::Tokens::T_RIGHT_BRACKET)) {
-        throw Errors::ParserErrors::ExpectedRightBracket{};
+        throw MakeError<Errors::ParserErrors::ExpectedRightBracket>();
     } GetTraitedToken();
     
     NodePtr func = std::make_unique<Func>(std::move(args), Block(), GetTraitedToken());
     
     if (!Eat(Lexer::Tokens::T_END_FUNC)) {
-        throw Errors::ParserErrors::ExpectedEndFunc{};
+        throw MakeError<Errors::ParserErrors::ExpectedEndFunc>();
     } GetTraitedToken();
 
     return std::move(func);
@@ -431,7 +438,7 @@ Parser::NodePtr Parser::Block() {
     && token.token != Lexer::Tokens::T_END_FOR && token.token != Lexer::Tokens::T_END_FUNC
     && token.token != Lexer::Tokens::T_EOF) {
         if (token.token == Lexer::Tokens::T_EOL) {
-            if (!Eat(token.token)) { throw ParserError{}; } GetTraitedToken();
+            if (!Eat(token.token)) { throw MakeError<ParserError>(); } GetTraitedToken();
         } else {
             node.data.push_back(StatementList());
         }
@@ -460,9 +467,11 @@ void Parser::Parse() {
         root = Block();
     } catch (const Error& e) {
         root = std::make_unique<Bad>(
-            Lexer::Token(Error(e.what()), std::move(token))
+            Lexer::Token(Error(e.what(), token.lineno, token.column), std::move(token))
         );
     } catch (...) {
-        root = std::make_unique<Bad>(Lexer::Token(InternalError(), GetTraitedToken()));
+        root = std::make_unique<Bad>(Lexer::Token(
+            MakeError<InternalError>(),
+            GetTraitedToken()));
     }
 }

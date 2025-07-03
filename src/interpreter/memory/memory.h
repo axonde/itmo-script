@@ -18,6 +18,7 @@ enum TYPES : uint16_t {
     FUNC_TYPE,
     NOT_SET_TYPE
 };
+extern std::unordered_map<TYPES, std::string> TYPE_TO_STR;
 
 namespace Memory {
 

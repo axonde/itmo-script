@@ -7,17 +7,6 @@
 #include <ranges>
 #include <vector>
 
-std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
-    {TYPES::NUM_TYPE, "number"},
-    {TYPES::STRING_TYPE, "string"},
-    {TYPES::NIL_TYPE, "nil"},
-    {TYPES::BOOL_TYPE, "bool"},
-    {TYPES::LIST_TYPE, "list"},
-    {TYPES::FUNC_TYPE, "func"},
-    {TYPES::NOT_SET_TYPE, "(not set type)"}
-};
-
-
 namespace BuiltIn {
 
 // NUMBER AWARE FUNCTIONS

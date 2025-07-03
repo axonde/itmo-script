@@ -7,7 +7,6 @@
 #include "memory.h"
 
 extern std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS;
-extern std::unordered_map<TYPES, std::string> TYPE_TO_STR;
 
 namespace BuiltIn {
 

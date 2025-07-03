@@ -2,13 +2,10 @@
 #include <concepts>
 #include <cstdint>
 #include <memory>
-#include <optional>
-#include <variant>
 #include <stack>
-#include <unordered_set>
 
 #include "lexer.h"
-#include "built_in.h"
+#include "memory.h"
 
 class Parser {
 public:
@@ -56,7 +53,7 @@ public:
     /// Base
     struct Compound : Node {
         Compound() : Node(Nodes::N_COMPOUND) {}
-        
+
         std::vector<NodePtr> data;
     };
     struct Bad : Node {
@@ -66,7 +63,7 @@ public:
     /// Literals
     struct NumLiteral : Node {
         NumLiteral(double v, Lexer::Token&& token) : Node(Nodes::N_NUM_LITERAL, TYPES::NUM_TYPE, std::move(token)), value(v) {}
-        
+
         double value;
     };
     struct StringLiteral : Node {
@@ -82,7 +79,7 @@ public:
         : Node(Nodes::N_BOOL_LITERAL, TYPES::BOOL_TYPE, token), value(v) {}
         BoolLiteral(bool v, Lexer::Token&& token)
         : Node(Nodes::N_BOOL_LITERAL, TYPES::BOOL_TYPE, std::move(token)), value(v) {}
-        
+
         bool value;
     };
     struct NilLiteral : Node {
@@ -152,7 +149,7 @@ public:
         For(For&&) = default;
         For(NodePtr&& i, NodePtr&& r, NodePtr&& b, Lexer::Token token)
         : Node(Nodes::N_FOR, std::move(token)), iterator(std::move(i)), range(std::move(r)), body(std::move(b)) {}
-        
+
         NodePtr iterator;
         NodePtr range;
         NodePtr body;
@@ -161,7 +158,7 @@ public:
         While(While&&) = default;
         While(NodePtr&& c, NodePtr&& b, Lexer::Token token)
         : Node(Nodes::N_WHILE, std::move(token)), condition(std::move(c)), body(std::move(b)) {}
-        
+
         NodePtr condition;
         NodePtr body;
     };
@@ -183,7 +180,7 @@ public:
     struct FuncCall : Node {
         FuncCall(FuncCall&&) = default;
         FuncCall(NodePtr&& f, Lexer::Token&& token) : Node(Nodes::N_FUNC_CALL, std::move(token)), func(std::move(f)) {}
-    
+
         NodePtr func;
         std::vector<NodePtr> params;
     };
@@ -195,6 +192,10 @@ public:
     };
 
     Parser(Lexer::Tokenizer&& t) : tokenizer(std::move(t)) {}
+
+    template<typename T>
+    requires std::derived_from<T, Error>
+    T MakeError();
 
     bool Eat(Lexer::Tokens);
     Lexer::Token GetTraitedToken();
