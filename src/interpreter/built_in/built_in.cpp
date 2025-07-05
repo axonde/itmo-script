@@ -194,7 +194,7 @@ HolderPack upper = HolderPack(
             if (params[0]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
             auto range = std::get<std::string>(params[0]->holder)
             | std::views::transform([](unsigned char s) { return std::toupper(s); });
-            
+
             return HolderPack(std::string(range.begin(), range.end()), TYPES::STRING_TYPE);
         })
     ),
@@ -210,7 +210,7 @@ HolderPack split = HolderPack(
             std::vector<std::string> splitted = Utils::Split(std::get<std::string>(params[0]->holder), &std::isblank);
             auto range = splitted | std::views::transform([](std::string s) {
                 return HolderPack(std::move(s), TYPES::STRING_TYPE); });
-            
+
             return HolderPack(MakeListHolder(std::vector(range.begin(), range.end())), TYPES::LIST_TYPE);
         })
     ),
@@ -319,7 +319,9 @@ HolderPack pop = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
-            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+            if (params[0]->type != TYPES::LIST_TYPE) {
+                throw Errors::TypeErrors::TypeErrorList();
+            }
 
             auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
             if (list.size() == 0) { return {TYPES::NIL_TYPE}; }
@@ -350,6 +352,9 @@ HolderPack sort = HolderPack(
 
 // UNIVERSAL FUNCTIONS STRING / LIST
 HolderPack copy;
+/// @brief  len(list / string)
+/// @brief  get the lenght of passed objects
+/// @return number
 HolderPack len = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -481,7 +486,6 @@ void BuiltIn::InitializeBuilInFunctions() {
         {"to_string", BuiltIn::to_string},
 
         // STRING AWARE FUNCTIONS
-        {"len", BuiltIn::len},
         {"lower", BuiltIn::lower},
         {"upper", BuiltIn::upper},
         {"split", BuiltIn::split},
@@ -490,7 +494,6 @@ void BuiltIn::InitializeBuilInFunctions() {
 
         // LIST AWARE FUNCTIONS
         {"range", BuiltIn::range},
-        {"len", BuiltIn::len},
         {"push", BuiltIn::push},
         {"pop", BuiltIn::pop},
         {"insert", BuiltIn::insert},
@@ -499,6 +502,7 @@ void BuiltIn::InitializeBuilInFunctions() {
 
         // UNIVERSAL FUNCTIONS
         {"copy", BuiltIn::copy},
+        {"len", BuiltIn::len},
 
         // SYSTEM FUNCTIONS
         {"print", BuiltIn::print},
