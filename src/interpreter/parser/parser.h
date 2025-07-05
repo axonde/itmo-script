@@ -32,8 +32,7 @@ public:
         N_FUNC_CALL,
         N_RETURN,
 
-        N_COMPOUND,
-        N_BAD
+        N_COMPOUND
     };
 
     struct Node {
@@ -55,9 +54,6 @@ public:
         Compound() : Node(Nodes::N_COMPOUND) {}
 
         std::vector<NodePtr> data;
-    };
-    struct Bad : Node {
-        Bad(Lexer::Token&& token) : Node(Nodes::N_BAD, std::move(token)) {}
     };
 
     /// Literals

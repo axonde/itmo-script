@@ -1,5 +1,5 @@
-#include <regex>
 #include "lexer.h"
+#include <regex>
 
 namespace Lexer {
 
@@ -72,9 +72,9 @@ Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t c, size
     token = t;
     if (opt == std::nullopt) {
         if (t == Lexer::Tokens::T_NUMBER)
-            *this = Token(Errors::LexerErrors::LexerNumberError{lineno, column});
+            throw Errors::LexerErrors::LexerNumberError{lineno, column};
         else
-            *this = Token(Errors::LexerErrors::LexerStringError{lineno, column});
+            throw Errors::LexerErrors::LexerStringError{lineno, column};
     }
     value = *opt;
     int i;
@@ -110,7 +110,9 @@ std::optional<double> Lexer::Tokenizer::GetNumber() {
 
     if (pos < text->size() && text->at(pos) == 'e') {
         Inc();
-        if (!std::isdigit(text->at(pos)) && text->at(pos) != '+' && text->at(pos) != '-') { return std::nullopt; }
+        if (!std::isdigit(text->at(pos)) && text->at(pos) != '+' && text->at(pos) != '-') {
+            return std::nullopt;
+        }
 
         int power = 0;
         if (text->at(pos) == '-') {
@@ -239,7 +241,7 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryKeyWords(std::string str) {
     }
 
     if (auto iter = key_words_.find(str); str == "end" || iter == key_words_.end()) {
-        return Token(Errors::LexerErrors::LexerKeyWordError(lineno, column));
+        throw Errors::LexerErrors::LexerKeyWordError(lineno, column);
     } else {
         return Token(static_cast<Tokens>(iter->second), column, lineno);
     }
@@ -277,7 +279,7 @@ Lexer::Token Lexer::Tokenizer::Advance() {
     if (auto token = TryLexems(); token) { return std::move(*token); }
     if (auto token = TryWords(); token) { return std::move(*token); }
 
-    return Token(Errors::LexerErrors::LexerUnrecognizable{lineno, column});
+    throw Errors::LexerErrors::LexerUnrecognizable{lineno, column};
 }
 
 Lexer::Token Lexer::Tokenizer::Peek() {
@@ -297,58 +299,45 @@ Lexer::Token Lexer::Tokenizer::Peek() {
 void Lexer::Tokenizer::Inc() { ++pos; ++column; }
 void Lexer::Tokenizer::DoubleInc() { pos += 2; column += 2; }
 
+// TOKENIZER INTERFIECE
 Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
     pos = 0;
     text = &str;
-
-    auto isCloseClosure = [](Token& token) -> bool {
-        return (token.token == Tokens::T_END_IF
-                || token.token == Tokens::T_ELSE
-                || token.token == Tokens::T_WHILE
-                || token.token == Tokens::T_FOR);
-    };
-
     Token token;
 
-    auto update_closures = [&token, this]() {
+    auto update_closures = [this, &token]() {
         if (token.token == Tokens::T_IF
-                || token.token == Tokens::T_WHILE
-                || token.token == Tokens::T_FOR
-                || token.token == Tokens::T_FUNC) {
+         || token.token == Tokens::T_WHILE
+         || token.token == Tokens::T_FOR
+         || token.token == Tokens::T_FUNC) {
             this->closures.push(token);
         }
         if (token.token == Tokens::T_END_IF
-                || token.token == Tokens::T_END_WHILE
-                || token.token == Tokens::T_END_FOR
-                || token.token == Tokens::T_END_FUNC) {
+         || token.token == Tokens::T_END_WHILE
+         || token.token == Tokens::T_END_FOR
+         || token.token == Tokens::T_END_FUNC) {
             if (this->closures.empty()) {
-                throw Closures::Closure(token);
+                throw Closures::NonExistantClosure(std::move(token));
             }
-            closures.pop();
+            this->closures.pop();
         }
     };
 
     do {
         token = Advance();
-        if (token.token == Tokens::T_BAD) {
-            auto error_ptr = std::get<std::shared_ptr<Error>>(token.value);
-            throw Error(error_ptr->what(), token.lineno, token.column);
-        }
         update_closures();
         tokens.push(token);
-    } while(tokens.back().token != Tokens::T_EOF);
-
+    } while(token.token != Tokens::T_EOF);
     if (closures.size() != 0) {
-        throw Closures::UncaughtClosure(std::move(token), TOKENS_TO_STR[token.token]);
+        throw Closures::UncaughtClosure(closures.top(), TOKENS_TO_STR[closures.top().token]);
     }
     return *this;
 }
 Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {
-    token = Advance();
+    if (tokens.empty()) { return *this; }
+    token = tokens.front(); tokens.pop();
     return *this;
 }
-
 size_t Lexer::Tokenizer::GetClosuresSize() const {
     return closures.size();
 }
-

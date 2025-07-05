@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 namespace Patterns {
 
@@ -27,10 +26,10 @@ namespace Errors {
 
 struct Error {
     Error() = default;
+    Error(const std::string& e) : error(e) {}
     Error(size_t l, size_t c) : lineno(l), column(c) {}
     Error(const std::string& e, size_t l, size_t c) : error(e), lineno(l), column(c) {}
-    virtual const char* what() const { return error.c_str(); }
-    virtual ~Error() = default;
+    const char* what() const { return error.c_str(); }
 
     std::string error = "Panic!";
     size_t lineno = 1;
@@ -48,20 +47,24 @@ inline void ErrorOpenFile() {
 namespace LexerErrors {
 
 struct LexerNumberError final : Error {
-    LexerNumberError(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "wrong number literal"; }
+    LexerNumberError(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "wrong number literal";
+    }
 };
 struct LexerStringError final : Error {
-    LexerStringError(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "unclosed string literal"; }
+    LexerStringError(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "unclosed string literal";
+    }
 };
 struct LexerKeyWordError final : Error {
-    LexerKeyWordError(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "non-existant key word"; }
+    LexerKeyWordError(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "non-existant key word";
+    }
 };
 struct LexerUnrecognizable final : Error {
-    LexerUnrecognizable(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "unrecognizable symbols"; }
+    LexerUnrecognizable(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "unrecognizable symbols";
+    }
 };
 
 } // end LexerErrors
@@ -70,72 +73,89 @@ namespace ParserErrors {
 
 
 struct Panic final : Error {
-    Panic(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "parser panic"; }
+    Panic(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "parser panic";
+    }
 };
 struct FactorError final : Error {
-    FactorError(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "cannot correctly evaluate expression"; }
+    FactorError(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "cannot correctly evaluate expression";
+    }
 };
 struct ExpectedAssignment final : Error {
-    ExpectedAssignment(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected an assignment operator"; }
+    ExpectedAssignment(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected an assignment operator";
+    }
 };
 struct ExpectedEmpty final : Error {
-    ExpectedEmpty(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected end of line"; }
+    ExpectedEmpty(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected end of line";
+    }
 };
 struct ExpectedThen final : Error {
-    ExpectedThen(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected then"; }
+    ExpectedThen(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected then";
+    }
 };
 struct ExpectedEndIf final : Error {
-    ExpectedEndIf(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected end if"; }
+    ExpectedEndIf(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected end if";
+    }
 };
 struct ExpectedIn final : Error {
-    ExpectedIn(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected in"; }
+    ExpectedIn(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected in";
+    }
 };
 struct ExpectedEndFor final : Error {
-    ExpectedEndFor(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected end for"; }
+    ExpectedEndFor(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected end for";
+    }
 };
 struct ExpectedEndWhile final : Error {
-    ExpectedEndWhile(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected end while"; }
+    ExpectedEndWhile(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected end while";
+    }
 };
 struct ExpectedFuntionName final : Error {
-    ExpectedFuntionName(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected function name"; }
+    ExpectedFuntionName(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected function name";
+    }
 };
 struct ExpectedLeftBracket final : Error {
-    ExpectedLeftBracket(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected '('"; }
+    ExpectedLeftBracket(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected '('";
+    }
 };
 struct ExpectedRightBracket final : Error {
-    ExpectedRightBracket(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected ')'"; }
+    ExpectedRightBracket(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected ')'";
+    }
 };
 struct ExpectedLeftSquareBracket final : Error {
-    ExpectedLeftSquareBracket(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected '['"; }
+    ExpectedLeftSquareBracket(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected '['";
+    }
 };
 struct ExpectedRightSquareBracket final : Error {
-    ExpectedRightSquareBracket(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected ']'"; }
+    ExpectedRightSquareBracket(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected ']'";
+    }
 };
 struct FunctionParamsError final : Error {
-    FunctionParamsError(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "cannot evaluate given function's parameters"; }
+    FunctionParamsError(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "cannot evaluate given function's parameters";
+    }
 };
 struct ExpectedEndFunc final : Error {
-    ExpectedEndFunc(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected end function"; }
+    ExpectedEndFunc(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected end function";
+    }
 };
 struct ExpectedVarExpr final : Error {
-    ExpectedVarExpr(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "expected variable expression"; }
+    ExpectedVarExpr(size_t lineno, size_t column) : Error(lineno, column) {
+        error = "expected variable expression";
+    }
 };
 
 } // end ParserErrors
@@ -147,17 +167,13 @@ struct OperatorUnaryError final : Error {
         using namespace std::string_literals;
         error = "unknow unary operation '"s + op + "' and "s + type;
     }
-    const char* what() const override {
-        return error.c_str();
-    }
 };
 
 struct OperatorBinaryError final : Error {
-    OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right, size_t lineno, size_t column) : Error(lineno, column) {
+    OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right, size_t lineno = 1, size_t column = 1) : Error(lineno, column) {
         using namespace std::string_literals;
         error = "unknow binary operation '"s + op + "' between "s + left + " and "s + right; 
     }
-    const char* what() const override { return error.c_str(); }
 };
 
 } // end OperatorErrors
@@ -165,7 +181,7 @@ struct OperatorBinaryError final : Error {
 namespace MemoryErrors {
 
 struct NotFound final : Error {
-    const char* what() const override { return "variable is not declared"; }
+    NotFound() : Error("variable is not declared") {}
 };
 
 } // end MemoryErrors
@@ -173,29 +189,29 @@ struct NotFound final : Error {
 namespace TypeErrors {
 
 struct TypeErrorNum final : Error {
-    const char* what() const override { return "expression should be a number"; }
+    TypeErrorNum() : Error("expression should be a number") {}
 };
 struct NonPositiveNumber final : Error {
-    const char* what() const override { return "number should be positive"; }
+    NonPositiveNumber() : Error("number should be positive") {}
 };
 struct IndexNotInteger final : Error {
-    const char* what() const override { return "index must be an integer"; }
+    IndexNotInteger() : Error("index must be an integer") {}
 };
 
 struct TypeErrorString final : Error {
-    const char* what() const override { return "expression should be a string"; }
+    TypeErrorString() : Error("expression should be a string") {}
 };
 
 struct TypeErrorList final : Error {
-    const char* what() const override { return "expression should be a list"; }
+    TypeErrorList() : Error("expression should be a list") {}
 };
 
 struct TypeErrorFunc final : Error {
-    const char* what() const override { return "expression should be a func"; }
+    TypeErrorFunc() : Error("expression should be a func") {}
 };
 
 struct TypeErrorStringOrList final : Error {
-    const char* what() const override { return "variable must be a string or list"; }
+    TypeErrorStringOrList() : Error("variable must be a string or list") {}
 };
 
 } // end TypeErrors
@@ -203,40 +219,40 @@ struct TypeErrorStringOrList final : Error {
 namespace RunTime {
 
 struct OutOfRange final : Error {
-    const char* what() const override { return "out of range"; }
+    OutOfRange() : Error("out of range") {}
 };
 struct ExpectedZeroArgs final : Error {
-    const char* what() const override { return "expected no args for call"; }
+    ExpectedZeroArgs() : Error("expected no args for call") {}
 };
 struct ExpectedOneArg final : Error {
-    const char* what() const override { return "expected one arg for call"; }
+    ExpectedOneArg() : Error("expected one arg for call") {}
 };
 struct ExpectedTwoArgs final : Error {
-    const char* what() const override { return "expected two args for call"; }
+    ExpectedTwoArgs() : Error("expected two args for call") {}
 };
 struct ExpectedThreeArgs final : Error {
-    const char* what() const override { return "expected three args for call"; }
+    ExpectedThreeArgs() : Error("expected three args for call") {}
 };
 struct ExpectedAtLeastOneArg final : Error {
-    const char* what() const override { return "expected at lease one arg for call"; }
+    ExpectedAtLeastOneArg() : Error("expected at lease one arg for call") {}
 };
 struct ExpectedFromOneOrTwoArgs final : Error {
-    const char* what() const override { return "expected one or two args for call"; }
+    ExpectedFromOneOrTwoArgs() : Error("expected one or two args for call") {}
 };
 struct ExpectedFromOneToThreeArgs final : Error {
-    const char* what() const override { return "expected from one to three args for call"; }
+    ExpectedFromOneToThreeArgs() : Error("expected from one to three args for call") {}
 };
 struct ZeroStep final : Error {
-    const char* what() const override { return "cannot have 0 as step"; }
+    ZeroStep() : Error("cannot have 0 as step") {}
 };
 struct WrongArgumentCount final : Error {
-    const char* what() const override { return "arguments count on calling function does not match"; }
+    WrongArgumentCount() : Error("arguments count on calling function does not match") {}
 };
 struct AssignLiteral final : Error {
-    const char* what() const override { return "cannot assign to literal"; }
+    AssignLiteral() : Error("cannot assign to literal") {}
 };
 struct NotEvaluatedSequence final : Error {
-    const char* what() const override { return "the evaluated expression must be a sequence"; }
+    NotEvaluatedSequence() : Error("the evaluated expression must be a sequence") {}
 };
 
 }
@@ -244,21 +260,21 @@ struct NotEvaluatedSequence final : Error {
 namespace InternalErrors {
 
 struct InternalError final : Error {
-    InternalError(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "internal operation error occured"; }
+    InternalError(size_t lineno, size_t column) : Error("internal operation error occured", lineno, column) {}
+    InternalError() : InternalError(1, 1) {}
 };
 struct NotImplemented final : Error {
-    NotImplemented(size_t lineno, size_t column) : Error(lineno, column) {}
-    const char* what() const override { return "not implemented yet"; }
+    NotImplemented(size_t lineno, size_t column) : Error("not implemented yet", lineno, column) {}
+    NotImplemented() : NotImplemented(1, 1) {}
 };
 
 } // end InternalErrors
 
-inline void PrintError(std::string header, Errors::Error* error, size_t pos, size_t line) {
-    std::cerr << Patterns::RED << header << Patterns::WHITE << ": "
-              << error->what() << " at " << Patterns::WHITEBOLD
-              << "line " << line << ", col " << pos << Patterns::WHITE << std::endl;
-}
+void PrintError(std::string header, const Error& error);
+
+void SyntaxError(const Error& error);
+void RunTimeError(const Error& error);
+void Panic(const Error& error);
 
 } // end Errors
 
@@ -266,32 +282,32 @@ namespace Closures {
 
 struct Closure {
     Closure(std::any t) : token(std::move(t)) {}
-    virtual const char* what() const { return closure.c_str(); }
-    virtual ~Closure() = default;
+    const char* what() const { return closure.c_str(); }
 
-    std::string closure = "uncaughted ? closure";
+    std::string closure = "closure error";
     std::any token;
 };
 
 struct UncaughtClosure final : Closure {
     UncaughtClosure(std::any t, const std::string& str)
-    : Closure(std::move(t)) {
-        closure = "uncaughted " + str + " closure";
-    }
+    : Closure(std::move(t)) { closure = "uncaughted " + str + " closure"; }
+};
+
+struct NonExistantClosure final : Closure {
+    NonExistantClosure(std::any t) : Closure(std::move(t)) { closure = "close non-existant closure"; }
 };
 
 struct Return final : Closure {
-    Return(std::any hp, std::any t) : Closure(std::move(t)), holder_pack(std::move(hp)) {}
-    const char* what() const override { return "uncaught return closure"; }
+    Return(std::any hp, std::any t) : Closure(std::move(t)), holder_pack(std::move(hp)) { closure = "uncaught return closure"; }
     std::any holder_pack;
 };
 
 struct Break final : Closure {
-    const char* what() const override { return "uncaught break closure"; }
+    Break(std::any t) : Closure(std::move(t)) { closure = "uncaught break closure"; }
 };
 
 struct Continue final : Closure {
-    const char* what() const override { return "uncaught continue closure"; }
+    Continue(std::any t) : Closure(std::move(t)) { closure = "uncaught continue closure"; }
 };
 
 } // end Closures

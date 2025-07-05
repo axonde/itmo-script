@@ -1,4 +1,7 @@
 #include "operators.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace Operators {
     std::unordered_map<UnaryOpTableKey, UnaryFunction> UNARY_OP_TABLE;
@@ -104,7 +107,7 @@ namespace Operators {
                 return arg_left;
             }
         };
-        
+
         // NUM (setted) = NUM
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
@@ -413,7 +416,7 @@ namespace Operators {
                 return arg_left;
             }
         };
-        
+
         // NUM (setted) = BOOL
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::BOOL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
@@ -570,7 +573,7 @@ namespace Operators {
                 return BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NIL_TYPE}](std::move(arg_left), std::move(arg_right));
             }
         };
-        
+
         // NIL == NIL
         BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::NIL_TYPE, TYPES::NIL_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
@@ -652,7 +655,7 @@ namespace Operators {
                 return arg_left;
             }
         };
-        
+
         // NUM (setted) = LIST
         BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NUM_TYPE, TYPES::LIST_TYPE}] = {
             [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
@@ -706,11 +709,11 @@ namespace Operators {
                 auto exit_true = HolderPack(true, TYPES::BOOL_TYPE);
 
                 if (ls_left.size() != ls_right.size()) { return std::move(exit_false); }
-                
+
                 for (size_t i = 0; i != ls_left.size(); ++i) {
                     if (ls_left[i]->type != ls_right[i]->type) { return std::move(exit_false); }
                     try {
-                        auto hp = ExecBinaryOperation(Lexer::Tokens::T_COMP_EQUAL, HolderPack(ls_left[i]), HolderPack(ls_right[i]));
+                        auto hp = RawExecBinaryOperation(Lexer::Tokens::T_COMP_EQUAL, HolderPack(ls_left[i]), HolderPack(ls_right[i]));
                         if (!std::get<bool>(hp->holder)) {
                             return std::move(exit_false);
                         }
@@ -787,9 +790,14 @@ namespace Operators {
         UnaryOpTableKey key = {node->op, computed->type};
         auto iter = UNARY_OP_TABLE.find(std::move(key));
         if (iter == UNARY_OP_TABLE.end()) {
-            return std::unexpected(Lexer::Token{
-                Errors::OperatorErrors::OperatorUnaryError(Lexer::TOKENS_TO_STR[node->op], TYPE_TO_STR[computed->type]), 
-                node->token});
+            return std::unexpected(Error(
+                Errors::OperatorErrors::OperatorUnaryError(
+                    Lexer::TOKENS_TO_STR[node->op],
+                    TYPE_TO_STR[computed->type],
+                    node->token.lineno,
+                    node->token.column
+                )
+            ));
         }
         return iter->second(std::move(computed));
     }
@@ -798,35 +806,51 @@ namespace Operators {
         BinaryOpTableKey key = {node->op, computed_left->type, computed_right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {
-            return std::unexpected(Lexer::Token{
-                Errors::OperatorErrors::OperatorBinaryError(Lexer::TOKENS_TO_STR[node->op], TYPE_TO_STR[computed_left->type], TYPE_TO_STR[computed_right->type]),
-                node->token});
+            return std::unexpected(Error(
+                Errors::OperatorErrors::OperatorBinaryError(
+                    Lexer::TOKENS_TO_STR[node->op],
+                    TYPE_TO_STR[computed_left->type],
+                    TYPE_TO_STR[computed_right->type],
+                    node->token.lineno,
+                    node->token.column
+                )
+            ));
         }
         try {
             return iter->second(std::move(computed_left), std::move(computed_right));
         } catch (Error& e) {
-            return std::unexpected(Lexer::Token{
-                Error(e.what()),
-                node->token});
+            return std::unexpected(Error(
+                e.what(),
+                node->token.lineno,
+                node->token.column
+            ));
         }
     }
-    [[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens op, Parser::NodePtr& node, HolderPack&& computed_left, HolderPack&& computed_right) noexcept {
-        BinaryOpTableKey key = {op, computed_left->type, computed_right->type};
+    [[nodiscard]] Expected ExecBinaryOperation(const Lexer::Token& op, HolderPack&& computed_left, HolderPack&& computed_right) noexcept {
+        BinaryOpTableKey key = {op.token, computed_left->type, computed_right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {
-            return std::unexpected(Lexer::Token{
-                Errors::OperatorErrors::OperatorBinaryError(Lexer::TOKENS_TO_STR[op], TYPE_TO_STR[computed_left->type], TYPE_TO_STR[computed_right->type]),
-                node->token});
+            return std::unexpected(Error(
+                Errors::OperatorErrors::OperatorBinaryError(
+                    Lexer::TOKENS_TO_STR[op.token],
+                    TYPE_TO_STR[computed_left->type],
+                    TYPE_TO_STR[computed_right->type],
+                    op.lineno,
+                    op.column
+                )
+            ));
         }
         try {
             return iter->second(std::move(computed_left), std::move(computed_right));
         } catch (Error& e) {
-            return std::unexpected(Lexer::Token{
-                Error(e.what()),
-                node->token});
+            return std::unexpected(Error(
+                e.what(),
+                op.lineno,
+                op.column
+            ));
         }
     }
-    [[nodiscard]] HolderPack ExecBinaryOperation(Lexer::Tokens op, HolderPack&& computed_left, HolderPack&& computed_right) {
+    [[nodiscard]] HolderPack RawExecBinaryOperation(Lexer::Tokens op, HolderPack&& computed_left, HolderPack&& computed_right) {
         BinaryOpTableKey key = {op, computed_left->type, computed_right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {

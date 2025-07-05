@@ -1,70 +1,34 @@
 #include "interpreter.h"
 
-namespace Interpreter {
+#include <any>
+#include <cmath>
+#include <variant>
 
-/// CONFIG
-std::unique_ptr<Memory::StackFrame> stack_frame;
-std::istream* in;
-std::ostream* out;
-
-void Init() {
-    BuiltIn::InitializeBuilInFunctions();
-    stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
-    Operators::RegisterUnaryOperators();
-    Operators::RegisterBinaryOperators();
-}
-
-/// ERRORS
-void SyntaxError(const Lexer::Token& token) {
-    using ErrorType = std::shared_ptr<Errors::Error>;
-    Errors::PrintError("Syntax error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
-}
-void RunTimeError(const Lexer::Token& token) {
-    using ErrorType = std::shared_ptr<Errors::Error>;
-    Errors::PrintError("RunTime error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
-}
-
-/// INTERPRET
-bool Interpret(std::istream& input, std::ostream& output) {
-    input.seekg(0, std::ios::end);
-    size_t size = input.tellg();
-    input.seekg(0);
-    std::string program(size, '\0');
-    input.read(&program[0], size);
-
-    return Interpret(program, input, output);
-}
-
-bool Interpret(std::string& program, std::istream& input, std::ostream& output) {
-    Interpreter::in = &input;
-    Interpreter::out = &output;
-    Init();  // caution! this initialization is steadfastly obligatory
-    Runner runner(std::move(program));
-
-    if (runner.GetRoot()->node == Parser::Nodes::N_BAD) {
-        SyntaxError(std::move(runner.GetRoot()->token));
-        return false;
-    }
-
-    if (auto expected = runner.Run(); !expected) {
-        RunTimeError(std::move(expected.error()));
-        return false;
-    }
-    return true;
-}
-
-} // end Interpreter
+#include "built_in.h"
+#include "operators.h"
 
 using Memory::MakeListHolder;
 using Memory::MakeFuncHolder;
 
+void Runner::operator<<(const std::string& str) {
+    tokenizer << str;
+}
+
 Runner::Expected Runner::Run() {
     try {
-        return Visit(parser.root);
+
     } catch (Closure& c) {
-        return std::unexpected(Lexer::Token(Error(
-            c.what()), std::any_cast<Lexer::Token&>(c.token)
+        return std::unexpected(Error(c.what(),
+            std::any_cast<Lexer::Token&>(c.token).lineno,
+            std::any_cast<Lexer::Token&>(c.token).column
         ));
+    } catch (Error& e) {
+        return std::unexpected(Error(e.what(),
+            e.lineno,
+            e.column
+        ));
+    } catch (...) {
+        return std::unexpected(InternalError());
     }
 }
 
@@ -482,3 +446,49 @@ std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var
     }
     return index;
 }
+
+
+/// INTERPRET
+
+Interpreter::Interpreter(std::istream& i, std::ostream& o) {
+    in = &i;
+    out = &o;
+    stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
+    Memory::stack_frame = stack_frame.get();
+    BuiltIn::InitializeBuilInFunctions();
+    Operators::RegisterUnaryOperators();
+    Operators::RegisterBinaryOperators();
+    Runner(...);
+}
+
+bool Interpret(std::istream& input, std::ostream& output) {
+    input.seekg(0, std::ios::end);
+    size_t size = input.tellg();
+    input.seekg(0);
+    std::string program(size, '\0');
+    input.read(&program[0], size);
+
+    return Interpret(program, input, output);
+}
+
+bool Interpret(std::string& program, std::istream& input, std::ostream& output) {
+    Interpreter::in = &input;
+    Interpreter::out = &output;
+    Init();  // caution! this initialization is steadfastly obligatory
+    Runner runner(std::move(program));
+
+    if (runner.GetRoot()->node == Parser::Nodes::N_BAD) {
+        SyntaxError(std::move(runner.GetRoot()->token));
+        return false;
+    }
+
+    if (auto expected = runner.Run(); !expected) {
+        RunTimeError(std::move(expected.error()));
+        return false;
+    }
+    return true;
+}
+
+} // end Interpreter
+
+

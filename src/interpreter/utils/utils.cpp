@@ -1,5 +1,25 @@
 #include "utils.h"
 
+namespace Errors {
+
+void PrintError(std::string header, const Error& error) {
+    std::cerr << Patterns::RED << header << Patterns::WHITE << ": "
+              << error.what() << " at " << Patterns::WHITEBOLD
+              << "line " << error.lineno << ", col " << error.column << Patterns::WHITE << std::endl;
+}
+
+void SyntaxError(const Error& error) {
+    Errors::PrintError("Syntax error", error);
+}
+void RunTimeError(const Error& error) {
+    Errors::PrintError("RunTime error", error);
+}
+void Panic(const Error& error) {
+    Errors::PrintError("Panic!", error);
+}
+
+} // end Errors
+
 namespace Utils {
 
 template<typename Comp>

@@ -12,7 +12,7 @@ std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
 
 bool Memory::HolderPack::operator<(const Memory::HolderPack& other) const {
     return std::get<bool>(
-        Operators::ExecBinaryOperation(Lexer::T_COMP_SMALLER, HolderPack(*this), HolderPack(other))->holder
+        Operators::RawExecBinaryOperation(Lexer::T_COMP_SMALLER, HolderPack(*this), HolderPack(other))->holder
     );
 }
 

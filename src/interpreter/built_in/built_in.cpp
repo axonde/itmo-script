@@ -372,38 +372,38 @@ HolderPack len = HolderPack(
 
 // SYSTEM FUNCTIONS
 /// @brief  print(...)
-/// @brief  prints to *Interpreter::out the passed objects to the terminal (delim = ' ' between objects)
+/// @brief  prints to *out the passed objects to the terminal (delim = ' ' between objects)
 /// @return nil
 HolderPack print = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             bool need_space = false;
             for (auto& holderpack : params) {
-                if (need_space) { *Interpreter::out << ' '; }
+                if (need_space) { *out << ' '; }
                 switch (holderpack->type) {
                     case TYPES::NUM_TYPE:
-                        *Interpreter::out << std::get<double>(holderpack->holder); break;
+                        *out << std::get<double>(holderpack->holder); break;
                     case TYPES::STRING_TYPE:
-                        *Interpreter::out << '"' << std::get<std::string>(holderpack->holder) << '"'; break;
+                        *out << '"' << std::get<std::string>(holderpack->holder) << '"'; break;
                     case TYPES::BOOL_TYPE:
-                        if (std::get<bool>(holderpack->holder)) { *Interpreter::out << "true"; }
-                        else { *Interpreter::out << "false"; }
+                        if (std::get<bool>(holderpack->holder)) { *out << "true"; }
+                        else { *out << "false"; }
                         break;
                     case TYPES::NIL_TYPE:
-                        *Interpreter::out << "nil"; break;
+                        *out << "nil"; break;
                     case TYPES::FUNC_TYPE:
-                        *Interpreter::out << "<function>"; break;
+                        *out << "<function>"; break;
                     case TYPES::LIST_TYPE:
-                    { *Interpreter::out << '['; bool not_first = false;
+                    { *out << '['; bool not_first = false;
                         for (auto hp : std::get<ListHolderPtr>(holderpack->holder)->data) {
-                            if (not_first) { *Interpreter::out << ", "; } not_first = true;
+                            if (not_first) { *out << ", "; } not_first = true;
                             std::get<BuiltInFunction>(
                                 std::get<FuncHolderPtr>(print->holder)->function
                             )({std::move(hp)});
-                        } *Interpreter::out << ']'; }
+                        } *out << ']'; }
                         break;
                     case TYPES::NOT_SET_TYPE:
-                        *Interpreter::out << "(not set type)"; break;
+                        *out << "(not set type)"; break;
                 } need_space = true;
             }
             return HolderPack(TYPES::NIL_TYPE);
@@ -412,7 +412,7 @@ HolderPack print = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief  print(...)
-/// @brief  prints to *Interpreter::out the passed objects to the terminal (delim = '\n' between objects)
+/// @brief  prints to *out the passed objects to the terminal (delim = '\n' between objects)
 /// @return nil
 HolderPack println = HolderPack(
     MakeFuncHolder(BuiltInFunction(
@@ -421,7 +421,7 @@ HolderPack println = HolderPack(
                 std::get<BuiltInFunction>(
                     std::get<FuncHolderPtr>(print->holder)->function
                 )({std::move(holderpack)});
-                *Interpreter::out << std::endl;
+                *out << std::endl;
             }
             return HolderPack(TYPES::NIL_TYPE);
         })
@@ -429,21 +429,21 @@ HolderPack println = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief  read()
-/// @brief  read text from *Interpreter::in;
+/// @brief  read text from *in;
 /// @return string
 HolderPack read = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() > 0) { throw Errors::RunTime::ExpectedZeroArgs(); }
             std::string str;
-            std::getline(*Interpreter::in, str);
+            std::getline(*in, str);
             return HolderPack(std::move(str), TYPES::STRING_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
 /// @brief  stacktrace()
-/// @brief  print to *Interpreter::out the current stack trace in next format:
+/// @brief  print to *out the current stack trace in next format:
 ///
 /// STACK TRACE (from top to bottom)
 /// ================================
@@ -457,7 +457,7 @@ HolderPack read = HolderPack(
 HolderPack stacktrace = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
-            *Interpreter::out << Memory::StackFrame::PrintStack(*Interpreter::stack_frame);
+            *out << Memory::StackFrame::PrintStack(*Memory::stack_frame);
             return HolderPack(TYPES::NIL_TYPE);
         })
     ),

@@ -57,12 +57,7 @@ extern HolderPack stacktrace;
 
 } // end BuiltIn
 
-namespace Interpreter {
-
-// forward declaration for work some system function of built in functions.
-extern std::unique_ptr<Memory::StackFrame> stack_frame;
+// forward declaration for work in/out stream system function of built in functions.
 extern std::istream* in;
 extern std::ostream* out;
-
-} // end Interpreter
 

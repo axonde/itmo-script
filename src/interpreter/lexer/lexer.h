@@ -82,9 +82,6 @@ enum Tokens : uint16_t {
     T_RIGHT_BRACKET,                // `)`
     T_LEFT_SQUARE_BRACKET,          // `[`
     T_RIGHT_SQUARE_BRACKET,         // `]`
-
-    // ERROR
-    T_BAD                           // ill formed token
 };
 
 extern std::unordered_map<Lexer::Tokens, std::string> TOKENS_TO_STR;
@@ -92,16 +89,6 @@ extern std::unordered_map<Lexer::Tokens, std::string> TOKENS_TO_STR;
 class Token {
 public:
     Token() = default;
-
-    template<typename T>
-    requires std::derived_from<T, Error>
-    Token(T&& e)
-    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))) {}
-
-    template<typename T>
-    requires std::derived_from<T, Error>
-    Token(T&& e, const Token& other)
-    : token(other.token), value(std::make_shared<T>(std::forward<T>(e))), column(other.column), lineno(other.lineno) {}
 
     Token(Tokens t, double v, size_t c, size_t l)
     : token(t), value(v), column(c), lineno(l) {}
@@ -112,7 +99,7 @@ public:
     : token(t), value(std::move(v)), column(c), lineno(l) {}
 
     // (Comfy) function, that give you a possibility to pass an optional object
-    // and will return a T_BAD if that is empty.
+    // and will throw if that is empty.
     template<typename T>
     Token(Tokens, const std::optional<T>&, size_t, size_t);
 
@@ -122,7 +109,7 @@ public:
     Tokens token;
     size_t column = 0;
     size_t lineno = 0;
-    std::variant<std::monostate, double, std::string, std::shared_ptr<Error>> value;
+    std::variant<std::monostate, double, std::string> value;
 };
 
 
@@ -138,12 +125,12 @@ public:
 
 private:
     std::queue<Token> tokens;
+    std::stack<Token> closures;
 
     size_t pos;
-    size_t lineno = 1;
     size_t column = 1;
+    size_t lineno = 1;
     const std::string* text;
-    std::stack<Token> closures;
 
     Lexer::Token Advance();
     void Inc();
@@ -201,7 +188,6 @@ private:
         {"function", Tokens::T_FUNC},
         {"return", Tokens::T_RETURN},
         {"end function", Tokens::T_END_FUNC},
-        {"end", Tokens::T_BAD},
 
     // logics
         {"and", Tokens::T_AND},

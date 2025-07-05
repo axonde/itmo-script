@@ -65,7 +65,7 @@ class HolderPack;
 namespace Operators {
 
 // need to forward declare to avoid compare between HolderPack
-[[nodiscard]] Memory::HolderPack ExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
+[[nodiscard]] Memory::HolderPack RawExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
 
 } // end Operators
 
@@ -135,4 +135,7 @@ private:
     HolderPack search(std::string_view);
 };
 
+extern StackFrame* stack_frame;
+
 } // namespace Memory
+

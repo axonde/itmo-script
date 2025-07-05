@@ -1,55 +1,31 @@
 #pragma once
-#include <any>
-#include <cmath>
 #include <concepts>
 #include <expected>
-#include <functional>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <variant>
-#include <unordered_map>
 
 #include "lexer.h"
 #include "parser.h"
-#include "operators.h"
 #include "memory.h"
-
-namespace Interpreter {
-    bool Interpret(std::istream&, std::ostream&);
-    bool Interpret(std::string&, std::istream&, std::ostream&);
-
-    extern std::unique_ptr<Memory::StackFrame> stack_frame;
-    extern std::istream* in;
-    extern std::ostream* out;
-
-    void Init();
-
-    // ERRORS
-    void SyntaxError(const Lexer::Token& token);
-    void RunTimeError(const Lexer::Token&);
-}
 
 class Runner {
 public:
-    template<typename T>
-    requires std::same_as<T, std::string>
-    Runner(T&& str)
-    : parser(Lexer::Tokenizer( std::forward<T>(str) )) {
-        parser.Parse();
-    }
+    Runner() = default;
+
+    void operator<<(const std::string&);
 
     using HolderPack = Memory::HolderPack;
-    using Expected = std::expected<HolderPack, Lexer::Token>;
+    using Expected = std::expected<HolderPack, Error>;
     Expected Run();
 
-    Parser::NodePtr& GetRoot() { return parser.root; }
-
 private:
+    Lexer::Tokenizer tokenizer;
+
     using NodePtr = Parser::NodePtr;
     using ListHolderPtr = Memory::ListHolderPtr;
     using FuncHolderPtr = Memory::FuncHolderPtr;
-    
+
     using FuncHolder = Memory::FuncHolder;
 
     Expected Visit(NodePtr&);
@@ -87,6 +63,26 @@ private:
     std::expected<int, Lexer::Token> GetIndex(NodePtr&, HolderPack&);
     Expected SubscriptIndexer(Parser::Subscript*, HolderPack&&);
     Expected SubscriptSlicer(Parser::Subscript*, HolderPack&&);
-
-    Parser parser;
 };
+
+extern std::istream* in;
+extern std::ostream* out;
+
+class Interpreter {
+public:
+    /// @brief initialize the Interpreter
+    /// @brief configure the input and output streams which are used in streams functions
+    Interpreter(std::istream&, std::ostream&);
+
+    /// @brief reads cmds from istream and puts the result of execution to ostream
+    bool Interpret(std::istream&, std::ostream&);
+
+    std::shared_ptr<Memory::StackFrame> stack_frame;
+
+    size_t GetClosureSize() const;
+
+private:
+    Runner runner;
+};
+
+
