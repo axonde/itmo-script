@@ -313,42 +313,50 @@ void PrintTypeError(const Error& error);
 void PrintRunTimeError(const Error& error);
 void PrintPanic(const Error& error);
 
-void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_t column);
+void PrintProgramSnippet(std::vector<std::string>&, size_t, size_t);
 
 } // end Errors
 
 namespace Closures {
 
 struct Closure {
-    Closure(std::any t) : token(std::move(t)) {}
+    Closure(size_t l, size_t c) : lineno(l), column(c) {}
     const char* what() const { return closure.c_str(); }
 
     std::string closure = "closure error";
     size_t lineno = 1;
     size_t column = 1;
-    std::any token; // TODO delete token depending
 };
 
 struct UncaughtClosure final : Closure {
-    UncaughtClosure(std::any t, const std::string& str)
-    : Closure(std::move(t)) { closure = "uncaughted " + str + " closure"; }
+    UncaughtClosure(const std::string& str, size_t lineno, size_t column)
+    : Closure(lineno, column) { closure = "uncaughted " + str + " closure"; }
 };
 
 struct NonExistantClosure final : Closure {
-    NonExistantClosure(std::any t) : Closure(std::move(t)) { closure = "close non-existant closure"; }
+    NonExistantClosure(size_t lineno, size_t column) : Closure(lineno, column) {
+        closure = "close non-existant closure";
+    }
 };
 
 struct Return final : Closure {
-    Return(std::any hp, std::any t) : Closure(std::move(t)), holder_pack(std::move(hp)) { closure = "uncaught return closure"; }
+    Return(std::any hp, size_t lineno, size_t column)
+    : Closure(lineno, column), holder_pack(std::move(hp)) {
+        closure = "uncaught return closure";
+    }
     std::any holder_pack;
 };
 
 struct Break final : Closure {
-    Break(std::any t) : Closure(std::move(t)) { closure = "uncaught break closure"; }
+    Break(size_t lineno, size_t column) : Closure(lineno, column) {
+        closure = "uncaught break closure";
+    }
 };
 
 struct Continue final : Closure {
-    Continue(std::any t) : Closure(std::move(t)) { closure = "uncaught continue closure"; }
+    Continue(size_t lineno, size_t column) : Closure(lineno, column) {
+        closure = "uncaught continue closure";
+    }
 };
 
 void PrintClosureError(const Closure& c);

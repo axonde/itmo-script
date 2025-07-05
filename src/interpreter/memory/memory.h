@@ -7,6 +7,7 @@
 #include <variant>
 #include <vector>
 
+#include "utils.h"
 #include "lexer.h"
 
 enum TYPES : uint16_t {

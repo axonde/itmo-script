@@ -1,8 +1,6 @@
 #pragma once
-#include <concepts>
 #include <cctype>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <queue>
 #include <stack>
@@ -10,8 +8,6 @@
 #include <unordered_map>
 #include <utility>
 #include <variant>
-
-#include "utils.h"
 
 namespace Lexer {
 
@@ -112,7 +108,6 @@ public:
     std::variant<std::monostate, double, std::string> value;
 };
 
-
 // Lexical Analyzer
 class Tokenizer {
 public:
@@ -200,6 +195,5 @@ private:
         {"nil", Tokens::T_NIL}
     };
 };
-
 
 } // end Lexer

@@ -1,5 +1,4 @@
 #pragma once
-#include <expected>
 #include <functional>
 
 #include "parser.h"
@@ -9,7 +8,6 @@ namespace Operators {
 using HolderPack = Memory::HolderPack;
 using UnaryFunction = std::function<HolderPack(HolderPack&&)>;
 using BinaryFunction = std::function<HolderPack(HolderPack&&, HolderPack&&)>;
-using Expected = std::expected<HolderPack, Error>;
 
 struct UnaryOpTableKey {
     Lexer::Tokens op;
@@ -42,9 +40,9 @@ void RegisterBinaryFuncOperators() noexcept;
 
 void RegisterBinaryOperators() noexcept;
 
-[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&) noexcept;
-[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&) noexcept;
-[[nodiscard]] Expected ExecBinaryOperation(const Lexer::Token&, HolderPack&&, HolderPack&&) noexcept;
+[[nodiscard]] HolderPack ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&);
+[[nodiscard]] HolderPack ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&);
+[[nodiscard]] HolderPack ExecBinaryOperation(const Lexer::Token&, HolderPack&&, HolderPack&&);
 [[maybe_unused]] HolderPack RawExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // inner exec binary operations
 
 } // end Operators

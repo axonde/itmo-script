@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "utils.h"
 #include <regex>
 
 namespace Lexer {
@@ -317,7 +318,7 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
          || token.token == Tokens::T_END_FOR
          || token.token == Tokens::T_END_FUNC) {
             if (this->closures.empty()) {
-                throw Closures::NonExistantClosure(std::move(token));
+                throw Closures::NonExistantClosure(token.lineno, token.column);
             }
             this->closures.pop();
         }
@@ -329,7 +330,11 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
         tokens.push(token);
     } while(token.token != Tokens::T_EOF);
     if (closures.size() != 0) {
-        throw Closures::UncaughtClosure(closures.top(), TOKENS_TO_STR[closures.top().token]);
+        throw Closures::UncaughtClosure(
+            TOKENS_TO_STR[closures.top().token],
+            closures.top().lineno,
+            closures.top().column
+        );
     }
     return *this;
 }

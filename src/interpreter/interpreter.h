@@ -3,7 +3,7 @@
 #include "parser.h"
 #include "memory.h"
 #include <concepts>
-#include <expected>
+#include <cstdint>
 #include <iostream>
 
 extern std::istream* in;
@@ -24,7 +24,6 @@ public:
     bool InterpretRepl(std::istream&, std::ostream&);
 
     using HolderPack = Memory::HolderPack;
-    using Expected = std::expected<HolderPack, Error>;
 
 private:
     Lexer::Tokenizer tokenizer;
@@ -36,55 +35,52 @@ private:
 
     using FuncHolder = Memory::FuncHolder;
 
-    Expected Visit(NodePtr&);
+    HolderPack Visit(NodePtr&);
 
-    Expected VisitNumLiteral(NodePtr&);
-    Expected VisitStringLiteral(NodePtr&);
-    Expected VisitBoolLiteral(NodePtr&);
-    Expected VisitNilLiteral(NodePtr&);
+    HolderPack VisitNumLiteral(NodePtr&);
+    HolderPack VisitStringLiteral(NodePtr&);
+    HolderPack VisitBoolLiteral(NodePtr&);
+    HolderPack VisitNilLiteral(NodePtr&);
 
-    Expected VisitVar(NodePtr&);
-    Expected VisitList(NodePtr&);
+    HolderPack VisitVar(NodePtr&);
+    HolderPack VisitList(NodePtr&);
 
-    Expected VisitUnaryOp(NodePtr&);
-    Expected VisitBinaryOp(NodePtr&);
-    Expected VisitSubscript(NodePtr&);
+    HolderPack VisitUnaryOp(NodePtr&);
+    HolderPack VisitBinaryOp(NodePtr&);
+    HolderPack VisitSubscript(NodePtr&);
 
-    Expected VisitIf(NodePtr&);
-    Expected VisitFor(NodePtr&);
-    Expected VisitWhile(NodePtr&);
+    HolderPack VisitIf(NodePtr&);
+    HolderPack VisitFor(NodePtr&);
+    HolderPack VisitWhile(NodePtr&);
 
-    Expected VisitReturn(NodePtr&);
-    Expected VisitBreak(NodePtr&);
-    Expected VisitContinue(NodePtr&);
+    HolderPack VisitReturn(NodePtr&);
+    HolderPack VisitBreak(NodePtr&);
+    HolderPack VisitContinue(NodePtr&);
 
-    Expected VisitFunc(NodePtr&);
-    Expected VisitFuncCall(NodePtr&);
-    Expected VisitUserFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
-    Expected VisitBuiltInFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
+    HolderPack VisitFunc(NodePtr&);
+    HolderPack VisitFuncCall(NodePtr&);
+    HolderPack VisitUserFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
+    HolderPack VisitBuiltInFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
 
 
-    Expected VisitCompound(NodePtr&);
+    HolderPack VisitCompound(NodePtr&);
 
     // Helpers
-    std::unexpected<Error> MakeError(const Error& e, Parser::Node* node);
-    std::unexpected<Error> MakeError(const Error& e, Parser::NodePtr& node);
+    template<typename E>
+    requires std::derived_from<E, Error>
+    E MakeError(Parser::NodePtr& node);
 
     template<typename E>
     requires std::derived_from<E, Error>
-    std::unexpected<Error> MakeError(Parser::NodePtr& node);
-
-    template<typename E>
-    requires std::derived_from<E, Error>
-    std::unexpected<Error> MakeError(Parser::Node* node);
+    E MakeError(Parser::Node* node);
 
     template<typename Func>
     requires std::invocable<Func>
-    bool RunSafely(Func&&);
+    bool RunSafely(Func&&, std::vector<std::string>&);
 
-    std::expected<int, Error> IntegerRequirement(NodePtr&);
-    std::expected<int, Error> GetIndex(NodePtr&, HolderPack&);
-    Expected SubscriptIndexer(Parser::Subscript*, HolderPack&&);
-    Expected SubscriptSlicer(Parser::Subscript*, HolderPack&&);
+    int64_t IntegerRequirement(NodePtr&);
+    int64_t GetIndex(NodePtr&, HolderPack&);
+    HolderPack SubscriptIndexer(Parser::Subscript*, HolderPack&&);
+    HolderPack SubscriptSlicer(Parser::Subscript*, HolderPack&&);
 };
 
