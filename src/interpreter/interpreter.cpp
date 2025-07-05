@@ -30,12 +30,6 @@ bool Interpreter::Interpret(std::istream& input, std::ostream& output, bool is_r
 }
 
 bool Interpreter::InterpretFile(std::istream& input, std::ostream& output) {
-    // input.seekg(0, std::ios::end);
-    // size_t size = input.tellg();
-    // input.seekg(0);
-    // std::string program(size, '\0');
-    // input.read(&program[0], size);
-
     std::vector<std::string> program;
     std::string line;
     while (std::getline(input, line)) {
@@ -46,16 +40,19 @@ bool Interpreter::InterpretFile(std::istream& input, std::ostream& output) {
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
             return false;
-        }
-        catch (...) {
+        } catch (...) {
             Errors::PrintPanic(InternalError());
             return false;
         }
     }
 
-    Parser parser(tokenizer);
+    extern Parser parser;
+    return RunSafely([&]() {
+        Parser parser(std::move(tokenizer));
+    });
+}
+bool Interpreter::InterpretRepl(std::istream& input, std::ostream& output) {
     
-
 }
 
 // VISITERS
@@ -398,6 +395,64 @@ template<typename E>
 requires std::derived_from<E, Error>
 std::unexpected<Error> MakeError(Parser::Node* node) {
     return { E(node->token.lineno, node->token.column) };
+}
+
+template<typename Func>
+requires std::invocable<Func>
+bool RunSafely(Func&& func, std::vector<std::string>& program) {
+
+    auto stacktrace = [&]() {
+        *err << Memory::StackFrame::PrintStack(*Memory::stack_frame);
+    };
+
+    try {
+        func();
+    } catch (const Closure& c) {
+        stacktrace();
+        Closures::PrintClosureError(c);
+        Errors::PrintProgramSnippet(program, c.lineno, c.column);
+        return false;
+    } catch (const Errors::LexerErrors::LexerError& e) {
+        stacktrace();
+        Errors::PrintSyntaxError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::ParserErrors::ParserError& e) {
+        stacktrace();
+        Errors::PrintSyntaxError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::OperatorErrors::OperatorError& e) {
+        stacktrace();
+        Errors::PrintOperatorError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::MemoryErrors::MemoryError& e) {
+        stacktrace();
+        Errors::PrintRunTimeError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::TypeErrors::TypeError& e) {
+        stacktrace();
+        Errors::PrintTypeError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::RunTime::RunTimeError& e) {
+        stacktrace();
+        Errors::PrintRunTimeError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::InternalErrors::InternalError& e) {
+        stacktrace();
+        Errors::PrintPanic(e);
+        return false;
+    } catch (...) {
+        stacktrace();
+        Errors::PrintPanic(InternalError());
+        return false;
+    }
+
+    return true;
 }
 
 Interpreter::Expected Interpreter::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var) {

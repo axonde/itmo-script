@@ -54,6 +54,7 @@ struct HolderData {
     HolderData(TYPES t) : type(t) {}
     HolderData(Holder&& h) : holder(std::move(h)) {}
     HolderData(Holder&& h, TYPES t) : holder(std::move(h)), type(t) {}
+
     Holder holder;
     TYPES type = TYPES::NOT_SET_TYPE;
 };

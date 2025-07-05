@@ -46,23 +46,28 @@ inline void ErrorOpenFile() {
 
 namespace LexerErrors {
 
-struct LexerNumberError final : Error {
-    LexerNumberError(size_t lineno, size_t column) : Error(lineno, column) {
+struct LexerError : Error {
+    template<typename... Args>
+    LexerError(Args&&... args) : Error(std::forward<Args>(args)...) {}
+};
+
+struct LexerNumberError final : LexerError {
+    LexerNumberError(size_t lineno, size_t column) : LexerError(lineno, column) {
         error = "wrong number literal";
     }
 };
-struct LexerStringError final : Error {
-    LexerStringError(size_t lineno, size_t column) : Error(lineno, column) {
+struct LexerStringError final : LexerError {
+    LexerStringError(size_t lineno, size_t column) : LexerError(lineno, column) {
         error = "unclosed string literal";
     }
 };
-struct LexerKeyWordError final : Error {
-    LexerKeyWordError(size_t lineno, size_t column) : Error(lineno, column) {
+struct LexerKeyWordError final : LexerError {
+    LexerKeyWordError(size_t lineno, size_t column) : LexerError(lineno, column) {
         error = "non-existant key word";
     }
 };
-struct LexerUnrecognizable final : Error {
-    LexerUnrecognizable(size_t lineno, size_t column) : Error(lineno, column) {
+struct LexerUnrecognizable final : LexerError {
+    LexerUnrecognizable(size_t lineno, size_t column) : LexerError(lineno, column) {
         error = "unrecognizable symbols";
     }
 };
@@ -71,89 +76,93 @@ struct LexerUnrecognizable final : Error {
 
 namespace ParserErrors {
 
+struct ParserError : Error {
+    template<typename... Args>
+    ParserError(Args&&... args) : Error(std::forward<Args>(args)...) {}
+};
 
-struct Panic final : Error {
-    Panic(size_t lineno, size_t column) : Error(lineno, column) {
+struct Panic final : ParserError {
+    Panic(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "parser panic";
     }
 };
-struct FactorError final : Error {
-    FactorError(size_t lineno, size_t column) : Error(lineno, column) {
+struct FactorError final : ParserError {
+    FactorError(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "cannot correctly evaluate expression";
     }
 };
-struct ExpectedAssignment final : Error {
-    ExpectedAssignment(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedAssignment final : ParserError {
+    ExpectedAssignment(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected an assignment operator";
     }
 };
-struct ExpectedEmpty final : Error {
-    ExpectedEmpty(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedEmpty final : ParserError {
+    ExpectedEmpty(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected end of line";
     }
 };
-struct ExpectedThen final : Error {
-    ExpectedThen(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedThen final : ParserError {
+    ExpectedThen(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected then";
     }
 };
-struct ExpectedEndIf final : Error {
-    ExpectedEndIf(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedEndIf final : ParserError {
+    ExpectedEndIf(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected end if";
     }
 };
-struct ExpectedIn final : Error {
-    ExpectedIn(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedIn final : ParserError {
+    ExpectedIn(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected in";
     }
 };
-struct ExpectedEndFor final : Error {
-    ExpectedEndFor(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedEndFor final : ParserError {
+    ExpectedEndFor(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected end for";
     }
 };
-struct ExpectedEndWhile final : Error {
-    ExpectedEndWhile(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedEndWhile final : ParserError {
+    ExpectedEndWhile(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected end while";
     }
 };
-struct ExpectedFuntionName final : Error {
-    ExpectedFuntionName(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedFuntionName final : ParserError {
+    ExpectedFuntionName(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected function name";
     }
 };
-struct ExpectedLeftBracket final : Error {
-    ExpectedLeftBracket(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedLeftBracket final : ParserError {
+    ExpectedLeftBracket(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected '('";
     }
 };
-struct ExpectedRightBracket final : Error {
-    ExpectedRightBracket(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedRightBracket final : ParserError {
+    ExpectedRightBracket(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected ')'";
     }
 };
-struct ExpectedLeftSquareBracket final : Error {
-    ExpectedLeftSquareBracket(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedLeftSquareBracket final : ParserError {
+    ExpectedLeftSquareBracket(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected '['";
     }
 };
-struct ExpectedRightSquareBracket final : Error {
-    ExpectedRightSquareBracket(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedRightSquareBracket final : ParserError {
+    ExpectedRightSquareBracket(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected ']'";
     }
 };
-struct FunctionParamsError final : Error {
-    FunctionParamsError(size_t lineno, size_t column) : Error(lineno, column) {
+struct FunctionParamsError final : ParserError {
+    FunctionParamsError(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "cannot evaluate given function's parameters";
     }
 };
-struct ExpectedEndFunc final : Error {
-    ExpectedEndFunc(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedEndFunc final : ParserError {
+    ExpectedEndFunc(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected end function";
     }
 };
-struct ExpectedVarExpr final : Error {
-    ExpectedVarExpr(size_t lineno, size_t column) : Error(lineno, column) {
+struct ExpectedVarExpr final : ParserError {
+    ExpectedVarExpr(size_t lineno, size_t column) : ParserError(lineno, column) {
         error = "expected variable expression";
     }
 };
@@ -162,17 +171,22 @@ struct ExpectedVarExpr final : Error {
 
 namespace OperatorErrors {
 
-struct OperatorUnaryError final : Error {
-    OperatorUnaryError(const std::string& op, const std::string& type, size_t lineno, size_t column) : Error(lineno, column) {
+struct OperatorError : Error {
+    template<typename... Args>
+    OperatorError(Args&&... args) : Error(std::forward<Args>(args)...) {}
+};
+
+struct OperatorUnaryError final : OperatorError {
+    OperatorUnaryError(const std::string& op, const std::string& type, size_t lineno, size_t column) : OperatorError(lineno, column) {
         using namespace std::string_literals;
         error = "unknow unary operation '"s + op + "' and "s + type;
     }
 };
 
-struct OperatorBinaryError final : Error {
-    OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right, size_t lineno = 1, size_t column = 1) : Error(lineno, column) {
+struct OperatorBinaryError final : OperatorError {
+    OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right, size_t lineno = 1, size_t column = 1) : OperatorError(lineno, column) {
         using namespace std::string_literals;
-        error = "unknow binary operation '"s + op + "' between "s + left + " and "s + right; 
+        error = "unknow binary operation '"s + op + "' between "s + left + " and "s + right;
     }
 };
 
@@ -180,91 +194,112 @@ struct OperatorBinaryError final : Error {
 
 namespace MemoryErrors {
 
-struct NotFound final : Error {
-    NotFound() : Error("variable is not declared") {}
+struct MemoryError : Error {
+    template<typename... Args>
+    MemoryError(Args&&... args) : Error(std::forward<Args>(args)...) {}
+};
+
+struct NotFound final : MemoryError {
+    NotFound() : MemoryError("variable is not declared") {}
 };
 
 } // end MemoryErrors
 
 namespace TypeErrors {
 
-struct TypeErrorNum final : Error {
-    TypeErrorNum() : Error("expression should be a number") {}
-};
-struct NonPositiveNumber final : Error {
-    NonPositiveNumber() : Error("number should be positive") {}
-};
-struct IndexNotInteger final : Error {
-    IndexNotInteger() : Error("index must be an integer") {}
+struct TypeError : Error {
+    template<typename... Args>
+    TypeError(Args&&... args) : Error(std::forward<Args>(args)...) {}
 };
 
-struct TypeErrorString final : Error {
-    TypeErrorString() : Error("expression should be a string") {}
+struct TypeErrorNum final : TypeError {
+    TypeErrorNum() : TypeError("expression should be a number") {}
+};
+struct NonPositiveNumber final : TypeError {
+    NonPositiveNumber() : TypeError("number should be positive") {}
+};
+struct IndexNotInteger final : TypeError {
+    IndexNotInteger() : TypeError("index must be an integer") {}
 };
 
-struct TypeErrorList final : Error {
-    TypeErrorList() : Error("expression should be a list") {}
+struct TypeErrorString final : TypeError {
+    TypeErrorString() : TypeError("expression should be a string") {}
 };
 
-struct TypeErrorFunc final : Error {
-    TypeErrorFunc() : Error("expression should be a func") {}
+struct TypeErrorList final : TypeError {
+    TypeErrorList() : TypeError("expression should be a list") {}
 };
 
-struct TypeErrorStringOrList final : Error {
-    TypeErrorStringOrList() : Error("variable must be a string or list") {}
+struct TypeErrorFunc final : TypeError {
+    TypeErrorFunc() : TypeError("expression should be a func") {}
+};
+
+struct TypeErrorStringOrList final : TypeError {
+    TypeErrorStringOrList() : TypeError("variable must be a string or list") {}
 };
 
 } // end TypeErrors
 
 namespace RunTime {
 
-struct OutOfRange final : Error {
-    OutOfRange() : Error("out of range") {}
+struct RunTimeError : Error {
+    template<typename... Args>
+    RunTimeError(Args&&... args) : Error(std::forward<Args>(args)...) {}
 };
-struct ExpectedZeroArgs final : Error {
-    ExpectedZeroArgs() : Error("expected no args for call") {}
+
+struct OutOfRange final : RunTimeError {
+    OutOfRange() : RunTimeError("out of range") {}
 };
-struct ExpectedOneArg final : Error {
-    ExpectedOneArg() : Error("expected one arg for call") {}
+struct ExpectedZeroArgs final : RunTimeError {
+    ExpectedZeroArgs() : RunTimeError("expected no args for call") {}
 };
-struct ExpectedTwoArgs final : Error {
-    ExpectedTwoArgs() : Error("expected two args for call") {}
+struct ExpectedOneArg final : RunTimeError {
+    ExpectedOneArg() : RunTimeError("expected one arg for call") {}
 };
-struct ExpectedThreeArgs final : Error {
-    ExpectedThreeArgs() : Error("expected three args for call") {}
+struct ExpectedTwoArgs final : RunTimeError {
+    ExpectedTwoArgs() : RunTimeError("expected two args for call") {}
 };
-struct ExpectedAtLeastOneArg final : Error {
-    ExpectedAtLeastOneArg() : Error("expected at lease one arg for call") {}
+struct ExpectedThreeArgs final : RunTimeError {
+    ExpectedThreeArgs() : RunTimeError("expected three args for call") {}
 };
-struct ExpectedFromOneOrTwoArgs final : Error {
-    ExpectedFromOneOrTwoArgs() : Error("expected one or two args for call") {}
+struct ExpectedAtLeastOneArg final : RunTimeError {
+    ExpectedAtLeastOneArg() : RunTimeError("expected at lease one arg for call") {}
 };
-struct ExpectedFromOneToThreeArgs final : Error {
-    ExpectedFromOneToThreeArgs() : Error("expected from one to three args for call") {}
+struct ExpectedFromOneOrTwoArgs final : RunTimeError {
+    ExpectedFromOneOrTwoArgs() : RunTimeError("expected one or two args for call") {}
 };
-struct ZeroStep final : Error {
-    ZeroStep() : Error("cannot have 0 as step") {}
+struct ExpectedFromOneToThreeArgs final : RunTimeError {
+    ExpectedFromOneToThreeArgs() : RunTimeError("expected from one to three args for call") {}
 };
-struct WrongArgumentCount final : Error {
-    WrongArgumentCount() : Error("arguments count on calling function does not match") {}
+struct ZeroStep final : RunTimeError {
+    ZeroStep() : RunTimeError("cannot have 0 as step") {}
 };
-struct AssignLiteral final : Error {
-    AssignLiteral() : Error("cannot assign to literal") {}
+struct WrongArgumentCount final : RunTimeError {
+    WrongArgumentCount() : RunTimeError("arguments count on calling function does not match") {}
 };
-struct NotEvaluatedSequence final : Error {
-    NotEvaluatedSequence() : Error("the evaluated expression must be a sequence") {}
+struct AssignLiteral final : RunTimeError {
+    AssignLiteral() : RunTimeError("cannot assign to literal") {}
+};
+struct NotEvaluatedSequence final : RunTimeError {
+    NotEvaluatedSequence() : RunTimeError("the evaluated expression must be a sequence") {}
 };
 
 }
 
 namespace InternalErrors {
 
-struct InternalError final : Error {
-    InternalError(size_t lineno, size_t column) : Error("internal operation error occured", lineno, column) {}
-    InternalError() : InternalError(1, 1) {}
+struct InternalError : Error {
+    template<typename... Args>
+    InternalError(Args&&... args) : Error(std::forward<Args>(args)...) {}
 };
-struct NotImplemented final : Error {
-    NotImplemented(size_t lineno, size_t column) : Error("not implemented yet", lineno, column) {}
+
+struct Panic : InternalError {
+    Panic(size_t lineno, size_t column)
+    : InternalError("internal operation error occured", lineno, column) {}
+    Panic() : InternalError(1, 1) {}
+};
+struct NotImplemented final : InternalError {
+    NotImplemented(size_t lineno, size_t column) : InternalError("not implemented yet", lineno, column) {}
     NotImplemented() : NotImplemented(1, 1) {}
 };
 
@@ -273,8 +308,12 @@ struct NotImplemented final : Error {
 void PrintError(std::string header, const Error& error);
 
 void PrintSyntaxError(const Error& error);
+void PrintOperatorError(const Error& error);
+void PrintTypeError(const Error& error);
 void PrintRunTimeError(const Error& error);
-void PrintPanic(const Error& error = InternalError());
+void PrintPanic(const Error& error);
+
+void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_t column);
 
 } // end Errors
 
@@ -318,7 +357,7 @@ void PrintClosureError(const Closure& c);
 
 using Error = Errors::Error;
 using ParserError = Errors::ParserErrors::Panic;
-using InternalError = Errors::InternalErrors::InternalError;
+using InternalError = Errors::InternalErrors::Panic;
 using OutOfRange = Errors::RunTime::OutOfRange;
 
 using Closure = Closures::Closure;
