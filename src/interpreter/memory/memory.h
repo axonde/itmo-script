@@ -65,7 +65,7 @@ class HolderPack;
 namespace Operators {
 
 // need to forward declare to avoid compare between HolderPack
-[[nodiscard]] Memory::HolderPack RawExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
+[[maybe_unused]] Memory::HolderPack RawExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
 
 } // end Operators
 
@@ -110,7 +110,7 @@ class StackFrame {
 public:
     StackFrame() = default;
     StackFrame(StackFrame&&) = default;
-    StackFrame(std::unordered_map<std::string, HolderPack> e, std::string&& n) : environment(std::move(e)), name(std::move(n)) {}
+    StackFrame(std::unordered_map<std::string, HolderPack>&& e, std::string&& n) : environment(std::move(e)), name(std::move(n)) {}
     StackFrame(std::unique_ptr<StackFrame>&& ptr, std::string&& n) : parent(std::move(ptr)), name(std::move(n)) {}
 
     HolderPack Lookup(std::string_view);  // return a (not set type) if not found variable

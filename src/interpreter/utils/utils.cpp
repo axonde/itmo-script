@@ -8,17 +8,25 @@ void PrintError(std::string header, const Error& error) {
               << "line " << error.lineno << ", col " << error.column << Patterns::WHITE << std::endl;
 }
 
-void SyntaxError(const Error& error) {
+void PrintSyntaxError(const Error& error) {
     Errors::PrintError("Syntax error", error);
 }
-void RunTimeError(const Error& error) {
+void PrintRunTimeError(const Error& error) {
     Errors::PrintError("RunTime error", error);
 }
-void Panic(const Error& error) {
+void PrintPanic(const Error& error) {
     Errors::PrintError("Panic!", error);
 }
 
 } // end Errors
+
+namespace Closures {
+
+void PrintClosureError(const Closure& c) {
+    Errors::PrintError("Closure Error", Error(c.closure, c.lineno, c.column));
+}
+
+} // end Closures
 
 namespace Utils {
 

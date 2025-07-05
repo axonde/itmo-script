@@ -1,26 +1,34 @@
 #pragma once
-#include <concepts>
-#include <expected>
-#include <iostream>
-#include <memory>
-#include <string>
-
 #include "lexer.h"
 #include "parser.h"
 #include "memory.h"
+#include <concepts>
+#include <expected>
+#include <iostream>
 
-class Runner {
+extern std::istream* in;
+extern std::ostream* out;
+
+class Interpreter {
 public:
-    Runner() = default;
+    /// @brief configure the input and output streams which are used in streams functions
+    ///        and init the mandatory classes.
+    Interpreter(std::istream& = std::cin, std::ostream& = std::cout, std::ostream& = std::cerr);
 
-    void operator<<(const std::string&);
+    /// @brief  reads cmds from istream and puts the result of execution to ostream
+    /// @return true if at execution no error happend
+    /// @return false if at least one error occured
+    bool Interpret(std::istream&, std::ostream&, bool is_repl);
+
+    bool InterpretFile(std::istream&, std::ostream&);
+    bool InterpretRepl(std::istream&, std::ostream&);
 
     using HolderPack = Memory::HolderPack;
     using Expected = std::expected<HolderPack, Error>;
-    Expected Run();
 
 private:
     Lexer::Tokenizer tokenizer;
+    std::unique_ptr<Memory::StackFrame> stack_frame;
 
     using NodePtr = Parser::NodePtr;
     using ListHolderPtr = Memory::ListHolderPtr;
@@ -59,30 +67,24 @@ private:
     Expected VisitCompound(NodePtr&);
 
     // Helpers
-    std::expected<int, Lexer::Token> IntegerRequirement(NodePtr&);
-    std::expected<int, Lexer::Token> GetIndex(NodePtr&, HolderPack&);
+    std::unexpected<Error> MakeError(const Error& e, Parser::Node* node);
+    std::unexpected<Error> MakeError(const Error& e, Parser::NodePtr& node);
+
+    template<typename E>
+    requires std::derived_from<E, Error>
+    std::unexpected<Error> MakeError(Parser::NodePtr& node);
+
+    template<typename E>
+    requires std::derived_from<E, Error>
+    std::unexpected<Error> MakeError(Parser::Node* node);
+
+    template<typename Func>
+    requires std::invocable<Func>
+    bool RunSafely(Func&&);
+
+    std::expected<int, Error> IntegerRequirement(NodePtr&);
+    std::expected<int, Error> GetIndex(NodePtr&, HolderPack&);
     Expected SubscriptIndexer(Parser::Subscript*, HolderPack&&);
     Expected SubscriptSlicer(Parser::Subscript*, HolderPack&&);
 };
-
-extern std::istream* in;
-extern std::ostream* out;
-
-class Interpreter {
-public:
-    /// @brief initialize the Interpreter
-    /// @brief configure the input and output streams which are used in streams functions
-    Interpreter(std::istream&, std::ostream&);
-
-    /// @brief reads cmds from istream and puts the result of execution to ostream
-    bool Interpret(std::istream&, std::ostream&);
-
-    std::shared_ptr<Memory::StackFrame> stack_frame;
-
-    size_t GetClosureSize() const;
-
-private:
-    Runner runner;
-};
-
 

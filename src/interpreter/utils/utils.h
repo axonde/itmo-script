@@ -272,9 +272,9 @@ struct NotImplemented final : Error {
 
 void PrintError(std::string header, const Error& error);
 
-void SyntaxError(const Error& error);
-void RunTimeError(const Error& error);
-void Panic(const Error& error);
+void PrintSyntaxError(const Error& error);
+void PrintRunTimeError(const Error& error);
+void PrintPanic(const Error& error = InternalError());
 
 } // end Errors
 
@@ -285,7 +285,9 @@ struct Closure {
     const char* what() const { return closure.c_str(); }
 
     std::string closure = "closure error";
-    std::any token;
+    size_t lineno = 1;
+    size_t column = 1;
+    std::any token; // TODO delete token depending
 };
 
 struct UncaughtClosure final : Closure {
@@ -309,6 +311,8 @@ struct Break final : Closure {
 struct Continue final : Closure {
     Continue(std::any t) : Closure(std::move(t)) { closure = "uncaught continue closure"; }
 };
+
+void PrintClosureError(const Closure& c);
 
 } // end Closures
 

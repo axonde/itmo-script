@@ -850,7 +850,7 @@ namespace Operators {
             ));
         }
     }
-    [[nodiscard]] HolderPack RawExecBinaryOperation(Lexer::Tokens op, HolderPack&& computed_left, HolderPack&& computed_right) {
+    [[maybe_unused]] HolderPack RawExecBinaryOperation(Lexer::Tokens op, HolderPack&& computed_left, HolderPack&& computed_right) {
         BinaryOpTableKey key = {op, computed_left->type, computed_right->type};
         auto iter = BINARY_OP_TABLE.find(std::move(key));
         if (iter == BINARY_OP_TABLE.end()) {

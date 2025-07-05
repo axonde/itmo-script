@@ -45,7 +45,7 @@ void RegisterBinaryOperators() noexcept;
 [[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&) noexcept;
 [[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&) noexcept;
 [[nodiscard]] Expected ExecBinaryOperation(const Lexer::Token&, HolderPack&&, HolderPack&&) noexcept;
-[[nodiscard]] HolderPack RawExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // inner exec binary operations
+[[maybe_unused]] HolderPack RawExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // inner exec binary operations
 
 } // end Operators
 
