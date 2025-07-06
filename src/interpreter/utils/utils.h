@@ -200,7 +200,7 @@ struct MemoryError : Error {
 };
 
 struct NotFound final : MemoryError {
-    NotFound() : MemoryError("variable is not declared") {}
+    NotFound(size_t lineno = 1, size_t column = 1) : MemoryError("variable is not declared", lineno, column) {}
 };
 
 } // end MemoryErrors
@@ -213,29 +213,29 @@ struct TypeError : Error {
 };
 
 struct TypeErrorNum final : TypeError {
-    TypeErrorNum() : TypeError("expression should be a number") {}
+    TypeErrorNum(size_t lineno = 1, size_t column = 1) : TypeError("expression should be a number", lineno, column) {}
 };
 struct NonPositiveNumber final : TypeError {
-    NonPositiveNumber() : TypeError("number should be positive") {}
+    NonPositiveNumber(size_t lineno = 1, size_t column = 1) : TypeError("number should be positive", lineno, column) {}
 };
 struct IndexNotInteger final : TypeError {
-    IndexNotInteger() : TypeError("index must be an integer") {}
+    IndexNotInteger(size_t lineno = 1, size_t column = 1) : TypeError("index must be an integer", lineno, column) {}
 };
 
 struct TypeErrorString final : TypeError {
-    TypeErrorString() : TypeError("expression should be a string") {}
+    TypeErrorString(size_t lineno = 1, size_t column = 1) : TypeError("expression should be a string", lineno, column) {}
 };
 
 struct TypeErrorList final : TypeError {
-    TypeErrorList() : TypeError("expression should be a list") {}
+    TypeErrorList(size_t lineno = 1, size_t column = 1) : TypeError("expression should be a list", lineno, column) {}
 };
 
 struct TypeErrorFunc final : TypeError {
-    TypeErrorFunc() : TypeError("expression should be a func") {}
+    TypeErrorFunc(size_t lineno = 1, size_t column = 1) : TypeError("expression should be a func", lineno, column) {}
 };
 
 struct TypeErrorStringOrList final : TypeError {
-    TypeErrorStringOrList() : TypeError("variable must be a string or list") {}
+    TypeErrorStringOrList(size_t lineno = 1, size_t column = 1) : TypeError("variable must be a string or list", lineno, column) {}
 };
 
 } // end TypeErrors
@@ -248,40 +248,40 @@ struct RunTimeError : Error {
 };
 
 struct OutOfRange final : RunTimeError {
-    OutOfRange() : RunTimeError("out of range") {}
+    OutOfRange(size_t lineno = 1, size_t column = 1) : RunTimeError("out of range", lineno, column) {}
 };
 struct ExpectedZeroArgs final : RunTimeError {
-    ExpectedZeroArgs() : RunTimeError("expected no args for call") {}
+    ExpectedZeroArgs(size_t lineno = 1, size_t column = 1) : RunTimeError("expected no args for call", lineno, column) {}
 };
 struct ExpectedOneArg final : RunTimeError {
     ExpectedOneArg() : RunTimeError("expected one arg for call") {}
 };
 struct ExpectedTwoArgs final : RunTimeError {
-    ExpectedTwoArgs() : RunTimeError("expected two args for call") {}
+    ExpectedTwoArgs(size_t lineno = 1, size_t column = 1) : RunTimeError("expected two args for call", lineno, column) {}
 };
 struct ExpectedThreeArgs final : RunTimeError {
-    ExpectedThreeArgs() : RunTimeError("expected three args for call") {}
+    ExpectedThreeArgs(size_t lineno = 1, size_t column = 1) : RunTimeError("expected three args for call", lineno, column) {}
 };
 struct ExpectedAtLeastOneArg final : RunTimeError {
-    ExpectedAtLeastOneArg() : RunTimeError("expected at lease one arg for call") {}
+    ExpectedAtLeastOneArg(size_t lineno = 1, size_t column = 1) : RunTimeError("expected at lease one arg for call", lineno, column) {}
 };
 struct ExpectedFromOneOrTwoArgs final : RunTimeError {
-    ExpectedFromOneOrTwoArgs() : RunTimeError("expected one or two args for call") {}
+    ExpectedFromOneOrTwoArgs(size_t lineno = 1, size_t column = 1) : RunTimeError("expected one or two args for call", lineno, column) {}
 };
 struct ExpectedFromOneToThreeArgs final : RunTimeError {
-    ExpectedFromOneToThreeArgs() : RunTimeError("expected from one to three args for call") {}
+    ExpectedFromOneToThreeArgs(size_t lineno = 1, size_t column = 1) : RunTimeError("expected from one to three args for call", lineno, column) {}
 };
 struct ZeroStep final : RunTimeError {
-    ZeroStep() : RunTimeError("cannot have 0 as step") {}
+    ZeroStep(size_t lineno = 1, size_t column = 1) : RunTimeError("cannot have 0 as step", lineno, column) {}
 };
 struct WrongArgumentCount final : RunTimeError {
-    WrongArgumentCount() : RunTimeError("arguments count on calling function does not match") {}
+    WrongArgumentCount(size_t lineno = 1, size_t column = 1) : RunTimeError("arguments count on calling function does not match", lineno, column) {}
 };
 struct AssignLiteral final : RunTimeError {
-    AssignLiteral() : RunTimeError("cannot assign to literal") {}
+    AssignLiteral(size_t lineno = 1, size_t column = 1) : RunTimeError("cannot assign to literal", lineno, column) {}
 };
 struct NotEvaluatedSequence final : RunTimeError {
-    NotEvaluatedSequence() : RunTimeError("the evaluated expression must be a sequence") {}
+    NotEvaluatedSequence(size_t lineno = 1, size_t column = 1) : RunTimeError("the evaluated expression must be a sequence", lineno, column) {}
 };
 
 }
@@ -294,13 +294,11 @@ struct InternalError : Error {
 };
 
 struct Panic : InternalError {
-    Panic(size_t lineno, size_t column)
+    Panic(size_t lineno = 1, size_t column = 1)
     : InternalError("internal operation error occured", lineno, column) {}
-    Panic() : InternalError(1, 1) {}
 };
 struct NotImplemented final : InternalError {
-    NotImplemented(size_t lineno, size_t column) : InternalError("not implemented yet", lineno, column) {}
-    NotImplemented() : NotImplemented(1, 1) {}
+    NotImplemented(size_t lineno = 1, size_t column = 1) : InternalError("not implemented yet", lineno, column) {}
 };
 
 } // end InternalErrors
@@ -373,6 +371,16 @@ using Closure = Closures::Closure;
 namespace Utils {
 
 template<typename Comp>
-std::vector<std::string> Split(const std::string& string, const Comp& comp);
+std::vector<std::string> Split(const std::string& string, const Comp& comp) {
+    std::vector<std::string> splitted_string;
+    size_t l = 0;
+    for (size_t r = 0; r != string.size() + 1; r++) {
+        if (r == string.size() || comp(string[r])) {
+            splitted_string.push_back(string.substr(l, r - l));
+            l = r + 1;
+        }
+    }
+    return splitted_string;
+}
 
 } // end Utils

@@ -1,4 +1,7 @@
 #include "serializer.h"
+#include <iostream>
+#include <filesystem>
+#include <fstream>
 
 int main(int argc, char** argv) {
     if (argc != 2) return 1;
@@ -13,6 +16,16 @@ int main(int argc, char** argv) {
     std::string program(size, '\0');
     file.read(&program[0], size);
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
-    std::cout << serializer.tree.dump(2) << '\n';
+    Lexer::Tokenizer tokenizer;
+    try {
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+        std::cout << serializer.tree.dump(2) << '\n';
+        return 0;
+    } catch (Closure& c) {
+        std::cerr << "Closure error occured: " << c.closure << '\n';
+    } catch (Error& e) {
+        std::cerr << "Error occured: " << e.what() << '\n';
+    }
+    return 1;
 }

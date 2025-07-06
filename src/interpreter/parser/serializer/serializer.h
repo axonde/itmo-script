@@ -1,10 +1,6 @@
 #pragma once
-#include <iostream>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <unordered_map>
-#include <variant>
 
 #include <nlohmann/json.hpp>
 #include "parser.h"
@@ -164,12 +160,6 @@ struct Serializer {
         j["children"] = children;
         return j;
     }
-    json VisitBad(NodePtr& node) {
-        return {
-            {"type", "BAD"},
-            {"error", std::get<std::shared_ptr<Error>>(node->token.value)->what()}
-        };
-    }
 
     json Visit(NodePtr& node) {
         if (!node) {
@@ -217,8 +207,6 @@ struct Serializer {
 
             case Parser::Nodes::N_COMPOUND:
                 return VisitCompound(node);
-            case Parser::Nodes::N_BAD:
-                return VisitBad(node);
         }
     }
 

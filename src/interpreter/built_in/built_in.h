@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
-
 #include "memory.h"
 
 extern std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS;

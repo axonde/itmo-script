@@ -1,10 +1,13 @@
 #pragma once
-#include "lexer.h"
-#include "parser.h"
-#include "memory.h"
 #include <concepts>
 #include <cstdint>
 #include <iostream>
+#include <string>
+
+#include "utils.h"
+#include "lexer.h"
+#include "memory.h"
+#include "parser.h"
 
 extern std::istream* in;
 extern std::ostream* out;
@@ -15,13 +18,13 @@ public:
     ///        and init the mandatory classes.
     Interpreter(std::istream& = std::cin, std::ostream& = std::cout, std::ostream& = std::cerr);
 
-    /// @brief  reads cmds from istream and puts the result of execution to ostream
+    /// @brief  reads cmds from istream
     /// @return true if at execution no error happend
     /// @return false if at least one error occured
-    bool Interpret(std::istream&, std::ostream&, bool is_repl);
+    bool Interpret(std::istream&, bool is_repl);
 
-    bool InterpretFile(std::istream&, std::ostream&);
-    bool InterpretRepl(std::istream&, std::ostream&);
+    bool InterpretFile(std::istream&);
+    bool InterpretRepl(std::istream&);
 
     using HolderPack = Memory::HolderPack;
 
@@ -68,11 +71,15 @@ private:
     // Helpers
     template<typename E>
     requires std::derived_from<E, Error>
-    E MakeError(Parser::NodePtr& node);
+    E MakeError(Parser::NodePtr& node) {
+        return E(node->token.lineno, node->token.column);
+    }
 
     template<typename E>
     requires std::derived_from<E, Error>
-    E MakeError(Parser::Node* node);
+    E MakeError(Parser::Node* node) {
+        return E(node->token.lineno, node->token.column);
+    }
 
     template<typename Func>
     requires std::invocable<Func>

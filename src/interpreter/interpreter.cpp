@@ -1,7 +1,7 @@
 #include "interpreter.h"
+
 #include "built_in.h"
 #include "operators.h"
-#include <string>
 
 using Memory::MakeListHolder;
 using Memory::MakeFuncHolder;
@@ -22,14 +22,14 @@ Interpreter::Interpreter(std::istream& i, std::ostream& o, std::ostream& e) {
     Operators::RegisterBinaryOperators();
 }
 
-bool Interpreter::Interpret(std::istream& input, std::ostream& output, bool is_repl) {
+bool Interpreter::Interpret(std::istream& input, bool is_repl) {
     if (!is_repl) {
-        return InterpretFile(input, output);
+        return InterpretFile(input);
     }
-    return InterpretRepl(input, output);
+    return InterpretRepl(input);
 }
 
-bool Interpreter::InterpretFile(std::istream& input, std::ostream& output) {
+bool Interpreter::InterpretFile(std::istream& input) {
     std::vector<std::string> program;
     std::string line;
     while (std::getline(input, line)) {
@@ -49,9 +49,10 @@ bool Interpreter::InterpretFile(std::istream& input, std::ostream& output) {
     return RunSafely([&]() {
         Parser parser(std::move(tokenizer));
         parser.Parse();
+        Visit(parser.root);
     }, program);
 }
-bool Interpreter::InterpretRepl(std::istream& input, std::ostream& output) {
+bool Interpreter::InterpretRepl(std::istream& input) {
     // TODO do it)
     Errors::PrintPanic(Errors::InternalErrors::NotImplemented());
     return false;
@@ -318,22 +319,10 @@ Interpreter::HolderPack Interpreter::VisitCompound(Parser::NodePtr& node) {
 
 
 /// HELPERS
-template<typename E>
-requires std::derived_from<E, Error>
-E MakeError(Parser::NodePtr& node) {
-    return E(node->token.lineno, node->token.column);
-}
-
-template<typename E>
-requires std::derived_from<E, Error>
-E MakeError(Parser::Node* node) {
-    return E(node->token.lineno, node->token.column);
-}
 
 template<typename Func>
 requires std::invocable<Func>
 bool Interpreter::RunSafely(Func&& func, std::vector<std::string>& program) {
-
     auto stacktrace = [&]() {
         *err << Memory::StackFrame::PrintStack(*Memory::stack_frame);
     };

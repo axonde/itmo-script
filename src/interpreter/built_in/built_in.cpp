@@ -7,6 +7,8 @@
 #include <ranges>
 #include <vector>
 
+#include "utils.h"
+
 namespace BuiltIn {
 
 // NUMBER AWARE FUNCTIONS
