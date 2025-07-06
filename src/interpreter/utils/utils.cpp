@@ -3,10 +3,18 @@
 
 namespace Errors {
 
+namespace GeneralErrors {
+
+void FailedOpenFile() {
+    std::cerr << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
+}
+
+} // end GeneralErrors
+
 void PrintError(std::string header, const Error& error) {
-    std::cerr << Patterns::RED << header << Patterns::WHITE << ": "
-              << error.what() << " at " << Patterns::WHITEBOLD
-              << "line " << error.lineno << ", col " << error.column << Patterns::WHITE << std::endl;
+    *err << Patterns::RED << header << Patterns::WHITE << ' '
+         << error.what() << " at " << Patterns::WHITEBOLD
+         << "line " << error.lineno << ", col " << error.column << Patterns::WHITE << std::endl;
 }
 
 void PrintSyntaxError(const Error& error) { PrintError("Syntax error", error); }
@@ -18,18 +26,16 @@ void PrintPanic(const Error& error) { Errors::PrintError("Panic!", error); }
 void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_t column) {
     if (program.empty()) { return; }
 
-    size_t gap = 10;
+    const size_t gap = 10;
     size_t left = 0;
     size_t right = std::min(program[lineno - 1].size(), column - 1 + gap);
     if (column > 1 + gap) { left = column - 1 - gap; }
 
-    std::cout << '\t' << program[lineno - 1] << std::endl;
-    for (size_t i = 0; i != left; ++i) { std::cout << ' '; }
-    std::cout << Patterns::RED << '\t';
-    for (size_t i = left; left < right; ++i) {
-        std::cout << "=";
-    }
-    std::cout << Patterns::WHITE << std::endl;
+    *err << '\t' << program[lineno - 1] << std::endl << '\t';
+    for (size_t i = 0; i != left; ++i) { *err << ' '; }
+    *err << Patterns::RED;
+    for (size_t i = left; i != right; ++i) { *err << "="; }
+    *err << Patterns::WHITE << std::endl;
 }
 
 } // end Errors

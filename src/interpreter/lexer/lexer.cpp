@@ -56,7 +56,7 @@ std::unordered_map<Lexer::Tokens, std::string> TOKENS_TO_STR = {
     {Lexer::Tokens::T_MOD, "%"},
     {Lexer::Tokens::T_XOR, "^"},
 
-    {Lexer::Tokens::T_EOL, "end of lineno"},
+    {Lexer::Tokens::T_EOL, "end of line"},
     {Lexer::Tokens::T_COMMA, ","},
     {Lexer::Tokens::T_COLON, ":"},
     {Lexer::Tokens::T_LEFT_BRACKET, "("},
@@ -68,8 +68,8 @@ std::unordered_map<Lexer::Tokens, std::string> TOKENS_TO_STR = {
 
 /// TOKEN
 template<typename T>
-Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t c, size_t l)
-: column(c), lineno(l) {
+Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t l, size_t c)
+: lineno(l), column(c) {
     token = t;
     if (opt == std::nullopt) {
         if (t == Lexer::Tokens::T_NUMBER)
@@ -86,14 +86,14 @@ void Lexer::Tokenizer::SkipWhiteSpaces() {
     while (pos < text->size() && std::isblank(text->at(pos))) { Inc(); }
 }
 void Lexer::Tokenizer::SkipComment() {
-    if (pos < text->size() - 1 && text->at(pos) == '/' && text->at(pos + 1) == '/') {
+    if (!text->empty() && pos < text->size() - 1 && text->at(pos) == '/' && text->at(pos + 1) == '/') {
         while (pos < text->size() && text->at(pos) != '\n') { Inc(); }
     }
 }
 
 // GETTERS
 std::optional<double> Lexer::Tokenizer::GetNumber() {
-    auto get = [&]() { Inc(); return text->at(pos) - 1 - '0'; };
+    auto get = [&]() { Inc(); return text->at(pos - 1) - '0'; };
 
     double number = 0;
     while (pos < text->size() && std::isdigit(text->at(pos))) number = number * 10 + get();
@@ -164,59 +164,58 @@ std::optional<std::string> Lexer::Tokenizer::GetWord() {
 // lexems
 std::optional<Lexer::Token> Lexer::Tokenizer::TryLiterals() {
     using namespace Lexer;
-    if (std::isdigit(text->at(pos))) return Token(Tokens::T_NUMBER, GetNumber(), column, lineno);
-    if (text->at(pos) == '"') return Token(Tokens::T_STRING, GetString(), column, lineno);
+    if (std::isdigit(text->at(pos))) return Token(Tokens::T_NUMBER, GetNumber(), lineno, column);
+    if (text->at(pos) == '"') return Token(Tokens::T_STRING, GetString(), lineno, column);
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryComparators() {
     using namespace Lexer;
     if (pos + 1 < text->size()) {
-        if (text->at(pos) == '=' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_EQUAL, column, lineno); }
-        if (text->at(pos) == '!' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_NON_EQUAL, column, lineno); }
-        if (text->at(pos) == '<' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_SMALLER_OR_EQ, column, lineno); }
-        if (text->at(pos) == '>' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_GREATER_OR_EQ, column, lineno); }
+        if (text->at(pos) == '=' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_EQUAL, lineno, column); }
+        if (text->at(pos) == '!' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_NON_EQUAL, lineno, column); }
+        if (text->at(pos) == '<' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_SMALLER_OR_EQ, lineno, column); }
+        if (text->at(pos) == '>' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_COMP_GREATER_OR_EQ, lineno, column); }
     }
 
-    if (text->at(pos) == '<') { Inc(); return Token(Tokens::T_COMP_SMALLER, column, lineno); }
-    if (text->at(pos) == '>') { Inc(); return Token(Tokens::T_COMP_GREATER, column, lineno); }
+    if (text->at(pos) == '<') { Inc(); return Token(Tokens::T_COMP_SMALLER, lineno, column); }
+    if (text->at(pos) == '>') { Inc(); return Token(Tokens::T_COMP_GREATER, lineno, column); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryEquals() {
     using namespace Lexer;
-    if (text->at(pos) == '=') { Inc(); return Token(Tokens::T_EQUAL, column, lineno); }
+    if (text->at(pos) == '=') { Inc(); return Token(Tokens::T_EQUAL, lineno, column); }
 
     if (pos + 1 == text->size()) return {};
 
-    if (text->at(pos) == '+' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_PLUS, column, lineno); }
-    if (text->at(pos) == '-' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MINUS, column, lineno); }
-    if (text->at(pos) == '*' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MULT, column, lineno); }
-    if (text->at(pos) == '/' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_DIV, column, lineno); }
-    if (text->at(pos) == '%' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MOD, column, lineno); }
-    if (text->at(pos) == '^' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_XOR, column, lineno); }
+    if (text->at(pos) == '-' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MINUS, lineno, column); }
+    if (text->at(pos) == '*' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MULT, lineno, column); }
+    if (text->at(pos) == '/' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_DIV, lineno, column); }
+    if (text->at(pos) == '%' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MOD, lineno, column); }
+    if (text->at(pos) == '^' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_XOR, lineno, column); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryOperators() {
     using namespace Lexer;
-    if (text->at(pos) == '+') { Inc(); return Token(Tokens::T_PLUS, column, lineno); }
-    if (text->at(pos) == '-') { Inc(); return Token(Tokens::T_MINUS, column, lineno); }
-    if (text->at(pos) == '/') { Inc(); return Token(Tokens::T_DIV, column, lineno); }
-    if (text->at(pos) == '*') { Inc(); return Token(Tokens::T_MULT, column, lineno); }
-    if (text->at(pos) == '%') { Inc(); return Token(Tokens::T_MOD, column, lineno); }
-    if (text->at(pos) == '^') { Inc(); return Token(Tokens::T_XOR, column, lineno); }
+    if (text->at(pos) == '+') { Inc(); return Token(Tokens::T_PLUS, lineno, column); }
+    if (text->at(pos) == '-') { Inc(); return Token(Tokens::T_MINUS, lineno, column); }
+    if (text->at(pos) == '/') { Inc(); return Token(Tokens::T_DIV, lineno, column); }
+    if (text->at(pos) == '*') { Inc(); return Token(Tokens::T_MULT, lineno, column); }
+    if (text->at(pos) == '%') { Inc(); return Token(Tokens::T_MOD, lineno, column); }
+    if (text->at(pos) == '^') { Inc(); return Token(Tokens::T_XOR, lineno, column); }
 
     return {};
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TrySyntaxes() {
     using namespace Lexer;
-    if (text->at(pos) == '\n') { ++pos; ++lineno, column = 1; return Token(Tokens::T_EOL, column, lineno); }
-    if (text->at(pos) == ',') { Inc(); return Token(Tokens::T_COMMA, column, lineno); }
-    if (text->at(pos) == ':') { Inc(); return Token(Tokens::T_COLON, column, lineno); }
-    if (text->at(pos) == '(') { Inc(); return Token(Tokens::T_LEFT_BRACKET, column, lineno); }
-    if (text->at(pos) == ')') { Inc(); return Token(Tokens::T_RIGHT_BRACKET, column, lineno); }
-    if (text->at(pos) == '[') { Inc(); return Token(Tokens::T_LEFT_SQUARE_BRACKET, column, lineno); }
-    if (text->at(pos) == ']') { Inc(); return Token(Tokens::T_RIGHT_SQUARE_BRACKET, column, lineno); }
+    if (text->at(pos) == '\n') { ++pos; ++lineno, column = 1; return Token(Tokens::T_EOL, lineno, column); }
+    if (text->at(pos) == ',') { Inc(); return Token(Tokens::T_COMMA, lineno, column); }
+    if (text->at(pos) == ':') { Inc(); return Token(Tokens::T_COLON, lineno, column); }
+    if (text->at(pos) == '(') { Inc(); return Token(Tokens::T_LEFT_BRACKET, lineno, column); }
+    if (text->at(pos) == ')') { Inc(); return Token(Tokens::T_RIGHT_BRACKET, lineno, column); }
+    if (text->at(pos) == '[') { Inc(); return Token(Tokens::T_LEFT_SQUARE_BRACKET, lineno, column); }
+    if (text->at(pos) == ']') { Inc(); return Token(Tokens::T_RIGHT_SQUARE_BRACKET, lineno, column); }
 
     return {};
 }
@@ -226,7 +225,7 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryKeyWords(std::string str) {
     using namespace Lexer;
     using namespace std::literals::string_literals;
 
-    if (auto iter = key_words_.find(str); iter == key_words_.end()) {
+    if (auto iter = key_words_.find(str); str != "end" && iter == key_words_.end()) {
         return {};
     }
 
@@ -241,10 +240,10 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryKeyWords(std::string str) {
         if (next_token.token == Tokens::T_IF) { Advance(); str += " if"s; }
     }
 
-    if (auto iter = key_words_.find(str); str == "end" || iter == key_words_.end()) {
+    if (auto iter = key_words_.find(str); iter == key_words_.end()) {
         throw Errors::LexerErrors::LexerKeyWordError(lineno, column);
     } else {
-        return Token(static_cast<Tokens>(iter->second), column, lineno);
+        return Token(static_cast<Tokens>(iter->second), lineno, column);
     }
 }
 
@@ -266,7 +265,7 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryWords() {
     else return {};
 
     if (auto token = TryKeyWords(word); token) { return token; }
-    return Token(Tokens::T_VAR, std::move(word), column, lineno);
+    return Token(Tokens::T_VAR, std::move(word), lineno, column);
 }
 
 Lexer::Token Lexer::Tokenizer::Advance() {
@@ -275,7 +274,7 @@ Lexer::Token Lexer::Tokenizer::Advance() {
     SkipWhiteSpaces();
     SkipComment();
 
-    if (pos >= text->size()) { return Token(Tokens::T_EOF, column, lineno); }
+    if (pos >= text->size()) { return Token(Tokens::T_EOF, lineno, column); }
 
     if (auto token = TryLexems(); token) { return std::move(*token); }
     if (auto token = TryWords(); token) { return std::move(*token); }
@@ -311,16 +310,16 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
          || token.token == Tokens::T_WHILE
          || token.token == Tokens::T_FOR
          || token.token == Tokens::T_FUNC) {
-            this->closures.push(token);
+            closures.push(token);
         }
         if (token.token == Tokens::T_END_IF
          || token.token == Tokens::T_END_WHILE
          || token.token == Tokens::T_END_FOR
          || token.token == Tokens::T_END_FUNC) {
-            if (this->closures.empty()) {
+            if (closures.empty()) {
                 throw Closures::NonExistantClosure(token.lineno, token.column);
             }
-            this->closures.pop();
+            closures.pop();
         }
     };
 

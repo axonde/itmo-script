@@ -86,25 +86,25 @@ class Token {
 public:
     Token() = default;
 
-    Token(Tokens t, double v, size_t c, size_t l)
-    : token(t), value(v), column(c), lineno(l) {}
+    Token(Tokens t, double v, size_t l, size_t c)
+    : token(t), value(v), lineno(l), column(c) {}
 
-    Token(Tokens t, const std::string& v, size_t c, size_t l)
-    : token(t), value(v), column(c), lineno(l) {}
-    Token(Tokens t, std::string&& v, size_t c, size_t l)
-    : token(t), value(std::move(v)), column(c), lineno(l) {}
+    Token(Tokens t, const std::string& v, size_t l, size_t c)
+    : token(t), value(v), lineno(l), column(c) {}
+    Token(Tokens t, std::string&& v, size_t l, size_t c)
+    : token(t), value(std::move(v)), lineno(l), column(c) {}
 
     // (Comfy) function, that give you a possibility to pass an optional object
     // and will throw if that is empty.
     template<typename T>
     Token(Tokens, const std::optional<T>&, size_t, size_t);
 
-    Token(Tokens t, size_t c, size_t l)
-    : token(t), value(std::monostate{}), column(c), lineno(l) {}
+    Token(Tokens t, size_t l, size_t c)
+    : token(t), value(std::monostate{}), lineno(l), column(c) {}
 
     Tokens token;
-    size_t column = 0;
     size_t lineno = 0;
+    size_t column = 0;
     std::variant<std::monostate, double, std::string> value;
 };
 
@@ -123,8 +123,8 @@ private:
     std::stack<Token> closures;
 
     size_t pos;
-    size_t column = 1;
     size_t lineno = 1;
+    size_t column = 1;
     const std::string* text;
 
     Lexer::Token Advance();

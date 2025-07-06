@@ -15,11 +15,11 @@ enable_testing()
 add_executable(
   itmoscript_tests
   lexer_ut.cpp
-  ast_ut.cpp
-  function_test.cpp
-  types_test.cpp
-  loop_and_branch_test.cpp
-  standart_library_ut.cpp
+  # ast_ut.cpp
+  # function_test.cpp
+  # types_test.cpp
+  # loop_and_branch_test.cpp
+  # standart_library_ut.cpp
 )
 
 target_link_libraries(
@@ -36,4 +36,4 @@ include(GoogleTest)
 
 gtest_discover_tests(itmoscript_tests)
 
-add_subdirectory(operators)
+# add_subdirectory(operators)

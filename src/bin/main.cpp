@@ -18,12 +18,12 @@ int main(int argc, char** argv) {
     }
 
     std::filesystem::path path(argv[1]);
-    std::fstream file(path, std::ios::in | std::ios::binary | std::ios::ate);
+    std::fstream file(path, std::ios::in);
 
     Interpreter interpreter;
 
     if (!file.is_open()) {
-        Errors::CommonErrors::ErrorOpenFile();
+        Errors::GeneralErrors::FailedOpenFile();
         return 1;
     }
 

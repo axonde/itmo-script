@@ -8,11 +8,12 @@
 using namespace Lexer;
 
 std::vector<Token> MakeTokensVector(std::string&& str) {
-    Tokenizer tokenizer(std::move(str));
+    Tokenizer tokenizer;
+    tokenizer << str;
     std::vector<Token> computed;
     Token token;
     tokenizer >> token;
-    while (token.token != T_BAD && token.token != T_EOF) {
+    while (token.token != T_EOF) {
         computed.push_back(token);
         tokenizer >> token;
     }
@@ -21,11 +22,12 @@ std::vector<Token> MakeTokensVector(std::string&& str) {
 }
 
 std::vector<Tokens> MakeTokensTypeVector(std::string&& str) {
-    Tokenizer tokenizer(std::move(str));
+    Tokenizer tokenizer;
+    tokenizer << str;
     std::vector<Tokens> computed;
     Token token;
     tokenizer >> token;
-    while (token.token != T_BAD && token.token != T_EOF) {
+    while (token.token != T_EOF) {
         computed.push_back(token.token);
         tokenizer >> token;
     }
@@ -72,10 +74,9 @@ TEST(LexerTokenizerTest, GreaterOrEq) {
 TEST(LexerTokenizerTest, SimpleWrongSyntax) {
     std::string program = R"(###)";
 
-    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
-
-    std::vector<Tokens> expected = {T_BAD};
-    ASSERT_EQ(computed, expected);
+    EXPECT_THROW(
+        std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+    , Errors::LexerErrors::LexerError);
 }
 
 TEST(LexerTokenizerTest, ForCycle) {
@@ -86,7 +87,6 @@ TEST(LexerTokenizerTest, ForCycle) {
     )";
 
     std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
-
     std::vector<Tokens> expected = {
         T_EOL,
         T_FOR, T_VAR, T_IN, T_VAR, T_LEFT_BRACKET, T_NUMBER, T_COMMA, T_NUMBER, T_RIGHT_BRACKET, T_EOL,
@@ -129,7 +129,7 @@ TEST(LexerTokenizerTest, EmptyFunction) {
 TEST(LexerTokenizerTest, Empty) {
     std::string program = R"()";
 
-    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program)); 
 
     std::vector<Tokens> expected = {T_EOF};
     ASSERT_EQ(computed, expected);

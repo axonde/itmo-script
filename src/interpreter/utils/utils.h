@@ -22,6 +22,8 @@ inline void Welcome() {
 
 }
 
+extern std::ostream* err;  // forward declaration for Errors out
+
 namespace Errors {
 
 struct Error {
@@ -36,13 +38,11 @@ struct Error {
     size_t column = 1;
 };
 
-namespace CommonErrors {
+namespace GeneralErrors {
 
-inline void ErrorOpenFile() {
-    std::cerr << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
-}
+void FailedOpenFile();
 
-} // end CommonErrors
+} // end GeneralErrors
 
 namespace LexerErrors {
 

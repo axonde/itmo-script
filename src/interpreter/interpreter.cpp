@@ -34,11 +34,17 @@ bool Interpreter::InterpretFile(std::istream& input) {
     std::string line;
     while (std::getline(input, line)) {
         program.push_back(line);
-        try {
-            tokenizer << line;
-        } catch (const Closures::UncaughtClosure& c) { continue; }
+        try { tokenizer << line; }
+        catch (const Closures::UncaughtClosure& c) {
+            if (!input.eof()) { continue; }
+            Closures::PrintClosureError(c);
+            return false;
+        }
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
+            return false;
+        } catch(const Error& e) {
+            Errors::PrintSyntaxError(e);
             return false;
         } catch (...) {
             Errors::PrintPanic(InternalError());
