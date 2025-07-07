@@ -275,7 +275,7 @@ TEST(AstSerialization, IfStatement) {
 
     json expected = {
         {"children", {{
-            {"children", {{
+            {"cases", {{
                 {"body", {
                     {"children", {{
                         {"func", {
@@ -288,7 +288,7 @@ TEST(AstSerialization, IfStatement) {
                         }}},
                         {"type", "function call"}
                     }}},
-                    {"type", "compound"}
+                    {"type", "compound"},
                 }},
                 {"condition", {
                     {"left", {
@@ -306,13 +306,13 @@ TEST(AstSerialization, IfStatement) {
                     {"operator", "=="},
                     {"right", {
                         {"type", "Bool Literal"},
-                        {"value", "true"}
+                        {"value", "true"},
+                        {"type", "Binary Op"}
                     }},
                     {"type", "Binary Op"}
                 }},
-                {"type", "If Block"}
             }}},
-            {"type", "compound"}
+            {"type", "If block"}
         }}},
         {"type", "compound"}
     };
