@@ -327,15 +327,11 @@ TEST(AstSerialization, WrongSyntaxStringLiteral) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "unclosed string literal"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::LexerErrors::LexerStringError);
 }
 
 TEST(AstSerialization, WrongSyntaxNumLiteral) {
@@ -345,30 +341,22 @@ TEST(AstSerialization, WrongSyntaxNumLiteral) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "wrong number literal"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::LexerErrors::LexerNumberError);
 }
 
 TEST(AstSerialization, WrongSyntaxUndefinedSymbols) {
     std::string program = R"(!@!#)";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "unrecognizable symbols"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::LexerErrors::LexerUnrecognizable);
 }
 
 TEST(AstSerialization, WrongSyntaxIfStatementExpThen) {
@@ -379,15 +367,11 @@ TEST(AstSerialization, WrongSyntaxIfStatementExpThen) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "expected then"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::ParserErrors::ExpectedThen);
 }
 
 TEST(AstSerialization, WrongSyntaxIfStatementExpExpr) {
@@ -398,15 +382,11 @@ TEST(AstSerialization, WrongSyntaxIfStatementExpExpr) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "cannot correctly evaluate expression"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::ParserErrors::FactorError);
 }
 
 TEST(AstSerialization, WrongSyntaxIfStatementForgotEndIf) {
@@ -416,15 +396,11 @@ TEST(AstSerialization, WrongSyntaxIfStatementForgotEndIf) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "expected end if"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Closures::UncaughtClosure);
 }
 
 TEST(AstSerialization, WrongSyntaxForStatementExpIn) {
@@ -435,15 +411,11 @@ TEST(AstSerialization, WrongSyntaxForStatementExpIn) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "expected in"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::ParserErrors::ExpectedIn);
 }
 
 TEST(AstSerialization, WrongSyntaxForStatementExpr) {
@@ -454,15 +426,11 @@ TEST(AstSerialization, WrongSyntaxForStatementExpr) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "cannot correctly evaluate expression"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::ParserErrors::FactorError);
 }
 
 TEST(AstSerialization, WrongSyntaxForStatementRange) {
@@ -473,15 +441,11 @@ TEST(AstSerialization, WrongSyntaxForStatementRange) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "cannot correctly evaluate expression"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::ParserErrors::FactorError);
 }
 
 TEST(AstSerialization, WrongSyntaxForStatementForgotEndFor) {
@@ -491,15 +455,11 @@ TEST(AstSerialization, WrongSyntaxForStatementForgotEndFor) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "expected end for"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Closures::UncaughtClosure);
 }
 
 TEST(AstSerialization, AbnormalInput) {
@@ -508,15 +468,11 @@ TEST(AstSerialization, AbnormalInput) {
     )";
 
     Lexer::Tokenizer tokenizer;
-    tokenizer << program;
-    Serializer serializer(Parser(std::move(tokenizer)));
 
-    json expected = {
-        {"error", "unrecognizable symbols"},
-        {"type", "BAD"}
-    };
-
-    ASSERT_EQ(serializer.tree, expected);
+    ASSERT_THROW(
+        tokenizer << program;
+        Serializer serializer(Parser(std::move(tokenizer)));
+    , Errors::LexerErrors::LexerUnrecognizable);
 }
 
 TEST(AstSerialization, EmptyInput) {
