@@ -211,7 +211,6 @@ struct Serializer {
     }
 
     Serializer(Parser&& p) : parser(std::move(p)) {
-        Lexer::Token token;
         parser.Parse();
         tree = Visit(parser.root);
     }

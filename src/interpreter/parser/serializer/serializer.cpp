@@ -23,9 +23,9 @@ int main(int argc, char** argv) {
         std::cout << serializer.tree.dump(2) << '\n';
         return 0;
     } catch (Closure& c) {
-        std::cerr << "Closure error occured: " << c.closure << '\n';
+        std::cerr << "Closure error occured: " << c.closure << " at" << c.lineno << ':' << c.column << '\n';
     } catch (Error& e) {
-        std::cerr << "Error occured: " << e.what() << '\n';
+        std::cerr << "Error occured: " << e.what() << e.lineno << ':' << e.column << '\n';
     }
     return 1;
 }

@@ -3,8 +3,9 @@
 
 TEST(AstSerialization, OnePlusOne) {
     std::string program = "1 + 1";
-
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {
@@ -34,7 +35,9 @@ TEST(AstSerialization, BasicVar) {
         a = 1
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {
@@ -66,7 +69,9 @@ TEST(AstSerialization, FunctionDeclaration) {
         end function
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"children", {{
@@ -121,7 +126,9 @@ TEST(AstSerialization, NestedFunctionCall) {
         a(b())
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"children", {
@@ -156,7 +163,9 @@ TEST(AstSerialization, ForCycle) {
         end for
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"children", {
@@ -213,7 +222,9 @@ TEST(AstSerialization, WhileCycle) {
         end while
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
        {"children", {{
@@ -251,61 +262,63 @@ TEST(AstSerialization, WhileCycle) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-// TEST(AstSerialization, IfStatement) {
-//     std::string program = R"(
-//         if cond == 1 then
-//             print("cool!")
-//         end if
-//     )"
+TEST(AstSerialization, IfStatement) {
+    std::string program = R"(
+        if cond == 1 then
+            print("cool!")
+        end if
+    )";
 
-//     Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
-//     json expected = {
-//         {"children", {{
-//             {"children", {{
-//                 {"body", {
-//                     {"children", {{
-//                         {"func", {
-//                             {"id", "print"},
-//                             {"type", "Var"}
-//                         }},
-//                         {"params", {{
-//                             {"type", "String Literal"},
-//                             {"value", "cool!"}
-//                         }}},
-//                         {"type", "function call"}
-//                     }}},
-//                     {"type", "compound"}
-//                 }},
-//                 {"condition", {
-//                     {"left", {
-//                         {"left", {
-//                             {"id", "cond"},
-//                             {"type", "Var"}
-//                         }},
-//                         {"operator", "=="},
-//                         {"right", {
-//                             {"type", "Num Literal"},
-//                             {"value", 1.0}
-//                         }},
-//                         {"type", "Binary Op"}
-//                     }},
-//                     {"operator", "=="},
-//                     {"right", {
-//                         {"type", "Bool Literal"},
-//                         {"value", "true"}
-//                     }},
-//                     {"type", "Binary Op"}
-//                 }},
-//                 {"type", "If Block"}
-//             }}},
-//             {"type", "compound"}
-//         }}},
-//         {"type", "compound"}
-//     };
+    json expected = {
+        {"children", {{
+            {"children", {{
+                {"body", {
+                    {"children", {{
+                        {"func", {
+                            {"id", "print"},
+                            {"type", "Var"}
+                        }},
+                        {"params", {{
+                            {"type", "String Literal"},
+                            {"value", "cool!"}
+                        }}},
+                        {"type", "function call"}
+                    }}},
+                    {"type", "compound"}
+                }},
+                {"condition", {
+                    {"left", {
+                        {"left", {
+                            {"id", "cond"},
+                            {"type", "Var"}
+                        }},
+                        {"operator", "=="},
+                        {"right", {
+                            {"type", "Num Literal"},
+                            {"value", 1.0}
+                        }},
+                        {"type", "Binary Op"}
+                    }},
+                    {"operator", "=="},
+                    {"right", {
+                        {"type", "Bool Literal"},
+                        {"value", "true"}
+                    }},
+                    {"type", "Binary Op"}
+                }},
+                {"type", "If Block"}
+            }}},
+            {"type", "compound"}
+        }}},
+        {"type", "compound"}
+    };
 
-//     ASSERT_EQ(serializer.tree, expected);
-// }
+    ASSERT_EQ(serializer.tree, expected);
+}
 
 TEST(AstSerialization, WrongSyntaxStringLiteral) {
     std::string program = R"(
@@ -313,7 +326,9 @@ TEST(AstSerialization, WrongSyntaxStringLiteral) {
         b = 2
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "unclosed string literal"},
@@ -329,7 +344,9 @@ TEST(AstSerialization, WrongSyntaxNumLiteral) {
         b = 2
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "wrong number literal"},
@@ -342,7 +359,9 @@ TEST(AstSerialization, WrongSyntaxNumLiteral) {
 TEST(AstSerialization, WrongSyntaxUndefinedSymbols) {
     std::string program = R"(!@!#)";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "unrecognizable symbols"},
@@ -359,7 +378,9 @@ TEST(AstSerialization, WrongSyntaxIfStatementExpThen) {
         end if
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "expected then"},
@@ -376,7 +397,9 @@ TEST(AstSerialization, WrongSyntaxIfStatementExpExpr) {
         end if
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "cannot correctly evaluate expression"},
@@ -392,7 +415,9 @@ TEST(AstSerialization, WrongSyntaxIfStatementForgotEndIf) {
             i = 3
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "expected end if"},
@@ -409,7 +434,9 @@ TEST(AstSerialization, WrongSyntaxForStatementExpIn) {
         end for
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "expected in"},
@@ -426,7 +453,9 @@ TEST(AstSerialization, WrongSyntaxForStatementExpr) {
         end for
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "cannot correctly evaluate expression"},
@@ -443,7 +472,9 @@ TEST(AstSerialization, WrongSyntaxForStatementRange) {
         end for
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "cannot correctly evaluate expression"},
@@ -459,7 +490,9 @@ TEST(AstSerialization, WrongSyntaxForStatementForgotEndFor) {
             continue
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "expected end for"},
@@ -474,7 +507,9 @@ TEST(AstSerialization, AbnormalInput) {
         !@O#I1o] 	2-]9u j[9j4n ln;lkj;j]
     )";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"error", "unrecognizable symbols"},
@@ -487,7 +522,9 @@ TEST(AstSerialization, AbnormalInput) {
 TEST(AstSerialization, EmptyInput) {
     std::string program = R"()";
 
-    Serializer serializer(Parser(Lexer::Tokenizer(std::move(program))));
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
 
     json expected = {
         {"children", {}},

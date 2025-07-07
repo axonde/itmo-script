@@ -184,15 +184,17 @@ std::optional<Lexer::Token> Lexer::Tokenizer::TryComparators() {
 }
 std::optional<Lexer::Token> Lexer::Tokenizer::TryEquals() {
     using namespace Lexer;
+
+    if (pos + 1 < text->size()) {
+        if (text->at(pos) == '+' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_PLUS, lineno, column); }
+        if (text->at(pos) == '-' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MINUS, lineno, column); }
+        if (text->at(pos) == '*' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MULT, lineno, column); }
+        if (text->at(pos) == '/' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_DIV, lineno, column); }
+        if (text->at(pos) == '%' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MOD, lineno, column); }
+        if (text->at(pos) == '^' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_XOR, lineno, column); }
+    }
+
     if (text->at(pos) == '=') { Inc(); return Token(Tokens::T_EQUAL, lineno, column); }
-
-    if (pos + 1 == text->size()) return {};
-
-    if (text->at(pos) == '-' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MINUS, lineno, column); }
-    if (text->at(pos) == '*' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MULT, lineno, column); }
-    if (text->at(pos) == '/' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_DIV, lineno, column); }
-    if (text->at(pos) == '%' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_MOD, lineno, column); }
-    if (text->at(pos) == '^' && text->at(pos + 1) == '=') { DoubleInc(); return Token(Tokens::T_EQUAL_XOR, lineno, column); }
 
     return {};
 }
@@ -285,11 +287,12 @@ Lexer::Token Lexer::Tokenizer::Advance() {
 Lexer::Token Lexer::Tokenizer::Peek() {
     using namespace Lexer;
 
-    std::string str;
     size_t pos_save = pos;
     auto column_save = column;
     size_t lineno_save = lineno;
+
     Token token = Advance();
+
     pos = pos_save;
     column = column_save;
     lineno = lineno_save;
@@ -338,7 +341,10 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
     return *this;
 }
 Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {
-    if (tokens.empty()) { return *this; }
+    if (tokens.empty()) {
+        token = Token(Tokens::T_EOF, lineno, column);
+        return *this;
+    }
     token = tokens.front(); tokens.pop();
     return *this;
 }
