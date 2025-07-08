@@ -230,3 +230,24 @@ end function)";
 
     ASSERT_EQ(positions, expected_positions);
 }
+
+TEST(LexerInterfaceTest, MultiLineInput) {
+    Lexer::Tokenizer tokenizer;
+
+    tokenizer << "a = 1\n";
+    tokenizer << "b = 2";
+
+    std::vector<Tokens> computed;
+    Token token;
+    tokenizer >> token;
+    while (token.token != T_EOF) {
+        computed.push_back(token.token);
+        tokenizer >> token;
+    }
+    computed.push_back(token.token);
+
+    std::vector<Tokens> expected = {
+        T_VAR, T_EQUAL, T_NUMBER, T_EOL,
+        T_VAR, T_EQUAL, T_NUMBER, T_EOF };
+    ASSERT_EQ(computed, expected);
+}

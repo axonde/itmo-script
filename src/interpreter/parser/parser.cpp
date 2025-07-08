@@ -197,7 +197,6 @@ Parser::NodePtr Parser::Factor() {
             }
             return expr; }
         default:
-            std::cout << Lexer::TOKENS_TO_STR[token.token] << '\n';
             throw MakeError<Errors::ParserErrors::FactorError>();
     }
 }

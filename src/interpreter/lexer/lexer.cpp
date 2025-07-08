@@ -308,6 +308,8 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
     text = &str;
     Token token;
 
+    if (tokens.size() != 0) { tokens.pop_back(); }
+
     auto update_closures = [this, &token]() {
         if (token.token == Tokens::T_IF
          || token.token == Tokens::T_WHILE
@@ -329,7 +331,7 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
     do {
         token = Advance();
         update_closures();
-        tokens.push(token);
+        tokens.push_back(token);
     } while(token.token != Tokens::T_EOF);
     if (closures.size() != 0) {
         throw Closures::UncaughtClosure(
@@ -345,7 +347,7 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {
         token = Token(Tokens::T_EOF, lineno, column);
         return *this;
     }
-    token = tokens.front(); tokens.pop();
+    token = tokens.front(); tokens.pop_front();
     return *this;
 }
 size_t Lexer::Tokenizer::GetClosuresSize() const {

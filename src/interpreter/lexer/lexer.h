@@ -2,7 +2,7 @@
 #include <cctype>
 #include <cstdint>
 #include <optional>
-#include <queue>
+#include <deque>
 #include <stack>
 #include <string>
 #include <unordered_map>
@@ -119,7 +119,7 @@ public:
     size_t GetClosuresSize() const;
 
 private:
-    std::queue<Token> tokens;
+    std::deque<Token> tokens;
     std::stack<Token> closures;
 
     size_t pos;

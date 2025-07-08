@@ -11,6 +11,7 @@
 
 extern std::istream* in;
 extern std::ostream* out;
+extern std::ostream* err;
 
 class Interpreter {
 public:
