@@ -1,0 +1,2 @@
+- [ ] Move constructor for tokenizer
+- [ ] Function node save with std::move(node ptr)!

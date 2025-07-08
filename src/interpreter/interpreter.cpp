@@ -52,8 +52,6 @@ bool Interpreter::InterpretFile(std::istream& input) {
         }
     }
 
-    // std::cout << "[interpreter log] start run safely\n";
-
     return RunSafely([&]() {
         Parser parser(std::move(tokenizer));
         parser.Parse();
@@ -61,9 +59,35 @@ bool Interpreter::InterpretFile(std::istream& input) {
     }, program);
 }
 bool Interpreter::InterpretRepl(std::istream& input) {
-    // TODO do it)
-    Errors::PrintPanic(Errors::InternalErrors::NotImplemented());
-    return false;
+    std::vector<std::string> session;
+    std::string line;
+    while (true) {
+        *out << Patterns::CMD;
+        std::getline(input, line);
+        session.push_back(line);
+        try { tokenizer << line + '\n'; }
+        catch (const Closures::UncaughtClosure& c) {
+            size_t tab_q = tokenizer.GetClosuresSize();
+            for (size_t i = 0; i != tab_q; ++i) {
+                *out << '\t';
+            } continue;
+        }
+        catch (const Closure& c) {
+            Closures::PrintClosureError(c);
+        } catch(const Error& e) {
+            Errors::PrintSyntaxError(e);
+        } catch (...) {
+            Errors::PrintPanic(InternalError());
+            return false;
+        }
+        RunSafely([&]() {
+            Parser parser(std::move(tokenizer));
+            parser.Parse();
+            Visit(parser.root);
+        }, session);
+        session = {};
+    }
+    return true;
 }
 
 // VISITERS
