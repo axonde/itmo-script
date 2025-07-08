@@ -1,8 +1,6 @@
 #include <interpreter>
 #include <gtest/gtest.h>
 
-using namespace Interpreter;
-
 TEST(NumBinaryTest, AssignNum) {
     std::string code = R"(
         a = 12
@@ -14,7 +12,9 @@ TEST(NumBinaryTest, AssignNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -30,7 +30,9 @@ TEST(NumBinaryTest, ReassignNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -42,7 +44,9 @@ TEST(NumBinaryTest, NumPlusNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, NumMinusNum) {
@@ -53,7 +57,9 @@ TEST(NumBinaryTest, NumMinusNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, NumMultNum) {
@@ -64,7 +70,9 @@ TEST(NumBinaryTest, NumMultNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, NumDivNum) {
@@ -75,7 +83,9 @@ TEST(NumBinaryTest, NumDivNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, NumModNum) {
@@ -86,7 +96,9 @@ TEST(NumBinaryTest, NumModNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, NumXorNum) {
@@ -97,7 +109,9 @@ TEST(NumBinaryTest, NumXorNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -112,7 +126,9 @@ TEST(StringBinaryTest, AssignString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, ReassignString) {
@@ -127,7 +143,9 @@ TEST(StringBinaryTest, ReassignString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringPlusString) {
@@ -138,7 +156,9 @@ TEST(StringBinaryTest, StringPlusString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringMinusString) {
@@ -149,7 +169,9 @@ TEST(StringBinaryTest, StringMinusString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringMultNum) {
@@ -160,6 +182,8 @@ TEST(StringBinaryTest, StringMultNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }

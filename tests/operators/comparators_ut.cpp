@@ -1,8 +1,6 @@
 #include <interpreter>
 #include <gtest/gtest.h>
 
-using namespace Interpreter;
-
 TEST(NumBinaryTest, IntEqInt) {
     std::string code = R"(print(1.1e-2 == 1.1e-2))";
 
@@ -11,7 +9,9 @@ TEST(NumBinaryTest, IntEqInt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, IntNonEqInt) {
@@ -22,7 +22,9 @@ TEST(NumBinaryTest, IntNonEqInt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, IntSmallerInt) {
@@ -33,7 +35,9 @@ TEST(NumBinaryTest, IntSmallerInt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, IntSmallerOrEqInt) {
@@ -44,7 +48,9 @@ TEST(NumBinaryTest, IntSmallerOrEqInt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, IntGreaterInt) {
@@ -55,7 +61,9 @@ TEST(NumBinaryTest, IntGreaterInt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumBinaryTest, NumGreaterOrEqInt) {
@@ -66,7 +74,9 @@ TEST(NumBinaryTest, NumGreaterOrEqInt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -78,7 +88,9 @@ TEST(StringBinaryTest, StringEqString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringNonEqString) {
@@ -89,7 +101,9 @@ TEST(StringBinaryTest, StringNonEqString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringSmallerString) {
@@ -100,7 +114,9 @@ TEST(StringBinaryTest, StringSmallerString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringSmallerOrEqString) {
@@ -111,7 +127,9 @@ TEST(StringBinaryTest, StringSmallerOrEqString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringGreaterString) {
@@ -122,7 +140,9 @@ TEST(StringBinaryTest, StringGreaterString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringBinaryTest, StringGreaterOrEqString) {
@@ -133,7 +153,9 @@ TEST(StringBinaryTest, StringGreaterOrEqString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -146,7 +168,9 @@ print( nil == 1, nil == "a", nil == true, nil == (function(a, b) end function), 
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NilBinaryTest, NilEq) {
@@ -157,7 +181,9 @@ TEST(NilBinaryTest, NilEq) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -169,7 +195,9 @@ TEST(NilBinaryTest, ListEqList) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -181,7 +209,9 @@ TEST(BoolBinaryTest, BoolAnd) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(BoolBinaryTest, BoolOr) {
@@ -192,7 +222,9 @@ TEST(BoolBinaryTest, BoolOr) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(BoolBinaryTest, ComplexBool) {
@@ -206,7 +238,9 @@ TEST(BoolBinaryTest, ComplexBool) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -218,6 +252,8 @@ TEST(ListBinaryTest, ListEq) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }

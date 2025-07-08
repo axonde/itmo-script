@@ -36,4 +36,4 @@ include(GoogleTest)
 
 gtest_discover_tests(itmoscript_tests)
 
-# add_subdirectory(operators)
+add_subdirectory(operators)
