@@ -213,7 +213,7 @@ def main():
             # Filter out any lines that are not valid JSON
             valid_json_lines = []
             for line in f:
-                if line.strip() and not line.startswith('now try to dispatch'):
+                if line.strip() and not line.startswith('[parser log]'):
                     valid_json_lines.append(line)
 
             json_content = ''.join(valid_json_lines)
