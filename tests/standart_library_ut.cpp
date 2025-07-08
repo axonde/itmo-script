@@ -1,8 +1,6 @@
 #include <interpreter>
 #include <gtest/gtest.h>
 
-using namespace Interpreter;
-
 // NUM
 TEST(NumStandartLibraryTest, Abs) {
     std::string code = R"( print(abs(-1)) )";
@@ -12,7 +10,9 @@ TEST(NumStandartLibraryTest, Abs) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, Ceil) {
@@ -23,7 +23,9 @@ TEST(NumStandartLibraryTest, Ceil) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, Floor) {
@@ -36,7 +38,9 @@ TEST(NumStandartLibraryTest, Floor) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, Round) {
@@ -49,7 +53,9 @@ TEST(NumStandartLibraryTest, Round) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, Sqrt) {
@@ -62,7 +68,9 @@ TEST(NumStandartLibraryTest, Sqrt) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, Rnd) {
@@ -78,7 +86,9 @@ TEST(NumStandartLibraryTest, Rnd) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, ParseNum) {
@@ -92,7 +102,9 @@ TEST(NumStandartLibraryTest, ParseNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumStandartLibraryTest, ToString) {
@@ -106,7 +118,9 @@ TEST(NumStandartLibraryTest, ToString) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -122,7 +136,9 @@ TEST(StringStandartLibraryTest, Lower) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringStandartLibraryTest, Upper) {
@@ -136,7 +152,9 @@ TEST(StringStandartLibraryTest, Upper) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringStandartLibraryTest, Split) {
@@ -150,7 +168,9 @@ TEST(StringStandartLibraryTest, Split) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringStandartLibraryTest, Join) {
@@ -164,7 +184,9 @@ TEST(StringStandartLibraryTest, Join) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(StringStandartLibraryTest, Replace) {
@@ -178,7 +200,9 @@ TEST(StringStandartLibraryTest, Replace) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -195,7 +219,9 @@ TEST(ListStandartLibraryTest, Push) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(ListStandartLibraryTest, Pop) {
@@ -209,7 +235,9 @@ TEST(ListStandartLibraryTest, Pop) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(ListStandartLibraryTest, Sort) {
@@ -223,7 +251,9 @@ TEST(ListStandartLibraryTest, Sort) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(ListStandartLibraryTest, WrongSort) {
@@ -234,6 +264,9 @@ TEST(ListStandartLibraryTest, WrongSort) {
 
     std::istringstream input(code);
     std::ostringstream output;
+    std::ostringstream error;
 
-    ASSERT_FALSE(Interpret(input, output));
+    Interpreter interpreter(input, output, error);
+
+    ASSERT_FALSE(interpreter.Interpret(input, false));
 }

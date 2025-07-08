@@ -25,6 +25,7 @@ void PrintPanic(const Error& error) { Errors::PrintError("Panic!", error); }
 
 void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_t column) {
     if (program.empty()) { return; }
+    if (program.size() <= lineno) { return; }
 
     const size_t gap = 10;
     size_t left = 0;
@@ -34,7 +35,7 @@ void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_
     *err << '\t' << program[lineno - 1] << std::endl << '\t';
     for (size_t i = 0; i != left; ++i) { *err << ' '; }
     *err << Patterns::RED;
-    for (size_t i = left; i != right; ++i) { *err << "="; }
+    for (size_t i = left; i < right; ++i) { *err << "="; }
     *err << Patterns::WHITE << std::endl;
 }
 

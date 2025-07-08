@@ -28,7 +28,7 @@ Lexer::Token Parser::GetTraitedToken() {
 // Var: T_VAR ( ('[' (Expr)? 1(':' | ':' (Expr)? 2(':' | ':' (Expr)? )? )? ) ']')
 //            | ('(' (expr (',' expr)* )? ')') )*
 Parser::NodePtr Parser::VarExpr() {
-    std::cout << "[parser log] var expr \n";
+    // std::cout << "[parser log] var expr \n";
 
     if (token.token != Lexer::Tokens::T_VAR) {
         throw MakeError<Errors::ParserErrors::ExpectedVarExpr>();
@@ -93,7 +93,7 @@ Parser::NodePtr Parser::VarExpr() {
 
 // ListExpr: '[' (T_EOL)* (Expr (T_EOL)* (, (T_EOL)* Expr (T_EOL)*)* )? (,)? (T_EOL)* ']'
 Parser::NodePtr Parser::ListExpr() {
-    std::cout << "[parser log] list expr \n";
+    // std::cout << "[parser log] list expr \n";
 
     if (!Eat(Lexer::Tokens::T_LEFT_SQUARE_BRACKET)) {
         throw MakeError<Errors::ParserErrors::ExpectedLeftSquareBracket>();
@@ -132,7 +132,7 @@ Parser::NodePtr Parser::ListExpr() {
 //         | ('not' | '+' | '-') Factor
 //         | '(' expr ')'
 Parser::NodePtr Parser::Factor() {
-    std::cout << "[parser log] factor \n";
+    // std::cout << "[parser log] factor \n";
 
     using namespace Lexer;
 
@@ -203,7 +203,7 @@ Parser::NodePtr Parser::Factor() {
 
 // Term: Factor (('*' | '/' | '%' | '^' | 'and') Factor)*
 Parser::NodePtr Parser::Term() {
-    std::cout << "[parser log] term \n";
+    // std::cout << "[parser log] term \n";
 
     NodePtr term = Factor();
     while (token.token == Lexer::Tokens::T_MULT
@@ -220,7 +220,7 @@ Parser::NodePtr Parser::Term() {
 
 // Expr: Term (('+' | '-' | 'or' | '==' | '!=' | '<' | '>' | '<=' | '>=') Term)*
 Parser::NodePtr Parser::Expr() {
-    std::cout << "[parser log] expr\n";
+    // std::cout << "[parser log] expr\n";
 
     using namespace Lexer;
 
@@ -243,7 +243,7 @@ Parser::NodePtr Parser::Expr() {
 
 // Assignment: VarExpr ('=', '+=', '-=', '*=', '/=', '%=', '^=') Expr
 Parser::NodePtr Parser::Assignment() {
-    std::cout << "[parser log] assignment expr\n";
+    // std::cout << "[parser log] assignment expr\n";
 
     using namespace Lexer;
 
@@ -265,7 +265,7 @@ Parser::NodePtr Parser::Assignment() {
 
 // BreakExpr: T_BREAK
 Parser::NodePtr Parser::BreakExpr() {
-    std::cout << "[parser log] break expr\n";
+    // std::cout << "[parser log] break expr\n";
 
     if (!Eat(Lexer::Tokens::T_BREAK)) { throw MakeError<ParserError>(); }
     return std::make_unique<Break>(GetTraitedToken());
@@ -273,7 +273,7 @@ Parser::NodePtr Parser::BreakExpr() {
 
 // ContinueExpr: T_CONTINUE
 Parser::NodePtr Parser::ContinueExpr() {
-    std::cout << "[parser log] continue expr\n";
+    // std::cout << "[parser log] continue expr\n";
 
     if (!Eat(Lexer::Tokens::T_CONTINUE)) { throw MakeError<ParserError>(); }
     return std::make_unique<Continue>(GetTraitedToken());
@@ -281,7 +281,7 @@ Parser::NodePtr Parser::ContinueExpr() {
 
 // ReturnExpr: 'return' Expr
 Parser::NodePtr Parser::ReturnExpr() {
-    std::cout << "[parser log] return expr\n";
+    // std::cout << "[parser log] return expr\n";
 
     if (!Eat(Lexer::Tokens::T_RETURN)) { throw MakeError<ParserError>(); }
     return std::make_unique<Return>(Expr(), GetTraitedToken());
@@ -289,7 +289,7 @@ Parser::NodePtr Parser::ReturnExpr() {
 
 // Statement: ReturnExpr | BreakExpr | ContinueExpr | Assignment | Expr
 Parser::NodePtr Parser::Statement() {
-    std::cout << "[parser log] looke at statement\n";
+    // std::cout << "[parser log] looke at statement\n";
 
     using namespace Lexer;
 
@@ -309,7 +309,7 @@ Parser::NodePtr Parser::Statement() {
 
 // IfExpr: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
 Parser::NodePtr Parser::IfBlock() {
-    std::cout << "[parser log] if block\n";
+    // std::cout << "[parser log] if block\n";
 
     if (!Eat(Lexer::Tokens::T_IF)) { throw MakeError<ParserError>(); }
 
@@ -363,7 +363,7 @@ Parser::NodePtr Parser::IfBlock() {
 
 // ForBlock: T_FOR Expr T_IN Expr BLOCK T_FOR_END
 Parser::NodePtr Parser::ForBlock() {
-    std::cout << "[parser log] for block\n";
+    // std::cout << "[parser log] for block\n";
 
     if (!Eat(Lexer::Tokens::T_FOR)) { throw MakeError<ParserError>(); }
 
@@ -378,7 +378,7 @@ Parser::NodePtr Parser::ForBlock() {
 
 // WhileBlock: T_WHILE Expr BLOCK T_END_WHILE
 Parser::NodePtr Parser::WhileBlock() {
-    std::cout << "[parser log] while block\n";
+    // std::cout << "[parser log] while block\n";
 
     if (!Eat(Lexer::Tokens::T_WHILE)) { throw MakeError<ParserError>(); }
 
@@ -396,7 +396,7 @@ Parser::NodePtr Parser::WhileBlock() {
 
 // FuncExpr: T_FUNC '(' (T_VAR (',' T_VAR)*)? ')' BLOCK T_END_FUNC
 Parser::NodePtr Parser::FuncExpr() {
-    std::cout << "[parser log] parser func expression\n";
+    // std::cout << "[parser log] parser func expression\n";
 
     if (!Eat(Lexer::Tokens::T_FUNC)) { throw MakeError<ParserError>(); }
 
@@ -438,7 +438,7 @@ Parser::NodePtr Parser::FuncExpr() {
 
 // StatementList: If | While | For | Statement
 Parser::NodePtr Parser::StatementList() {
-    std::cout << "[parser log] choose between statements\n";
+    // std::cout << "[parser log] choose between statements\n";
 
     switch (token.token) {
         case Lexer::Tokens::T_IF:
@@ -454,7 +454,7 @@ Parser::NodePtr Parser::StatementList() {
 
 // Block: (StatementList)? (T_EOL | StatementList)*
 Parser::NodePtr Parser::Block() {
-    std::cout << "[parser log] come in block\n";
+    // std::cout << "[parser log] come in block\n";
 
     Compound node;
     while ( token.token != Lexer::Tokens::T_ELSE_IF && token.token != Lexer::Tokens::T_ELSE

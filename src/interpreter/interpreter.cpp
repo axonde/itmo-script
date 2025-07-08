@@ -15,9 +15,9 @@ Interpreter::Interpreter(std::istream& i, std::ostream& o, std::ostream& e) {
     in = &i;
     out = &o;
     err = &e;
+    BuiltIn::InitializeBuilInFunctions();
     stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
     Memory::stack_frame = stack_frame.get();
-    BuiltIn::InitializeBuilInFunctions();
     Operators::RegisterUnaryOperators();
     Operators::RegisterBinaryOperators();
 }
@@ -33,9 +33,8 @@ bool Interpreter::InterpretFile(std::istream& input) {
     std::vector<std::string> program;
     std::string line;
     while (std::getline(input, line)) {
-        std::cout << line << '\n';
         program.push_back(line);
-        try { tokenizer << line; }
+        try { tokenizer << line + '\n'; }
         catch (const Closures::UncaughtClosure& c) {
             if (!input.eof()) { continue; }
             Closures::PrintClosureError(c);
@@ -53,7 +52,7 @@ bool Interpreter::InterpretFile(std::istream& input) {
         }
     }
 
-    std::cout << "[interpreter log] start run safely\n";
+    // std::cout << "[interpreter log] start run safely\n";
 
     return RunSafely([&]() {
         Parser parser(std::move(tokenizer));
@@ -69,7 +68,7 @@ bool Interpreter::InterpretRepl(std::istream& input) {
 
 // VISITERS
 Interpreter::HolderPack Interpreter::Visit(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] visit dispatch\n";
+    // std::cout << "[interpreter log] visit dispatch\n";
     switch (node->node) {
         case Parser::Nodes::N_NUM_LITERAL:
             return VisitNumLiteral(node);
@@ -119,35 +118,35 @@ Interpreter::HolderPack Interpreter::Visit(Interpreter::NodePtr& node) {
 
 /// LITERALS
 Interpreter::HolderPack Interpreter::VisitNumLiteral(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] num literal\n";
+    // std::cout << "[interpreter log] num literal\n";
 
     Parser::NumLiteral* num_literal = static_cast<Parser::NumLiteral*>(node.get());
     return HolderPack(num_literal->value, TYPES::NUM_TYPE);
 }
 
 Interpreter::HolderPack Interpreter::VisitStringLiteral(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] string literal\n";
+    // std::cout << "[interpreter log] string literal\n";
 
     Parser::StringLiteral* str_literal = static_cast<Parser::StringLiteral*>(node.get());
     return HolderPack(str_literal->value, TYPES::STRING_TYPE);
 }
 
 Interpreter::HolderPack Interpreter::VisitBoolLiteral(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] bool literal\n";
+    // std::cout << "[interpreter log] bool literal\n";
 
     Parser::BoolLiteral* bool_literal = static_cast<Parser::BoolLiteral*>(node.get());
     return HolderPack(bool_literal->value, TYPES::BOOL_TYPE);
 }
 
 Interpreter::HolderPack Interpreter::VisitNilLiteral(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] nil literal\n";
+    // std::cout << "[interpreter log] nil literal\n";
 
     return HolderPack(TYPES::NIL_TYPE);
 }
 
 /// LITERAL EXPR
 Interpreter::HolderPack Interpreter::VisitVar(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] var\n";
+    // std::cout << "[interpreter log] var\n";
 
     std::string_view id = static_cast<Parser::Var*>(node.get())->id;
     try {
@@ -159,7 +158,7 @@ Interpreter::HolderPack Interpreter::VisitVar(Interpreter::NodePtr& node) {
     }
 }
 Interpreter::HolderPack Interpreter::VisitList(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] list\n";
+    // std::cout << "[interpreter log] list\n";
 
     Parser::List* list = static_cast<Parser::List*>(node.get());
     std::vector<HolderPack> data;
@@ -172,14 +171,14 @@ Interpreter::HolderPack Interpreter::VisitList(Interpreter::NodePtr& node) {
 
 /// OPERATIONS
 Interpreter::HolderPack Interpreter::VisitUnaryOp(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] unary op\n";
+    // std::cout << "[interpreter log] unary op\n";
 
     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
     auto computed_operand = Visit(ptr->operand);
     return Operators::ExecUnaryOperation(ptr, std::move(computed_operand));
 }
 Interpreter::HolderPack Interpreter::VisitBinaryOp(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] binary op\n";
+    // std::cout << "[interpreter log] binary op\n";
 
     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
     auto computed_left = Visit(ptr->left);
@@ -188,7 +187,7 @@ Interpreter::HolderPack Interpreter::VisitBinaryOp(Interpreter::NodePtr& node) {
     return std::move(computed);
 }
 Interpreter::HolderPack Interpreter::VisitSubscript(Interpreter::NodePtr& node) {
-    std::cout << "[interpreter log] subscript\n";
+    // std::cout << "[interpreter log] subscript\n";
 
     Parser::Subscript* ptr = static_cast<Parser::Subscript*>(node.get());
 
@@ -206,7 +205,7 @@ Interpreter::HolderPack Interpreter::VisitSubscript(Interpreter::NodePtr& node) 
 
 /// BLOCKS
 Interpreter::HolderPack Interpreter::VisitIf(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] if block\n";
+    // std::cout << "[interpreter log] if block\n";
 
     Parser::If* ptr = static_cast<Parser::If*>(node.get());
     for (Parser::If::IfCase& occasion : ptr->cases) {
@@ -219,7 +218,7 @@ Interpreter::HolderPack Interpreter::VisitIf(Parser::NodePtr& node) {
     return HolderPack();
 }
 Interpreter::HolderPack Interpreter::VisitFor(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] for block\n";
+    // std::cout << "[interpreter log] for block\n";
 
     auto ptr = static_cast<Parser::For*>(node.get());
     auto iterator = Visit(ptr->iterator);
@@ -253,7 +252,7 @@ Interpreter::HolderPack Interpreter::VisitFor(Parser::NodePtr& node) {
     return HolderPack();
 }
 Interpreter::HolderPack Interpreter::VisitWhile(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] while block\n";
+    // std::cout << "[interpreter log] while block\n";
 
     auto ptr = static_cast<Parser::While*>(node.get());
 
@@ -273,31 +272,31 @@ Interpreter::HolderPack Interpreter::VisitWhile(Parser::NodePtr& node) {
 
 /// CLOSURE STATEMENTS
 Interpreter::HolderPack Interpreter::VisitReturn(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] return statement\n";
+    // std::cout << "[interpreter log] return statement\n";
 
     Parser::Return* ptr = static_cast<Parser::Return*>(node.get());
     auto expr = Visit(ptr->expr);
     throw Closures::Return(std::move(expr), node->token.lineno, node->token.column);
 }
 Interpreter::HolderPack Interpreter::VisitBreak(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] break statement\n";
+    // std::cout << "[interpreter log] break statement\n";
 
     throw Closures::Break(node->token.lineno, node->token.column);
 }
 Interpreter::HolderPack Interpreter::VisitContinue(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] continue statement\n";
+    // std::cout << "[interpreter log] continue statement\n";
 
     throw Closures::Continue(node->token.lineno, node->token.column);
 }
 
 /// FUNCTIONS
 Interpreter::HolderPack Interpreter::VisitFunc(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] func declaration\n";
+    // std::cout << "[interpreter log] func declaration\n";
 
     return HolderPack( MakeFuncHolder(node.get()), TYPES::FUNC_TYPE );
 }
 Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] func call\n";
+    // std::cout << "[interpreter log] func call\n";
 
     auto ptr = static_cast<Parser::FuncCall*>(node.get());
     HolderPack func = Visit(ptr->func);
@@ -321,7 +320,7 @@ Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
     return VisitBuiltInFuncCall(ptr, function_holder, params);
 }
 Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& function_holder, std::vector<HolderPack>& params) {
-    std::cout << "[interpreter log] user func call\n";
+    // std::cout << "[interpreter log] user func call\n";
 
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
@@ -351,14 +350,18 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
     return result;
 }
 Interpreter::HolderPack Interpreter::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
-    std::cout << "[interpreter log] built in func call\n";
+    // std::cout << "[interpreter log] built in func call\n";
 
     auto& function = std::get<Memory::BuiltInFunction>(function_holder.function);
-    return function(std::move(params));
+    try {
+        return function(std::move(params));
+    } catch (const Error& e) {
+        throw RunTimeError(e.what(), ptr->token.lineno, ptr->token.column);
+    }
 }
 
 Interpreter::HolderPack Interpreter::VisitCompound(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] compound\n";
+    // std::cout << "[interpreter log] compound\n";
 
     Parser::Compound* cmpd = static_cast<Parser::Compound*>(node.get());
     for (auto& child : cmpd->data) {

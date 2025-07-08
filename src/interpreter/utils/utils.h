@@ -364,6 +364,7 @@ void PrintClosureError(const Closure& c);
 using Error = Errors::Error;
 using ParserError = Errors::ParserErrors::Panic;
 using InternalError = Errors::InternalErrors::Panic;
+using RunTimeError = Errors::RunTime::RunTimeError;
 using OutOfRange = Errors::RunTime::OutOfRange;
 
 using Closure = Closures::Closure;
