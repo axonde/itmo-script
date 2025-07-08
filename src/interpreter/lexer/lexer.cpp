@@ -81,6 +81,36 @@ Lexer::Token::Token(Lexer::Tokens t, const std::optional<T>& opt, size_t l, size
     int i;
 }
 
+/// TOKENIZER INTERFACE
+Lexer::Tokenizer::Tokenizer(Lexer::Tokenizer&& other) {
+    tokens = std::move(other.tokens);
+    closures = std::move(other.closures);
+    lineno = other.lineno;
+    column = other.column;
+    text = other.text;
+    pos = other.pos;
+
+    other.lineno = 1;
+    other.column = 1;
+    other.text = nullptr;
+    other.pos = 0;
+}
+Lexer::Tokenizer& Lexer::Tokenizer::operator=(Lexer::Tokenizer&& other) {
+    tokens = std::move(other.tokens);
+    closures = std::move(other.closures);
+    lineno = other.lineno;
+    column = other.column;
+    text = other.text;
+    pos = other.pos;
+
+    other.lineno = 1;
+    other.column = 1;
+    other.text = nullptr;
+    other.pos = 0;
+
+    return *this;
+}
+
 /// SKIPPERS
 void Lexer::Tokenizer::SkipWhiteSpaces() {
     while (pos < text->size() && std::isblank(text->at(pos))) { Inc(); }

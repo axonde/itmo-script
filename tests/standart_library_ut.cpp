@@ -76,7 +76,7 @@ TEST(NumStandartLibraryTest, Sqrt) {
 TEST(NumStandartLibraryTest, Rnd) {
     std::string code = R"(
         a = rnd(100)
-        if (a > 0) and (a < 100) then
+        if (a >= 0) and (a <= 100) then
             print("good")
         end if
     )";

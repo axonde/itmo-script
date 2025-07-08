@@ -123,7 +123,7 @@ HolderPack sqrt = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief  rnd(n)
-/// @brief  generate a random number from 0 to n - 1
+/// @brief  generate a random number [0, n]
 /// @return single number if one argument is addressed
 /// @return list of sqrt values otherwise
 HolderPack rnd = HolderPack(

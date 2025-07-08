@@ -63,15 +63,12 @@ bool Interpreter::InterpretRepl(std::istream& input) {
     std::string line;
     while (true) {
         *out << Patterns::CMD;
+        size_t tab_q = tokenizer.GetClosuresSize();
+        for (size_t i = 0; i != tab_q; ++i) { *out << "... "; }
         std::getline(input, line);
         session.push_back(line);
         try { tokenizer << line + '\n'; }
-        catch (const Closures::UncaughtClosure& c) {
-            size_t tab_q = tokenizer.GetClosuresSize();
-            for (size_t i = 0; i != tab_q; ++i) {
-                *out << '\t';
-            } continue;
-        }
+        catch (const Closures::UncaughtClosure& c) { continue; }
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
         } catch(const Error& e) {

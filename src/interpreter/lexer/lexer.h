@@ -112,6 +112,9 @@ public:
 class Tokenizer {
 public:
     Tokenizer() {}
+    Tokenizer(const Tokenizer&) = default;
+    Tokenizer(Tokenizer&&);
+    Tokenizer& operator=(Tokenizer&&);
 
     Tokenizer& operator<<(const std::string&);
     Tokenizer& operator>>(Lexer::Token&);
