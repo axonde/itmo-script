@@ -81,7 +81,7 @@ struct Serializer {
     json VisitIf(NodePtr& node) {
         Parser::If* if_block = static_cast<Parser::If*>(node.get());
         json j;
-        j["type"] = "If block";
+        j["type"] = "If Block";
         json cases;
         for (auto& c : if_block->cases) {
             cases += {
@@ -111,15 +111,15 @@ struct Serializer {
         return j;
     }
     json VisitBreak(NodePtr& node) {
-        return {"type", "break statement"};
+        return {"type", "Break statement"};
     }
     json VisitContinue(NodePtr& node) {
-        return {"type", "continue statement"};
+        return {"type", "Continue statement"};
     }
 
     json VisitFunc(NodePtr& node) {
         Parser::Func* func = static_cast<Parser::Func*>(node.get());
-        json j; j["type"] = "function";
+        json j; j["type"] = "Function";
         json args;
         for (auto& ptr : func->args) {
             args += {
@@ -133,7 +133,7 @@ struct Serializer {
     }
     json VisitFuncCall(NodePtr& node) {
         Parser::FuncCall* func_call = static_cast<Parser::FuncCall*>(node.get());
-        json j; j["type"] = "function call";
+        json j; j["type"] = "Function call";
         j["func"] = Visit(func_call->func);
         json params;
         for (auto& ptr : func_call->params) {
@@ -144,14 +144,14 @@ struct Serializer {
     }
     json VisitReturn(NodePtr& node) {
         Parser::Return* return_expr = static_cast<Parser::Return*>(node.get());
-        json j; j["type"] = "return statement";
+        json j; j["type"] = "Return statement";
         j["expr"] = Visit(return_expr->expr);
         return j;
     }
 
     json VisitCompound(NodePtr& node) {
         json j;
-        j["type"] = "compound";
+        j["type"] = "Compound";
         json children;
         Parser::Compound* cmpd = static_cast<Parser::Compound*>(node.get());
         for (auto& child : cmpd->data) {

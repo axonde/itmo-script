@@ -34,7 +34,7 @@ struct Error {
     const char* what() const { return error.c_str(); }
 
     std::string error = "Panic!";
-    size_t lineno = 1;
+size_t lineno = 1;
     size_t column = 1;
 };
 

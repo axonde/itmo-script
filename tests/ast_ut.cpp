@@ -24,7 +24,7 @@ TEST(AstSerialization, OnePlusOne) {
                 }
             }
         },
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -56,7 +56,7 @@ TEST(AstSerialization, BasicVar) {
                 }
             }
         },
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -96,10 +96,10 @@ TEST(AstSerialization, FunctionDeclaration) {
                                 }},
                                 {"type", "Binary Op"}
                             }},
-                            {"type", "return statement"}
+                            {"type", "Return statement"}
                         }
                     }},
-                    {"type", "compound"}
+                    {"type", "Compound"}
                 }},
                 {"args", {
                     {
@@ -111,11 +111,11 @@ TEST(AstSerialization, FunctionDeclaration) {
                         {"type", "Var"}
                     }
                 }},
-                {"type", "function"}
+                {"type", "Function"}
             }},
             {"type", "Binary Op"}
         }}},
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -144,13 +144,13 @@ TEST(AstSerialization, NestedFunctionCall) {
                             {"type", "Var"}
                         }},
                         {"params", {}},
-                        {"type", "function call"}
+                        {"type", "Function call"}
                     }
                 }},
-                {"type", "function call"}
+                {"type", "Function call"}
             }
         }},
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -183,7 +183,7 @@ TEST(AstSerialization, ForCycle) {
                             }},
                             {"type", "Binary Op"}
                     }}},
-                    {"type", "compound"}
+                    {"type", "Compound"}
                 }},
                 {"iterator", {
                     {"id", "i"},
@@ -204,12 +204,12 @@ TEST(AstSerialization, ForCycle) {
                             {"value", 2.0}
                         }
                     }},
-                    {"type", "function call"}
+                    {"type", "Function call"}
                 }},
                 {"type", "For Block"}
             }
         }},
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -238,9 +238,9 @@ TEST(AstSerialization, WhileCycle) {
                         {"type", "String Literal"},
                         {"value", "while true!"}
                     }}},
-                    {"type", "function call"}
+                    {"type", "Function call"}
                 }}},
-                {"type", "compound"}
+                {"type", "Compound"}
             }},
             {"condition", {
                 {"left", {
@@ -256,7 +256,7 @@ TEST(AstSerialization, WhileCycle) {
             }},
             {"type", "While Block"}
         }}},
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -286,9 +286,9 @@ TEST(AstSerialization, IfStatement) {
                             {"type", "String Literal"},
                             {"value", "cool!"}
                         }}},
-                        {"type", "function call"}
+                        {"type", "Function call"}
                     }}},
-                    {"type", "compound"},
+                    {"type", "Compound"},
                 }},
                 {"condition", {
                     {"left", {
@@ -306,15 +306,14 @@ TEST(AstSerialization, IfStatement) {
                     {"operator", "=="},
                     {"right", {
                         {"type", "Bool Literal"},
-                        {"value", "true"},
-                        {"type", "Binary Op"}
+                        {"value", "true"}
                     }},
                     {"type", "Binary Op"}
                 }},
             }}},
-            {"type", "If block"}
+            {"type", "If Block"}
         }}},
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
@@ -484,7 +483,7 @@ TEST(AstSerialization, EmptyInput) {
 
     json expected = {
         {"children", {}},
-        {"type", "compound"}
+        {"type", "Compound"}
     };
 
     ASSERT_EQ(serializer.tree, expected);
