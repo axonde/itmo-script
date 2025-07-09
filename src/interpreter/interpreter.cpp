@@ -76,9 +76,11 @@ bool Interpreter::InterpretRepl(std::istream& input) {
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
             Errors::PrintProgramSnippet(session, c.lineno, c.column);
+            continue;
         } catch(const Error& e) {
             Errors::PrintSyntaxError(e);
             Errors::PrintProgramSnippet(session, e.lineno, e.column);
+            continue;
         } catch (...) {
             Errors::PrintPanic(InternalError());
             return false;
