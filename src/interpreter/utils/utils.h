@@ -40,7 +40,8 @@ size_t lineno = 1;
 
 namespace GeneralErrors {
 
-void FailedOpenFile();
+void FailedOpenFile(std::string&& path);
+void WrongLaunch();
 
 } // end GeneralErrors
 

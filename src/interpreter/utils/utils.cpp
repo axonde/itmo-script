@@ -5,8 +5,11 @@ namespace Errors {
 
 namespace GeneralErrors {
 
-void FailedOpenFile() {
-    std::cerr << Patterns::RED << "Error" << Patterns::WHITE << ": could not read the file." << std::endl;
+void FailedOpenFile(std::string&& path) {
+    std::cerr << Patterns::RED << "Error" << Patterns::WHITE << " Could not read the file: " << path << std::endl;
+}
+void WrongLaunch() {
+    std::cerr << Patterns::RED << "Wrong launch" << Patterns::WHITE << " Please, retry :)" << std::endl;
 }
 
 } // end GeneralErrors
@@ -25,7 +28,7 @@ void PrintPanic(const Error& error) { Errors::PrintError("Panic!", error); }
 
 void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_t column) {
     if (program.empty()) { return; }
-    if (program.size() <= lineno) { return; }
+    if (program.size() < lineno) { return; }
 
     const size_t gap = 10;
     size_t left = 0;

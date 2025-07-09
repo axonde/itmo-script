@@ -52,11 +52,15 @@ bool Interpreter::InterpretFile(std::istream& input) {
         }
     }
 
-    return RunSafely([&]() {
-        Parser parser(std::move(tokenizer));
-        parser.Parse();
-        Visit(parser.root);
-    }, program);
+    try {
+        return RunSafely([&]() {
+            Parser parser(std::move(tokenizer));
+            parser.Parse();
+            Visit(parser.root);
+        }, program);
+    } catch (...) {
+        return false;
+    }
 }
 bool Interpreter::InterpretRepl(std::istream& input) {
     std::vector<std::string> session;
@@ -71,17 +75,23 @@ bool Interpreter::InterpretRepl(std::istream& input) {
         catch (const Closures::UncaughtClosure& c) { continue; }
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
+            Errors::PrintProgramSnippet(session, c.lineno, c.column);
         } catch(const Error& e) {
             Errors::PrintSyntaxError(e);
+            Errors::PrintProgramSnippet(session, e.lineno, e.column);
         } catch (...) {
             Errors::PrintPanic(InternalError());
             return false;
         }
-        RunSafely([&]() {
-            Parser parser(std::move(tokenizer));
-            parser.Parse();
-            Visit(parser.root);
-        }, session);
+        try {
+            RunSafely([&]() {
+                Parser parser(std::move(tokenizer));
+                parser.Parse();
+                Visit(parser.root);
+            }, session);
+        } catch (...) {
+            return false;
+        }
         session = {};
     }
     return true;
@@ -441,11 +451,11 @@ bool Interpreter::RunSafely(Func&& func, std::vector<std::string>& program) {
     } catch (const Errors::InternalErrors::InternalError& e) {
         stacktrace();
         Errors::PrintPanic(e);
-        return false;
+        throw;
     } catch (...) {
         stacktrace();
         Errors::PrintPanic(InternalError());
-        return false;
+        throw;
     }
 
     return true;
