@@ -72,7 +72,7 @@ bool Interpreter::InterpretRepl(std::istream& input) {
         std::getline(input, line);
         session.push_back(line);
         try { tokenizer << line + '\n'; }
-        catch (const Closures::UncaughtClosure& c) { continue; }
+        catch (const Closures::UncaughtClosure& c) { std::cout << "yey"; continue; }
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
             Errors::PrintProgramSnippet(session, c.lineno, c.column);
@@ -324,12 +324,12 @@ Interpreter::HolderPack Interpreter::VisitContinue(Parser::NodePtr& node) {
 
 /// FUNCTIONS
 Interpreter::HolderPack Interpreter::VisitFunc(Parser::NodePtr& node) {
-    // std::cout << "[interpreter log] func declaration\n";
+    std::cout << "[interpreter log] func declaration\n";
 
-    return HolderPack( MakeFuncHolder(node.get()), TYPES::FUNC_TYPE );
+    return HolderPack(MakeFuncHolder(static_cast<void*>(node.get())), TYPES::FUNC_TYPE);
 }
 Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
-    // std::cout << "[interpreter log] func call\n";
+    std::cout << "[interpreter log] func call\n";
 
     auto ptr = static_cast<Parser::FuncCall*>(node.get());
     HolderPack func = Visit(ptr->func);
@@ -347,21 +347,20 @@ Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
     }
 
     FuncHolder& function_holder = *std::get<FuncHolderPtr>(func->holder);
-    if (std::holds_alternative<std::any>(function_holder.function)) {
+    if (std::holds_alternative<Memory::NodeHolder>(function_holder.function)) {
         return VisitUserFuncCall(ptr, function_holder, params);
     }
     return VisitBuiltInFuncCall(ptr, function_holder, params);
 }
 Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& function_holder, std::vector<HolderPack>& params) {
-    // std::cout << "[interpreter log] user func call\n";
+    std::cout << "[interpreter log] user func call\n";
 
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
     Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
 
-    Parser::Func* func_instance = static_cast<Parser::Func*>(std::any_cast<Parser::Node*>(
-        std::get<std::any>(function_holder.function)
-    ));
+    Parser::Node* func_holder = static_cast<Parser::Node*>(std::get<Memory::NodeHolder>(function_holder.function).get());
+    Parser::Func* func_instance = static_cast<Parser::Func*>(func_holder);
     if (func_instance->args.size() != ptr->params.size()) {
         throw MakeError<Errors::RunTime::WrongArgumentCount>(ptr);
     }

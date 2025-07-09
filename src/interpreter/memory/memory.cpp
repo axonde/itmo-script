@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "parser.h"
 
 std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
     {TYPES::NUM_TYPE, "number"},
@@ -11,6 +12,26 @@ std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
 };
 
 namespace Memory {
+
+struct NodeHolder::Impl {
+    Impl(void* n) {
+        Parser::Node* source = static_cast<Parser::Node*>(n);
+
+        node = std::make_unique<Parser::Func>(
+            std::move(*static_cast<Parser::Func*>(source))
+        );
+    }
+    Parser::NodePtr node;
+};
+NodeHolder::NodeHolder(void* node) {
+    pimpl = std::make_unique<NodeHolder::Impl>(node);
+}
+NodeHolder::NodeHolder(NodeHolder&&) noexcept = default;
+NodeHolder& NodeHolder::operator=(NodeHolder&&) noexcept = default;
+NodeHolder::~NodeHolder() = default;
+void* NodeHolder::get() {
+    return static_cast<void*>(pimpl->node.get());
+}
 
 StackFrame* stack_frame;
 

@@ -338,22 +338,31 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
     text = &str;
     Token token;
     std::deque<Token> curr_tokens;
+    std::stack<Token> curr_closures(closures);
 
-    auto update_closures = [this, &token]() {
+    auto save_state = [this, &curr_tokens, &curr_closures]() {
+        closures = std::move(curr_closures);
+        if (tokens.size() != 0) { tokens.pop_back(); }
+        for (Token& t : curr_tokens) {
+            tokens.push_back(std::move(t));
+        }
+    };
+
+    auto update_closures = [&curr_closures, &token]() {
         if (token.token == Tokens::T_IF
          || token.token == Tokens::T_WHILE
          || token.token == Tokens::T_FOR
          || token.token == Tokens::T_FUNC) {
-            closures.push(token);
+            curr_closures.push(token);
         }
         if (token.token == Tokens::T_END_IF
          || token.token == Tokens::T_END_WHILE
          || token.token == Tokens::T_END_FOR
          || token.token == Tokens::T_END_FUNC) {
-            if (closures.empty()) {
+            if (curr_closures.empty()) {
                 throw Closures::NonExistantClosure(token.lineno, token.column);
             }
-            closures.pop();
+            curr_closures.pop();
         }
     };
 
@@ -362,6 +371,9 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
         update_closures();
         curr_tokens.push_back(token);
     } while(token.token != Tokens::T_EOF);
+
+    save_state();
+
     if (closures.size() != 0) {
         throw Closures::UncaughtClosure(
             TOKENS_TO_STR[closures.top().token],
@@ -370,10 +382,6 @@ Lexer::Tokenizer& Lexer::Tokenizer::operator<<(const std::string& str) {
         );
     }
 
-    if (tokens.size() != 0) { tokens.pop_back(); }
-    for (Token& t : curr_tokens) {
-        tokens.push_back(std::move(t));
-    }
     return *this;
 }
 Lexer::Tokenizer& Lexer::Tokenizer::operator>>(Lexer::Token& token) {

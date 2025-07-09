@@ -84,10 +84,24 @@ struct HolderPack {
     std::shared_ptr<RawHolderPack> pack;
 };
 
+// Escape the forward declaration for Parser::Node (NodeHolder) // PIMPL
+struct NodeHolder {
+    NodeHolder(void* node);
+    ~NodeHolder();
+
+    NodeHolder(NodeHolder&&) noexcept;
+    NodeHolder& operator=(NodeHolder&&) noexcept;
+
+    void* get();
+private:
+    struct Impl;
+    std::unique_ptr<Impl> pimpl;
+};
+
 using BuiltInFunction = std::function<HolderPack(std::vector<HolderPack>&&)>;
 using Function = std::variant<
-    BuiltInFunction,            // built in function
-    std::any                    // user set function (Parser::Node*) TODO think how fix this problem by forwarding declarations ?
+    BuiltInFunction,    // built in function
+    NodeHolder          // user set function (std::unique_ptr<Parser::Node>)
 >;
 
 struct ListHolder {
