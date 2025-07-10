@@ -240,6 +240,43 @@ TEST(ListStandartLibraryTest, Pop) {
     ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
+TEST(ListStandartLibraryTest, Insert) {
+    std::string code = R"(
+        a = ["base", true]
+        insert(a, 0, 1)
+        insert(a, -1, 2)
+        insert(a, 1000, 3)
+        insert(a, -1000, 4)
+
+        print(a)
+    )";
+
+    std::string expected = "[4, 1, \"base\", 2, true, 3]";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(ListStandartLibraryTest, Remove) {
+    std::string code = R"(
+        a = ["base", true]
+        print(remove(a, 0), remove(a, 1000), remove(a, -1))
+    )";
+
+    std::string expected = "\"base\" nil true";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
 TEST(ListStandartLibraryTest, Sort) {
     std::string code = R"(
         a = [5, 4, 3, 2]
