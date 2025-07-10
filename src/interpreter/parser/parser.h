@@ -47,7 +47,7 @@ public:
         Lexer::Token token;
     };
 
-    using NodePtr = std::unique_ptr<Node>;
+    using NodePtr = std::shared_ptr<Node>;
 
     /// Base
     struct Compound : Node {

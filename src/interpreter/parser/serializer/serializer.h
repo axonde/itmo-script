@@ -6,7 +6,7 @@
 #include "parser.h"
 
 using json = nlohmann::json;
-using NodePtr = std::unique_ptr<Parser::Node>;
+using NodePtr = std::shared_ptr<Parser::Node>;
 
 struct Serializer {
     json VisitNumLiteral(NodePtr& node) {

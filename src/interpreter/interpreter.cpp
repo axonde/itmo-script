@@ -10,14 +10,15 @@ std::istream* in;       // input stream of interpretator
 std::ostream* out;      // output stream of interpretator
 std::ostream* err;      // error stream of interpretator
 
+std::unique_ptr<Memory::StackFrame> Memory::stack_frame;
+
 // INTERPRETER
 Interpreter::Interpreter(std::istream& i, std::ostream& o, std::ostream& e) {
     in = &i;
     out = &o;
     err = &e;
     BuiltIn::InitializeBuilInFunctions();
-    stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
-    Memory::stack_frame = stack_frame.get();
+    Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
     Operators::RegisterUnaryOperators();
     Operators::RegisterBinaryOperators();
 }
@@ -72,7 +73,7 @@ bool Interpreter::InterpretRepl(std::istream& input) {
         std::getline(input, line);
         session.push_back(line);
         try { tokenizer << line + '\n'; }
-        catch (const Closures::UncaughtClosure& c) { std::cout << "yey"; continue; }
+        catch (const Closures::UncaughtClosure& c) { continue; }
         catch (const Closure& c) {
             Closures::PrintClosureError(c);
             Errors::PrintProgramSnippet(session, c.lineno, c.column);
@@ -183,7 +184,7 @@ Interpreter::HolderPack Interpreter::VisitVar(Interpreter::NodePtr& node) {
 
     std::string_view id = static_cast<Parser::Var*>(node.get())->id;
     try {
-        return Interpreter::stack_frame->Lookup(id);
+        return Memory::stack_frame->Lookup(id);
     } catch (Errors::MemoryErrors::NotFound e) {
         throw MakeError<decltype(e)>(node);
     } catch (...) {
@@ -357,7 +358,7 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
 
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
-    Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
+    Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Memory::stack_frame), std::move(func_name));
 
     Parser::Node* func_holder = static_cast<Parser::Node*>(std::get<Memory::NodeHolder>(function_holder.function).get());
     Parser::Func* func_instance = static_cast<Parser::Func*>(func_holder);
@@ -366,7 +367,7 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
     }
 
     for (size_t i = 0; i != func_instance->args.size(); ++i) {
-        HolderPack hp = Interpreter::stack_frame->Lookup(func_instance->args[i].id);
+        HolderPack hp = Memory::stack_frame->Lookup(func_instance->args[i].id);
         hp->holder = std::move(params[i]->holder);
         hp->type = std::move(params[i]->type);
     }
@@ -378,7 +379,7 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
         result = std::move(std::any_cast<HolderPack&>(r.holder_pack));
     }
 
-    Interpreter::stack_frame = std::move(Interpreter::stack_frame->parent);
+    Memory::stack_frame = std::move(Memory::stack_frame->parent);
     return result;
 }
 Interpreter::HolderPack Interpreter::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {

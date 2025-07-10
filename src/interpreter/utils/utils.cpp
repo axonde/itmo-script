@@ -30,7 +30,7 @@ void PrintProgramSnippet(std::vector<std::string>& program, size_t lineno, size_
     if (program.empty()) { return; }
     if (program.size() < lineno) { return; }
 
-    const size_t gap = 1;
+    const size_t gap = 2;
     size_t left = 0;
     size_t right = std::min(program[lineno - 1].size(), column - 1 + gap);
     if (column > 1 + gap) { left = column - 1 - gap; }

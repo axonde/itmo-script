@@ -319,45 +319,6 @@ TEST(AstSerialization, IfStatement) {
     ASSERT_EQ(serializer.tree, expected);
 }
 
-TEST(AstSerialization, WrongSyntaxStringLiteral) {
-    std::string program = R"(
-        a = "sdfkjfkjdf
-        b = 2
-    )";
-
-    Lexer::Tokenizer tokenizer;
-
-    ASSERT_THROW(
-        tokenizer << program;
-        Serializer serializer(Parser(std::move(tokenizer)));
-    , Errors::LexerErrors::LexerStringError);
-}
-
-TEST(AstSerialization, WrongSyntaxNumLiteral) {
-    std::string program = R"(
-        a = 1123.
-        b = 2
-    )";
-
-    Lexer::Tokenizer tokenizer;
-
-    ASSERT_THROW(
-        tokenizer << program;
-        Serializer serializer(Parser(std::move(tokenizer)));
-    , Errors::LexerErrors::LexerNumberError);
-}
-
-TEST(AstSerialization, WrongSyntaxUndefinedSymbols) {
-    std::string program = R"(!@!#)";
-
-    Lexer::Tokenizer tokenizer;
-
-    ASSERT_THROW(
-        tokenizer << program;
-        Serializer serializer(Parser(std::move(tokenizer)));
-    , Errors::LexerErrors::LexerUnrecognizable);
-}
-
 TEST(AstSerialization, WrongSyntaxIfStatementExpThen) {
     std::string program = R"(
         if i < 3
@@ -386,20 +347,6 @@ TEST(AstSerialization, WrongSyntaxIfStatementExpExpr) {
         tokenizer << program;
         Serializer serializer(Parser(std::move(tokenizer)));
     , Errors::ParserErrors::FactorError);
-}
-
-TEST(AstSerialization, WrongSyntaxIfStatementForgotEndIf) {
-    std::string program = R"(
-        if i < 3 then
-            i = 3
-    )";
-
-    Lexer::Tokenizer tokenizer;
-
-    ASSERT_THROW(
-        tokenizer << program;
-        Serializer serializer(Parser(std::move(tokenizer)));
-    , Closures::UncaughtClosure);
 }
 
 TEST(AstSerialization, WrongSyntaxForStatementExpIn) {
@@ -445,33 +392,6 @@ TEST(AstSerialization, WrongSyntaxForStatementRange) {
         tokenizer << program;
         Serializer serializer(Parser(std::move(tokenizer)));
     , Errors::ParserErrors::FactorError);
-}
-
-TEST(AstSerialization, WrongSyntaxForStatementForgotEndFor) {
-    std::string program = R"(
-        for i in range(3)
-            continue
-    )";
-
-    Lexer::Tokenizer tokenizer;
-
-    ASSERT_THROW(
-        tokenizer << program;
-        Serializer serializer(Parser(std::move(tokenizer)));
-    , Closures::UncaughtClosure);
-}
-
-TEST(AstSerialization, AbnormalInput) {
-    std::string program = R"(
-        !@O#I1o] 	2-]9u j[9j4n ln;lkj;j]
-    )";
-
-    Lexer::Tokenizer tokenizer;
-
-    ASSERT_THROW(
-        tokenizer << program;
-        Serializer serializer(Parser(std::move(tokenizer)));
-    , Errors::LexerErrors::LexerUnrecognizable);
 }
 
 TEST(AstSerialization, EmptyInput) {

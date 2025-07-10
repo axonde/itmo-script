@@ -18,7 +18,7 @@ struct NodeHolder::Impl {
         Parser::Node* source = static_cast<Parser::Node*>(n);
 
         node = std::make_unique<Parser::Func>(
-            std::move(*static_cast<Parser::Func*>(source))
+            *static_cast<Parser::Func*>(source)
         );
     }
     Parser::NodePtr node;
@@ -32,8 +32,6 @@ NodeHolder::~NodeHolder() = default;
 void* NodeHolder::get() {
     return static_cast<void*>(pimpl->node.get());
 }
-
-StackFrame* stack_frame;
 
 bool HolderPack::operator<(const HolderPack& other) const {
     return std::get<bool>(

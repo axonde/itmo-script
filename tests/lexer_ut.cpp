@@ -251,3 +251,77 @@ TEST(LexerInterfaceTest, MultiLineInput) {
         T_VAR, T_EQUAL, T_NUMBER, T_EOF };
     ASSERT_EQ(computed, expected);
 }
+
+TEST(LexerStressTest, WrongSyntaxStringLiteral) {
+    std::string program = R"(
+        a = "sdfkjfkjdf
+        b = 2
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerStringError);
+}
+
+TEST(LexerStressTest, WrongSyntaxNumLiteral) {
+    std::string program = R"(
+        a = 1123.
+        b = 2
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerNumberError);
+}
+
+TEST(LexerStressTest, WrongSyntaxUndefinedSymbols) {
+    std::string program = R"(!@!#)";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerUnrecognizable);
+}
+
+TEST(LexerStressTest, WrongSyntaxIfStatementForgotEndIf) {
+    std::string program = R"(
+        if i < 3 then
+            i = 3
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Closures::UncaughtClosure);
+}
+
+TEST(LexerStressTest, WrongSyntaxForStatementForgotEndFor) {
+    std::string program = R"(
+        for i in range(3)
+            continue
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Closures::UncaughtClosure);
+}
+
+TEST(LexerStressTest, AbnormalInput) {
+    std::string program = R"(
+        !@O#I1o] 	2-]9u j[9j4n ln;lkj;j]
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerUnrecognizable);
+}

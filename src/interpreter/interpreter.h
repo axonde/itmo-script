@@ -31,7 +31,6 @@ public:
 
 private:
     Lexer::Tokenizer tokenizer;
-    std::unique_ptr<Memory::StackFrame> stack_frame;
 
     using NodePtr = Parser::NodePtr;
     using ListHolderPtr = Memory::ListHolderPtr;

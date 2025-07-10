@@ -1,5 +1,4 @@
 #pragma once
-#include <any>
 #include <functional>
 #include <memory>
 #include <string_view>
@@ -84,7 +83,7 @@ struct HolderPack {
     std::shared_ptr<RawHolderPack> pack;
 };
 
-// Escape the forward declaration for Parser::Node (NodeHolder) // PIMPL
+// Escape the forward declaration for Parser::Node (NodeHolder) [PIMPL]
 struct NodeHolder {
     NodeHolder(void* node);
     ~NodeHolder();
@@ -151,7 +150,7 @@ private:
     HolderPack search(std::string_view);
 };
 
-extern StackFrame* stack_frame;
+extern std::unique_ptr<StackFrame> stack_frame;
 
 } // namespace Memory
 
