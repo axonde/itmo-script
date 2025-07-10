@@ -516,7 +516,7 @@ int64_t Interpreter::IntegerRequirement(NodePtr& node) {
         throw MakeError<Errors::TypeErrors::TypeErrorNum>(node);
     }
     double raw_index = std::get<double>(index->holder);
-    if (raw_index != std::trunc(raw_index)) {
+    if (Utils::IsInteger(raw_index)) {
         throw MakeError<Errors::TypeErrors::IndexNotInteger>(node);
     }
     return raw_index;

@@ -385,4 +385,6 @@ std::vector<std::string> Split(const std::string& string, const Comp& comp) {
     return splitted_string;
 }
 
+bool IsInteger(double number);
+
 } // end Utils

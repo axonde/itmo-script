@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <algorithm>
+#include <cmath>
 
 namespace Errors {
 
@@ -51,4 +52,12 @@ void PrintClosureError(const Closure& c) {
 }
 
 } // end Closures
+
+namespace Utils {
+
+bool IsInteger(double number) {
+    return number == std::trunc(number);
+}
+
+} // end Utils
 

@@ -315,7 +315,7 @@ HolderPack push = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief  pop(list)
-/// @brief  modified list by delete last elem
+/// @brief  modified list by deleted last elem
 /// @return deleted element if list is not empty, nil otherwise
 HolderPack pop = HolderPack(
     MakeFuncHolder(BuiltInFunction(
@@ -333,8 +333,70 @@ HolderPack pop = HolderPack(
     )),
     TYPES::FUNC_TYPE
 );
-HolderPack insert;
-HolderPack remove;
+/// @brief   insert(list, index, x)
+/// @brief   modify the list by inserting x before index.
+/// @details index supports negative and super large values(but not floats).
+/// @return  nil
+HolderPack insert = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 3) { throw Errors::RunTime::ExpectedThreeArgs(); }
+            if (params[0]->type != TYPES::LIST_TYPE) {
+                throw Errors::TypeErrors::TypeErrorList(); }
+
+            if (params[1]->type != TYPES::NUM_TYPE && !Utils::IsInteger(
+                std::get<double>(params[1]->holder))
+            ) {
+                throw Errors::TypeErrors::IndexNotInteger(); }
+
+            if (params[2]->type == TYPES::NOT_SET_TYPE) {
+                throw Errors::MemoryErrors::NotFound(); }
+
+            auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
+            double index = std::get<double>(params[1]->holder);
+            if (index < 0) { index = list.size() + index; }
+            if (index < 0) { index = 0; }
+            index = std::min(list.size(), static_cast<size_t>(index));
+
+            list.insert(list.begin() + index, std::move(params[2]));
+            return std::move(params[0]);
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
+/// @brief   remove(list, index)
+/// @brief   modify the list by deleting element pointing at the index.
+/// @details index supports negative and super large values(but not floats).
+/// @return  removed element or nil (empty case or too big index)
+HolderPack remove = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 2) { throw Errors::RunTime::ExpectedTwoArgs(); }
+            if (params[0]->type != TYPES::LIST_TYPE) {
+                throw Errors::TypeErrors::TypeErrorList(); }
+
+            if (params[1]->type != TYPES::NUM_TYPE && !Utils::IsInteger(
+                std::get<double>(params[1]->holder))
+            ) {
+                throw Errors::TypeErrors::IndexNotInteger(); }
+
+            auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
+            double index = std::get<double>(params[1]->holder);
+            if (index < 0) { index = list.size() + index; }
+            if (index < 0) { index = 0; }
+            index = std::min(list.size(), static_cast<size_t>(index));
+
+            if (index >= list.size()) {
+                return HolderPack(TYPES::NIL_TYPE);
+            }
+
+            auto removed = std::move(list[index]);
+            list.erase(list.begin() + index);
+            return removed;
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
 /// @brief  sort(list)
 /// @brief  sort the given list by comparators defined in operators
 /// @return the sorted given list (modify)
