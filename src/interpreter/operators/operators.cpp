@@ -262,6 +262,50 @@ void RegisterBinaryNumOperators() noexcept {
             };
         }
     };
+    // NUM += NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_PLUS, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<double>(arg_left->holder) += std::get<double>(arg_right->holder);
+            return std::move(arg_left);
+        }
+    };
+    // NUM -= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_MINUS, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<double>(arg_left->holder) -= std::get<double>(arg_right->holder);
+            return std::move(arg_left);
+        }
+    };
+    // NUM *= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_MULT, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<double>(arg_left->holder) *= std::get<double>(arg_right->holder);
+            return std::move(arg_left);
+        }
+    };
+    // NUM /= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_DIV, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<double>(arg_left->holder) /= std::get<double>(arg_right->holder);
+            return std::move(arg_left);
+        }
+    };
+    // NUM %= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_MOD, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            arg_left->holder = std::get<double>(RawExecBinaryOperation(
+                Lexer::Tokens::T_MOD, HolderPack(arg_left), std::move(arg_right)
+            )->holder);
+            return std::move(arg_left);
+        }
+    };
+    // NUM ^= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_XOR, TYPES::NUM_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<double>(arg_left->holder) = std::pow(std::get<double>(arg_left->holder), std::get<double>(arg_right->holder));
+            return std::move(arg_left);
+        }
+    };
 }
 void RegisterBinaryStringOperators() noexcept {
     // (not set type) = STRING
@@ -405,6 +449,39 @@ void RegisterBinaryStringOperators() noexcept {
                 std::get<std::string>(arg_left->holder) >= std::get<std::string>(arg_right->holder),
                 TYPES::BOOL_TYPE
             };
+        }
+    };
+    // STRING += STRING
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_PLUS, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<std::string>(arg_left->holder) = std::get<std::string>(RawExecBinaryOperation(
+                Lexer::Tokens::T_PLUS,
+                HolderPack(arg_left),
+                std::move(arg_right)
+            )->holder);
+            return std::move(arg_left);
+        }
+    };
+    // STRING -= STRING
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_MINUS, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<std::string>(arg_left->holder) = std::get<std::string>(RawExecBinaryOperation(
+                Lexer::Tokens::T_MINUS,
+                HolderPack(arg_left),
+                std::move(arg_right)
+            )->holder);
+            return std::move(arg_left);
+        }
+    };
+    // STRING *= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_MULT, TYPES::STRING_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::get<std::string>(arg_left->holder) = std::get<std::string>(RawExecBinaryOperation(
+                Lexer::Tokens::T_MULT,
+                HolderPack(arg_left),
+                std::move(arg_right)
+            )->holder);
+            return std::move(arg_left);
         }
     };
 }
@@ -721,6 +798,58 @@ void RegisterBinaryListOperators() noexcept {
                 } catch (...) { return std::move(exit_false); }
             }
             return std::move(exit_true);
+        }
+    };
+
+    // LIST + LIST
+    BINARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::LIST_TYPE, TYPES::LIST_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            std::vector<HolderPack> list;
+            list.insert(list.end(),
+                    std::get<Memory::ListHolderPtr>(arg_left->holder)->data.begin(),
+                    std::get<Memory::ListHolderPtr>(arg_left->holder)->data.end());
+            list.insert(list.end(),
+                    std::get<Memory::ListHolderPtr>(arg_right->holder)->data.begin(),
+                    std::get<Memory::ListHolderPtr>(arg_right->holder)->data.end());
+            return HolderPack(MakeListHolder(std::move(list)), TYPES::LIST_TYPE);
+        }
+    };
+    // LIST += LIST
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_PLUS, TYPES::LIST_TYPE, TYPES::LIST_TYPE}] = {
+         [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            *arg_left.pack = *RawExecBinaryOperation(
+                Lexer::Tokens::T_PLUS,
+                HolderPack(arg_left),
+                std::move(arg_right)
+            ).pack;
+            return std::move(arg_left);
+         }
+    };
+    // LIST * NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_MULT, TYPES::LIST_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            double index = std::get<double>(arg_right->holder);
+            if (!Utils::IsInteger(index) || index < 0) {
+                throw Errors::TypeErrors::IndexNotPositiveInteger();
+            }
+            auto& ref_list = std::get<Memory::ListHolderPtr>(arg_left->holder)->data;
+            std::vector<HolderPack> list;
+            for (double i = 0; i < index; ++i) {
+                list.insert(list.begin(), ref_list.begin(), ref_list.end());
+            }
+            return HolderPack(MakeListHolder(std::move(list)), TYPES::LIST_TYPE);
+        }
+    };
+    // LIST *= NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL_MULT, TYPES::LIST_TYPE, TYPES::NUM_TYPE}] = {
+        [](HolderPack&& arg_left, HolderPack&& arg_right) -> HolderPack {
+            *arg_left.pack = *RawExecBinaryOperation(
+                Lexer::Tokens::T_MULT,
+                HolderPack(arg_left),
+                std::move(arg_right)
+            ).pack;
+            return std::move(arg_left);
+
         }
     };
 }

@@ -25,8 +25,9 @@ TEST(IndexTest, OutOfRange) {
 
     std::istringstream input(code);
     std::ostringstream output;
+    std::ostringstream error;
 
-    Interpreter interpreter(input, output);
+    Interpreter interpreter(input, output, error);
 
     ASSERT_FALSE(interpreter.Interpret(input, false));
 }

@@ -252,6 +252,7 @@ Parser::NodePtr Parser::Assignment() {
         case Tokens::T_EQUAL:
         case Tokens::T_EQUAL_PLUS:
         case Tokens::T_EQUAL_MINUS:
+        case Tokens::T_EQUAL_MULT:
         case Tokens::T_EQUAL_DIV:
         case Tokens::T_EQUAL_MOD:
         case Tokens::T_EQUAL_XOR:

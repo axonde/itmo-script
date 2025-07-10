@@ -222,6 +222,9 @@ struct NonPositiveNumber final : TypeError {
 struct IndexNotInteger final : TypeError {
     IndexNotInteger(size_t lineno = 1, size_t column = 1) : TypeError("index must be an integer", lineno, column) {}
 };
+struct IndexNotPositiveInteger final : TypeError {
+    IndexNotPositiveInteger(size_t lineno = 1, size_t column = 1) : TypeError("index must be a positive integer", lineno, column) {}
+};
 
 struct TypeErrorString final : TypeError {
     TypeErrorString(size_t lineno = 1, size_t column = 1) : TypeError("expression should be a string", lineno, column) {}

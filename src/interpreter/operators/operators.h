@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include "lexer.h"
+#include "memory.h"
 #include "parser.h"
 
 namespace Operators {
@@ -44,6 +45,8 @@ void RegisterBinaryOperators() noexcept;
 [[nodiscard]] HolderPack ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&);
 [[nodiscard]] HolderPack ExecBinaryOperation(const Lexer::Token&, HolderPack&&, HolderPack&&);
 [[maybe_unused]] HolderPack RawExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // inner exec binary operations
+
+using Memory::MakeListHolder;
 
 } // end Operators
 
