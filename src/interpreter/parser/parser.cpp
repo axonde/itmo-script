@@ -175,7 +175,7 @@ Parser::NodePtr Parser::Factor() {
         case Tokens::T_FUNC:
         {   auto func_expr = FuncExpr();
             if (token.token == Tokens::T_LEFT_BRACKET) {
-                return make_func_call(FuncExpr());
+                return make_func_call(std::move(func_expr));
             }
             return func_expr; }
         case Tokens::T_MINUS:

@@ -325,12 +325,12 @@ Interpreter::HolderPack Interpreter::VisitContinue(Parser::NodePtr& node) {
 
 /// FUNCTIONS
 Interpreter::HolderPack Interpreter::VisitFunc(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] func declaration\n";
+    // std::cout << "[interpreter log] func declaration\n";
 
     return HolderPack(MakeFuncHolder(static_cast<void*>(node.get())), TYPES::FUNC_TYPE);
 }
 Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
-    std::cout << "[interpreter log] func call\n";
+//     std::cout << "[interpreter log] func call\n";
 
     auto ptr = static_cast<Parser::FuncCall*>(node.get());
     HolderPack func = Visit(ptr->func);
@@ -354,7 +354,7 @@ Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
     return VisitBuiltInFuncCall(ptr, function_holder, params);
 }
 Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& function_holder, std::vector<HolderPack>& params) {
-    std::cout << "[interpreter log] user func call\n";
+    // std::cout << "[interpreter log] user func call\n";
 
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;

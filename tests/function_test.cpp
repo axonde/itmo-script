@@ -116,3 +116,82 @@ TEST(FunctionTestSuite, FunnySyntaxTestInDepth) {
     ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
+
+TEST(FunctionTestSuite, ReturnNestedFunc) {
+    std::string code = R"(
+        nested_func = function()
+            return function()
+                return function()
+                    return 1
+                end function
+            end function
+        end function
+
+        print(nested_func()()())
+    )";
+
+    std::string expected = "1";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
+
+TEST(FunctionTestSuite, MultipleCall) {
+    // This is not a simple test. This is a correct behaviour that have been violated previously
+    std::string code = R"(
+        func = function()
+            b = function()
+                print(1)
+            end function
+            b()
+        end function
+
+        func() func() func() func() func()
+    )";
+
+    std::string expected = "11111";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
+
+TEST(FunctionTestSuite, AnonimousFunctionCall) {
+    std::string code = R"(
+        print(function()
+            return "passed"
+        end function())
+    )";
+
+    std::string expected = "\"passed\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
+
+TEST(FunctionTestSuite, AnonimousFunctionCallOneLine) {
+    std::string code = R"(
+        print(function() return "itmo" + " = love" end function())
+    )";
+
+    std::string expected = "\"itmo = love\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
+

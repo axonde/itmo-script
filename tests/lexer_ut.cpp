@@ -325,3 +325,4 @@ TEST(LexerStressTest, AbnormalInput) {
         tokenizer << program;
     , Errors::LexerErrors::LexerUnrecognizable);
 }
+

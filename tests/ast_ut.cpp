@@ -408,3 +408,70 @@ TEST(AstSerialization, EmptyInput) {
 
     ASSERT_EQ(serializer.tree, expected);
 }
+
+TEST(AstSerialization, AnonymousFunctionCallOneLine) {
+    std::string program = R"(
+        function() return 1 end function()
+    )";
+
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
+
+    json expected = {
+        {"children", {{
+            {"func", {
+                {"args", {}},
+                {"body", {
+                    {"children", {{
+                        {"expr", {
+                            {"type", "Num Literal"},
+                            {"value", 1.0}
+                        }},
+                        {"type", "Return statement"}
+                    }}},
+                    {"type", "Compound"}}},
+                {"type", "Function"}}},
+            {"params", {}},
+            {"type", "Function call"}
+        }}},
+        {"type", "Compound"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
+TEST(AstSerialization, AnonymousFunctionCallBlock) {
+    std::string program = R"(
+        function()
+            return 1
+        end function()
+    )";
+
+    Lexer::Tokenizer tokenizer;
+    tokenizer << program;
+    Serializer serializer(Parser(std::move(tokenizer)));
+
+    json expected = {
+        {"children", {{
+            {"func", {
+                {"args", {}},
+                {"body", {
+                    {"children", {{
+                        {"expr", {
+                            {"type", "Num Literal"},
+                            {"value", 1.0}
+                        }},
+                        {"type", "Return statement"}
+                    }}},
+                    {"type", "Compound"}}},
+                {"type", "Function"}}},
+            {"params", {}},
+            {"type", "Function call"}
+        }}},
+        {"type", "Compound"}
+    };
+
+    ASSERT_EQ(serializer.tree, expected);
+}
+
