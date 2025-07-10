@@ -358,6 +358,12 @@ struct Continue final : Closure {
     }
 };
 
+struct Exit final : Closure {
+    Exit(size_t lineno, size_t column) : Closure(lineno, column) {
+        closure = "exit closure";
+    }
+};
+
 void PrintClosureError(const Closure& c);
 
 } // end Closures

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "utils.h"
+#include "operators.h"
 
 namespace BuiltIn {
 
@@ -413,9 +414,53 @@ HolderPack sort = HolderPack(
     )),
     TYPES::FUNC_TYPE
 );
+/// @fn      copy(list)
+/// @brief   deeply copy the list.
+/// return   list
+HolderPack copy = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+
+            // it is a rude hack for call the lambda recursively
+            auto deep_copy = [](std::vector<HolderPack>& packs) -> std::vector<HolderPack> {
+                auto deep_copy_impl = [](auto& self, std::vector<HolderPack>& packs) -> std::vector<HolderPack> {
+                    std::vector<HolderPack> copied;
+                    for (HolderPack& hp : packs) {
+                        if (hp->type == TYPES::NOT_SET_TYPE) {
+                            throw Errors::MemoryErrors::NotFound();
+                        }
+                        if (hp->type == TYPES::LIST_TYPE) {
+                            copied.push_back(
+                                HolderPack(MakeListHolder(self(
+                                    self,
+                                    std::get<ListHolderPtr>(hp->holder)->data)
+                                ), TYPES::LIST_TYPE)
+                            );
+                        } else {
+                            copied.push_back(
+                                Operators::RawExecBinaryOperation(
+                                    Lexer::Tokens::T_EQUAL,
+                                    HolderPack(), HolderPack(hp))
+                            );
+                        }
+                    }
+                    return std::move(copied);
+                };
+
+                return deep_copy_impl(deep_copy_impl, packs);
+            };
+
+            return HolderPack(MakeListHolder(
+                deep_copy(std::get<ListHolderPtr>(params[0]->holder)->data)
+            ), TYPES::LIST_TYPE);
+        }
+    )), TYPES::FUNC_TYPE
+);
 
 // UNIVERSAL FUNCTIONS STRING / LIST
-HolderPack copy;
+
 /// @brief  len(list / string)
 /// @brief  get the lenght of passed objects
 /// @return number
@@ -532,7 +577,16 @@ HolderPack stacktrace = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
-
+/// @fn    exit()
+/// @brief exit the program
+HolderPack exit = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            throw Closures::Exit(1, 1);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
 }
 
 std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS;
@@ -572,6 +626,7 @@ void BuiltIn::InitializeBuilInFunctions() {
         {"print", BuiltIn::print},
         {"println", BuiltIn::println},
         {"read", BuiltIn::read},
-        {"stacktrace", BuiltIn::stacktrace}
+        {"stacktrace", BuiltIn::stacktrace},
+        {"exit", BuiltIn::exit}
     };
 }

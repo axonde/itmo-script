@@ -73,10 +73,8 @@ int main(int argc, char** argv) {
     if (file_path == non_existant_path) {
         Patterns::Welcome();
 
-        while (true) {
-            if (!interpreter.Interpret(std::cin, true)) {
-                return 1;
-            }
+        if (!interpreter.Interpret(std::cin, true)) {
+            return 1;
         }
         return 0;
     }

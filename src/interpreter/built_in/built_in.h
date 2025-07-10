@@ -43,9 +43,9 @@ extern HolderPack pop;
 extern HolderPack insert;
 extern HolderPack remove;
 extern HolderPack sort;
+extern HolderPack copy;
 
 // UNIVERSAL FUNCTIONS
-extern HolderPack copy;
 extern HolderPack len;
 
 // SYSTEM FUNCTIONS
@@ -53,6 +53,7 @@ extern HolderPack print;
 extern HolderPack println;
 extern HolderPack read;
 extern HolderPack stacktrace;
+extern HolderPack exit;
 
 } // end BuiltIn
 

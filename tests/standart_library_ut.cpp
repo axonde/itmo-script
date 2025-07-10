@@ -307,3 +307,22 @@ TEST(ListStandartLibraryTest, WrongSort) {
 
     ASSERT_FALSE(interpreter.Interpret(input, false));
 }
+TEST(ListStandartLibraryTest, Copy) {
+    std::string code = R"(
+        a = ["axonde"]
+        b = copy(a)
+        a[0] = "itmo"
+        push(a, 38)
+        print(a, b)
+    )";
+
+    std::string expected = "[\"itmo\", 38] [\"axonde\"]";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);}
+

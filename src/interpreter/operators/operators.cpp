@@ -729,7 +729,6 @@ void RegisterBinaryFuncOperators() noexcept {
     // (not set type) = FUNC
     BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::FUNC_TYPE}] = {
         [](HolderPack&& arg_left, HolderPack&& arg_right) noexcept -> HolderPack {
-            std::cout << "Hello!";
             *arg_left.pack = *arg_right.pack;
             return arg_left;
         }

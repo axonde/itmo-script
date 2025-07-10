@@ -59,6 +59,8 @@ bool Interpreter::InterpretFile(std::istream& input) {
             parser.Parse();
             Visit(parser.root);
         }, program);
+    } catch (const Closures::Exit& e) {
+        return true;
     } catch (...) {
         return false;
     }
@@ -92,6 +94,8 @@ bool Interpreter::InterpretRepl(std::istream& input) {
                 parser.Parse();
                 Visit(parser.root);
             }, session);
+        } catch (const Closures::Exit& c) {
+            return true;
         } catch (...) {
             return false;
         }
@@ -415,6 +419,8 @@ bool Interpreter::RunSafely(Func&& func, std::vector<std::string>& program) {
 
     try {
         func();
+    } catch (const Closures::Exit& c) {
+        throw;
     } catch (const Closure& c) {
         stacktrace();
         Closures::PrintClosureError(c);
