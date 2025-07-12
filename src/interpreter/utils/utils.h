@@ -180,14 +180,14 @@ struct OperatorError : Error {
 struct OperatorUnaryError final : OperatorError {
     OperatorUnaryError(const std::string& op, const std::string& type, size_t lineno, size_t column) : OperatorError(lineno, column) {
         using namespace std::string_literals;
-        error = "unknow unary operation '"s + op + "' and "s + type;
+        error = "unknown unary operation '"s + op + "' and "s + type;
     }
 };
 
 struct OperatorBinaryError final : OperatorError {
     OperatorBinaryError(const std::string& op, const std::string& left, const std::string& right, size_t lineno = 1, size_t column = 1) : OperatorError(lineno, column) {
         using namespace std::string_literals;
-        error = "unknow binary operation '"s + op + "' between "s + left + " and "s + right;
+        error = "unknown binary operation '"s + op + "' between "s + left + " and "s + right;
     }
 };
 
