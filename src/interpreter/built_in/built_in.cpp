@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <random>
 #include <ranges>
 #include <vector>
@@ -439,10 +440,14 @@ HolderPack copy = HolderPack(
                                 ), TYPES::LIST_TYPE)
                             );
                         } else {
-                            copied.push_back(
-                                Operators::RawExecBinaryOperation(
-                                    Lexer::Tokens::T_EQUAL,
-                                    HolderPack(), HolderPack(hp))
+                            copied.push_back({});
+                            Operators::RawExecBinaryOperation(
+                                Lexer::Tokens::T_EQUAL,
+                                std::ref(*copied.back()), HolderPack(hp)
+                            );
+                            copied.back() = HolderPack(
+                                std::move(copied.back()->holder),
+                                copied.back()->type
                             );
                         }
                     }

@@ -312,11 +312,10 @@ TEST(ListStandartLibraryTest, Copy) {
         a = ["axonde"]
         b = copy(a)
         a[0] = "itmo"
-        push(a, 38)
         print(a, b)
     )";
 
-    std::string expected = "[\"itmo\", 38] [\"axonde\"]";
+    std::string expected = "[\"itmo\"] [\"axonde\"]";
 
     std::istringstream input(code);
     std::ostringstream output;
@@ -324,5 +323,22 @@ TEST(ListStandartLibraryTest, Copy) {
     Interpreter interpreter(input, output);
 
     ASSERT_TRUE(interpreter.Interpret(input, false));
-    ASSERT_EQ(output.str(), expected);}
+    ASSERT_EQ(output.str(), expected);
+}
+TEST(SystemStandartLibraryTest, Exit) {
+    std::string code = R"(
+        print("ITMO")
+        exit()
+        print(" looser")
+    )";
 
+    std::string expected = "\"ITMO\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}

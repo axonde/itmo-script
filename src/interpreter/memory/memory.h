@@ -30,7 +30,7 @@ struct FuncHolder;
 using ListHolderPtr = std::unique_ptr<ListHolder>;
 using FuncHolderPtr = std::unique_ptr<FuncHolder>;
 
-/// Holder -> HolderData -> RawHolderPack -> HolderPack
+// STRUCTURE: Holder -> HolderData -> RawHolderPack -> HolderPack
 
 /// HOLDER
 /// - std::monostate    > nil type / (not set type)
@@ -72,15 +72,21 @@ namespace Operators {
 
 namespace Memory {
 
-using RawHolderPack = std::shared_ptr<HolderData>;
 struct HolderPack {
+    using ptr = std::shared_ptr<HolderData>;
+
+    HolderPack(std::reference_wrapper<ptr> ref) : pack(ref) {}
     template<typename... Args>
     HolderPack(Args... args) {
-        pack = std::make_shared<RawHolderPack>(std::make_shared<HolderData>(std::forward<Args>(args)...));
+        pack = std::make_shared<HolderData>(std::forward<Args>(args)...);
     }
+
     bool operator<(const HolderPack&) const;
-    HolderData* operator->() { return (*pack).get(); }
-    std::shared_ptr<RawHolderPack> pack;
+    ptr& operator*();
+    HolderData* operator->();
+    bool IsRef() const;
+
+    std::variant<ptr, std::reference_wrapper<ptr>> pack;
 };
 
 // Escape the forward declaration for Parser::Node (NodeHolder) [PIMPL]

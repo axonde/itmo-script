@@ -201,8 +201,7 @@ Interpreter::HolderPack Interpreter::VisitList(Interpreter::NodePtr& node) {
     Parser::List* list = static_cast<Parser::List*>(node.get());
     std::vector<HolderPack> data;
     for (auto& child : list->data) {
-        auto visited = Visit(child);
-        data.push_back(std::move(visited));
+        data.push_back(Visit(child));
     }
     return { HolderPack(MakeListHolder(std::move(data)), TYPES::LIST_TYPE) };
 }
@@ -212,17 +211,13 @@ Interpreter::HolderPack Interpreter::VisitUnaryOp(Interpreter::NodePtr& node) {
     // std::cout << "[interpreter log] unary op\n";
 
     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
-    auto computed_operand = Visit(ptr->operand);
-    return Operators::ExecUnaryOperation(ptr, std::move(computed_operand));
+    return Operators::ExecUnaryOperation(ptr, HolderPack(Visit(ptr->operand)));
 }
 Interpreter::HolderPack Interpreter::VisitBinaryOp(Interpreter::NodePtr& node) {
     // std::cout << "[interpreter log] binary op\n";
 
     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
-    auto computed_left = Visit(ptr->left);
-    auto computed_right = Visit(ptr->right);
-    auto computed = Operators::ExecBinaryOperation(ptr, std::move(computed_left), std::move(computed_right));
-    return std::move(computed);
+    return Operators::ExecBinaryOperation(ptr, Visit(ptr->left), Visit(ptr->right));
 }
 Interpreter::HolderPack Interpreter::VisitSubscript(Interpreter::NodePtr& node) {
     // std::cout << "[interpreter log] subscript\n";
@@ -294,7 +289,7 @@ Interpreter::HolderPack Interpreter::VisitWhile(Parser::NodePtr& node) {
 
     auto ptr = static_cast<Parser::While*>(node.get());
 
-    Interpreter::HolderPack condition_expected;
+    HolderPack condition_expected;
     while (true) {
         auto condition = Visit(ptr->condition);
         if (std::get<bool>(condition->holder)) {
@@ -313,8 +308,7 @@ Interpreter::HolderPack Interpreter::VisitReturn(Parser::NodePtr& node) {
     // std::cout << "[interpreter log] return statement\n";
 
     Parser::Return* ptr = static_cast<Parser::Return*>(node.get());
-    auto expr = Visit(ptr->expr);
-    throw Closures::Return(std::move(expr), node->token.lineno, node->token.column);
+    throw Closures::Return(Visit(ptr->expr), node->token.lineno, node->token.column);
 }
 Interpreter::HolderPack Interpreter::VisitBreak(Parser::NodePtr& node) {
     // std::cout << "[interpreter log] break statement\n";
@@ -476,6 +470,9 @@ Interpreter::HolderPack Interpreter::SubscriptIndexer(Parser::Subscript* ptr, Ho
             std::string{std::get<std::string>(var->holder)[index]},
             TYPES::STRING_TYPE
         ); }
+    if (var.IsRef()) {
+        return std::ref(*std::get<ListHolderPtr>(var->holder)->data[index]);
+    }
     return std::get<ListHolderPtr>(var->holder)->data[index];
 }
 

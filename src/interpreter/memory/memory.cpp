@@ -13,6 +13,19 @@ std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
 
 namespace Memory {
 
+HolderPack::ptr& HolderPack::operator*() {
+    if (std::holds_alternative<ptr>(pack)) {
+        return std::get<ptr>(pack);
+    }
+    return std::get<std::reference_wrapper<ptr>>(pack).get();
+}
+HolderData* HolderPack::operator->() {
+    return (*(*this)).get();
+}
+bool HolderPack::IsRef() const {
+    return std::holds_alternative<std::reference_wrapper<ptr>>(pack);
+}
+
 struct NodeHolder::Impl {
     Impl(void* n) {
         Parser::Node* source = static_cast<Parser::Node*>(n);
@@ -44,13 +57,13 @@ HolderPack StackFrame::Lookup(std::string_view key) {
         return search(key);
     } catch (const Errors::MemoryErrors::NotFound&) {
         environment[std::string(key)] = HolderPack();
-        return environment[std::string(key)];
+        return std::ref(*environment[std::string(key)]);
     }
 }
 
 HolderPack StackFrame::search(std::string_view key) {
     if (auto iter = environment.find(std::string(key)); iter != environment.end()) {
-        return iter->second;
+        return std::ref(*iter->second);
     }
     if (parent != nullptr) { return parent->search(key); }
     throw Errors::MemoryErrors::NotFound();
