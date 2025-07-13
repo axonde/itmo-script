@@ -115,10 +115,7 @@ ITMO-Script offers several command-line options:
 
 `./itmo-srcipt` is default located as `./src/bin/itmoscript_interpreter`
 
-For extra-tools look at ..
-
-Some examples:
-
+For extra-tools look at [language feature](#-language-features)
 
 ## 🏗️ Architecture Deep Dive
 
