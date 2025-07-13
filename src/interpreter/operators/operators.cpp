@@ -399,6 +399,24 @@ void RegisterBinaryStringOperators() noexcept {
             );
         }
     };
+    // STRING * BOOL
+    BINARY_OP_TABLE[{Lexer::Tokens::T_MULT, TYPES::STRING_TYPE, TYPES::BOOL_TYPE}] = {
+        [](auto&& arg_left, auto&& arg_right) -> HolderPack {
+            std::string& left_str = std::get<std::string>(arg_left->holder);
+            if (std::get<bool>(arg_right->holder)) {
+                return arg_left.Clone();
+            }
+            return {"", TYPES::STRING_TYPE};
+       }
+    };
+    // NUM * STRING
+    BINARY_OP_TABLE[{Lexer::Tokens::T_MULT, TYPES::BOOL_TYPE, TYPES::STRING_TYPE}] = {
+        [](auto&& arg_left, auto&& arg_right) -> HolderPack {
+            return BINARY_OP_TABLE[{Lexer::Tokens::T_MULT, TYPES::STRING_TYPE, TYPES::BOOL_TYPE}](
+                    std::move(arg_right), std::move(arg_left)
+            );
+        }
+    };
     // STRING == STRING
     BINARY_OP_TABLE[{Lexer::Tokens::T_COMP_EQUAL, TYPES::STRING_TYPE, TYPES::STRING_TYPE}] = {
         [](auto&& arg_left, auto&& arg_right) -> HolderPack {
