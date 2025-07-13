@@ -136,6 +136,7 @@ public:
     StackFrame(std::unique_ptr<StackFrame>&& ptr, std::string&& n) : parent(std::move(ptr)), name(std::move(n)) {}
 
     HolderPack Lookup(std::string_view);  // return a (not set type) if not found variable
+    HolderPack Set(std::string_view);  // set a var inn current table with (not set type)
 
     inline static std::string PrintStack(StackFrame& stack) {
         std::stringstream formatted;

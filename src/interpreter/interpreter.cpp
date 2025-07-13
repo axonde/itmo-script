@@ -365,7 +365,7 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
 
     Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Memory::stack_frame), std::move(func_name));
     for (size_t i = 0; i != func_instance->args.size(); ++i) {
-        HolderPack hp = Memory::stack_frame->Lookup(func_instance->args[i].id);
+        HolderPack hp = Memory::stack_frame->Set(func_instance->args[i].id);
         Operators::RawExecBinaryOperation(
             Lexer::Tokens::T_EQUAL, std::move(hp), std::move(params[i])
         );
@@ -375,7 +375,7 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
     try {
         Visit(func_instance->body);
     } catch (Closures::Return& r) {
-        result = std::any_cast<HolderPack&>(r.holder_pack).Clone();  // ISSUE: prevent forwarding links to inner variables
+        result = std::any_cast<HolderPack&>(r.holder_pack).Clone();  // ISSUE: prevent forwarding links from inner variables
     }
 
     Memory::stack_frame = std::move(Memory::stack_frame->parent);

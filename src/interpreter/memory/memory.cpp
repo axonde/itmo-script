@@ -61,9 +61,12 @@ HolderPack StackFrame::Lookup(std::string_view key) {
     try {
         return search(key);
     } catch (const Errors::MemoryErrors::NotFound&) {
-        environment[std::string(key)] = HolderPack();
-        return std::ref(*environment[std::string(key)]);
+        return Set(key);
     }
+}
+HolderPack StackFrame::Set(std::string_view key) {
+    environment[std::string(key)] = HolderPack();
+    return std::ref(*environment[std::string(key)]);
 }
 
 HolderPack StackFrame::search(std::string_view key) {
