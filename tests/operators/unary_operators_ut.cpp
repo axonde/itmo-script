@@ -1,8 +1,6 @@
 #include <interpreter>
 #include <gtest/gtest.h>
 
-using namespace Interpreter;
-
 TEST(NumUnaryTest, PlusNum) {
     std::string code = R"(print(+++++1))";
 
@@ -11,7 +9,9 @@ TEST(NumUnaryTest, PlusNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -23,7 +23,9 @@ TEST(NumUnaryTest, MinusNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -35,7 +37,9 @@ TEST(NumUnaryTest, DoubleMinusNum) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -47,7 +51,9 @@ TEST(NumUnaryTest, NotNumFalse) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumUnaryTest, NotNumTrue) {
@@ -58,7 +64,9 @@ TEST(NumUnaryTest, NotNumTrue) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -70,7 +78,9 @@ TEST(NumUnaryTest, NotStringTrue) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(NumUnaryTest, NotStringFalse) {
@@ -81,7 +91,9 @@ TEST(NumUnaryTest, NotStringFalse) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -93,7 +105,9 @@ TEST(NumUnaryTest, NotBool) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -105,7 +119,9 @@ TEST(NumUnaryTest, NotNil) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 
@@ -117,6 +133,8 @@ TEST(NumUnaryTest, PlusMinusNil) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }

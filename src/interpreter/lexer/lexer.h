@@ -1,18 +1,13 @@
 #pragma once
-#include <concepts>
 #include <cctype>
 #include <cstdint>
-#include <iostream>
-#include <memory>
 #include <optional>
-#include <regex>
+#include <deque>
+#include <stack>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
-
-#include "utils.h"
 
 namespace Lexer {
 
@@ -83,9 +78,6 @@ enum Tokens : uint16_t {
     T_RIGHT_BRACKET,                // `)`
     T_LEFT_SQUARE_BRACKET,          // `[`
     T_RIGHT_SQUARE_BRACKET,         // `]`
-
-    // ERROR
-    T_BAD                           // ill formed token
 };
 
 extern std::unordered_map<Lexer::Tokens, std::string> TOKENS_TO_STR;
@@ -94,52 +86,49 @@ class Token {
 public:
     Token() = default;
 
-    template<typename T>
-    requires std::derived_from<T, Error>
-    Token(T&& e, size_t c, size_t l)
-    : token(Tokens::T_BAD), value(std::make_shared<T>(std::forward<T>(e))), column(c), lineno(l) {}
+    Token(Tokens t, double v, size_t l, size_t c)
+    : token(t), value(v), lineno(l), column(c) {}
 
-    template<typename T>
-    requires std::derived_from<T, Error>
-    Token(T&& e, const Token& other)
-    : token(other.token), value(std::make_shared<T>(std::forward<T>(e))), column(other.column), lineno(other.lineno) {}
-
-    Token(Tokens t, double v, size_t c, size_t l)
-    : token(t), value(v), column(c), lineno(l) {}
-
-    Token(Tokens t, const std::string& v, size_t c, size_t l)
-    : token(t), value(v), column(c), lineno(l) {}
-    Token(Tokens t, std::string&& v, size_t c, size_t l)
-    : token(t), value(std::move(v)), column(c), lineno(l) {}
+    Token(Tokens t, const std::string& v, size_t l, size_t c)
+    : token(t), value(v), lineno(l), column(c) {}
+    Token(Tokens t, std::string&& v, size_t l, size_t c)
+    : token(t), value(std::move(v)), lineno(l), column(c) {}
 
     // (Comfy) function, that give you a possibility to pass an optional object
-    // and will return a T_BAD if that is empty.
+    // and will throw if that is empty.
     template<typename T>
     Token(Tokens, const std::optional<T>&, size_t, size_t);
 
-    Token(Tokens t, size_t c, size_t l)
-    : token(t), value(std::monostate{}), column(c), lineno(l) {}
+    Token(Tokens t, size_t l, size_t c)
+    : token(t), value(std::monostate{}), lineno(l), column(c) {}
 
     Tokens token;
-    size_t column = 0;
     size_t lineno = 0;
-    std::variant<std::monostate, double, std::string, std::shared_ptr<Error>> value;
+    size_t column = 0;
+    std::variant<std::monostate, double, std::string> value;
 };
-
 
 // Lexical Analyzer
 class Tokenizer {
 public:
-    Tokenizer(const std::string& str) : text(str) {}
+    Tokenizer() {}
+    Tokenizer(const Tokenizer&) = default;
+    Tokenizer(Tokenizer&&);
+    Tokenizer& operator=(Tokenizer&&);
 
-    Tokenizer& operator>>(Lexer::Token& token);
+    Tokenizer& operator<<(const std::string&);
+    Tokenizer& operator>>(Lexer::Token&);
     Lexer::Token Peek();
+    size_t GetClosuresSize() const;
 
 private:
-    size_t pos = 0;
-    size_t column = 1;
+    std::deque<Token> tokens;
+    std::stack<Token> closures;
+
+    size_t pos;
     size_t lineno = 1;
-    std::string text;
+    size_t column = 1;
+    const std::string* text;
 
     Lexer::Token Advance();
     void Inc();
@@ -192,7 +181,6 @@ private:
         {"end for", Tokens::T_END_FOR},
         {"break", Tokens::T_BREAK},
         {"continue", Tokens::T_CONTINUE},
-        {"end", Tokens::T_BAD},
 
     // functions
         {"function", Tokens::T_FUNC},
@@ -211,5 +199,4 @@ private:
     };
 };
 
-
-}
+} // end Lexer

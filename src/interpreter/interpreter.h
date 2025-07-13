@@ -1,92 +1,93 @@
 #pragma once
-#include <any>
-#include <cmath>
 #include <concepts>
-#include <expected>
-#include <functional>
+#include <cstdint>
 #include <iostream>
-#include <memory>
 #include <string>
-#include <variant>
-#include <unordered_map>
 
+#include "utils.h"
 #include "lexer.h"
-#include "parser.h"
-#include "operators.h"
 #include "memory.h"
+#include "parser.h"
 
-namespace Interpreter {
-    bool Interpret(std::istream&, std::ostream&);
-    bool Interpret(std::string&, std::istream&, std::ostream&);
+extern std::istream* in;
+extern std::ostream* out;
+extern std::ostream* err;
 
-    extern std::unique_ptr<Memory::StackFrame> stack_frame;
-    extern std::istream* in;
-    extern std::ostream* out;
-
-    void Init();
-
-    // ERRORS
-    void SyntaxError(const Lexer::Token& token);
-    void RunTimeError(const Lexer::Token&);
-}
-
-class Runner {
+class Interpreter {
 public:
-    template<typename T>
-    requires std::same_as<T, std::string>
-    Runner(T&& str)
-    : parser(Lexer::Tokenizer( std::forward<T>(str) )) {
-        parser.Parse();
-    }
+    /// @brief configure the input and output streams which are used in streams functions
+    ///        and init the mandatory classes.
+    Interpreter(std::istream& = std::cin, std::ostream& = std::cout, std::ostream& = std::cerr);
+
+    /// @brief  reads cmds from istream
+    /// @return true if at execution no error happend
+    /// @return false if at least one error occured
+    bool Interpret(std::istream&, bool is_repl);
+
+    bool InterpretFile(std::istream&);
+    bool InterpretRepl(std::istream&);
 
     using HolderPack = Memory::HolderPack;
-    using Expected = std::expected<HolderPack, Lexer::Token>;
-    Expected Run();
-
-    Parser::NodePtr& GetRoot() { return parser.root; }
 
 private:
+    Lexer::Tokenizer tokenizer;
+
     using NodePtr = Parser::NodePtr;
     using ListHolderPtr = Memory::ListHolderPtr;
     using FuncHolderPtr = Memory::FuncHolderPtr;
-    
+
     using FuncHolder = Memory::FuncHolder;
 
-    Expected Visit(NodePtr&);
+    HolderPack Visit(NodePtr&);
 
-    Expected VisitNumLiteral(NodePtr&);
-    Expected VisitStringLiteral(NodePtr&);
-    Expected VisitBoolLiteral(NodePtr&);
-    Expected VisitNilLiteral(NodePtr&);
+    HolderPack VisitNumLiteral(NodePtr&);
+    HolderPack VisitStringLiteral(NodePtr&);
+    HolderPack VisitBoolLiteral(NodePtr&);
+    HolderPack VisitNilLiteral(NodePtr&);
 
-    Expected VisitVar(NodePtr&);
-    Expected VisitList(NodePtr&);
+    HolderPack VisitVar(NodePtr&);
+    HolderPack VisitList(NodePtr&);
 
-    Expected VisitUnaryOp(NodePtr&);
-    Expected VisitBinaryOp(NodePtr&);
-    Expected VisitSubscript(NodePtr&);
+    HolderPack VisitUnaryOp(NodePtr&);
+    HolderPack VisitBinaryOp(NodePtr&);
+    HolderPack VisitSubscript(NodePtr&);
 
-    Expected VisitIf(NodePtr&);
-    Expected VisitFor(NodePtr&);
-    Expected VisitWhile(NodePtr&);
+    HolderPack VisitIf(NodePtr&);
+    HolderPack VisitFor(NodePtr&);
+    HolderPack VisitWhile(NodePtr&);
 
-    Expected VisitReturn(NodePtr&);
-    Expected VisitBreak(NodePtr&);
-    Expected VisitContinue(NodePtr&);
-    
-    Expected VisitFunc(NodePtr&);
-    Expected VisitFuncCall(NodePtr&);
-    Expected VisitUserFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
-    Expected VisitBuiltInFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
+    HolderPack VisitReturn(NodePtr&);
+    HolderPack VisitBreak(NodePtr&);
+    HolderPack VisitContinue(NodePtr&);
+
+    HolderPack VisitFunc(NodePtr&);
+    HolderPack VisitFuncCall(NodePtr&);
+    HolderPack VisitUserFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
+    HolderPack VisitBuiltInFuncCall(Parser::FuncCall*, Memory::FuncHolder&, std::vector<HolderPack>&);
 
 
-    Expected VisitCompound(NodePtr&);
+    HolderPack VisitCompound(NodePtr&);
 
     // Helpers
-    std::expected<int, Lexer::Token> IntegerRequirement(NodePtr&);
-    std::expected<int, Lexer::Token> GetIndex(NodePtr&, HolderPack&);
-    Expected SubscriptIndexer(Parser::Subscript*, HolderPack&&);
-    Expected SubscriptSlicer(Parser::Subscript*, HolderPack&&);
+    template<typename E>
+    requires std::derived_from<E, Error>
+    E MakeError(Parser::NodePtr& node) {
+        return E(node->token.lineno, node->token.column);
+    }
 
-    Parser parser;
+    template<typename E>
+    requires std::derived_from<E, Error>
+    E MakeError(Parser::Node* node) {
+        return E(node->token.lineno, node->token.column);
+    }
+
+    template<typename Func>
+    requires std::invocable<Func>
+    bool RunSafely(Func&&, std::vector<std::string>&);
+
+    int64_t IntegerRequirement(NodePtr&);
+    int64_t GetIndex(NodePtr&, HolderPack&);
+    HolderPack SubscriptIndexer(Parser::Subscript*, HolderPack&&);
+    HolderPack SubscriptSlicer(Parser::Subscript*, HolderPack&&);
 };
+

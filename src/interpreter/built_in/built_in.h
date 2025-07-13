@@ -1,23 +1,11 @@
 #pragma once
-#include <algorithm>
 #include <cctype>
-#include <cmath>
-#include <cstdint>
-#include <functional>
-#include <random>
-#include <ranges>
-#include <span>
+#include <iostream>
 #include <string>
 #include <unordered_map>
-#include <variant>
-#include <vector>
-
-#include <iostream>
-
 #include "memory.h"
 
 extern std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS;
-extern std::unordered_map<TYPES, std::string> TYPE_TO_STR;
 
 namespace BuiltIn {
 
@@ -31,6 +19,7 @@ using FuncHolderPtr = Memory::FuncHolderPtr;
 
 void InitializeBuilInFunctions();
 
+// MATH FUNCTIONS
 extern HolderPack abs;
 extern HolderPack ceil;
 extern HolderPack floor;
@@ -54,9 +43,9 @@ extern HolderPack pop;
 extern HolderPack insert;
 extern HolderPack remove;
 extern HolderPack sort;
+extern HolderPack copy;
 
 // UNIVERSAL FUNCTIONS
-extern HolderPack copy;
 extern HolderPack len;
 
 // SYSTEM FUNCTIONS
@@ -64,11 +53,11 @@ extern HolderPack print;
 extern HolderPack println;
 extern HolderPack read;
 extern HolderPack stacktrace;
+extern HolderPack exit;
 
-} // BuiltIn
+} // end BuiltIn
 
-namespace Interpreter {
-    extern std::unique_ptr<Memory::StackFrame> stack_frame;
-    extern std::istream* in;
-    extern std::ostream* out;
-} // Interpreter
+// forward declaration for work in/out stream system function of built in functions.
+extern std::istream* in;
+extern std::ostream* out;
+

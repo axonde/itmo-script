@@ -1,8 +1,6 @@
 #include <interpreter>
 #include <gtest/gtest.h>
 
-using namespace Interpreter;
-
 TEST(IndexTest, GetIndex) {
     std::string code = R"(
         a = "this is a string"
@@ -14,7 +12,9 @@ TEST(IndexTest, GetIndex) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(IndexTest, OutOfRange) {
@@ -25,8 +25,11 @@ TEST(IndexTest, OutOfRange) {
 
     std::istringstream input(code);
     std::ostringstream output;
+    std::ostringstream error;
 
-    ASSERT_FALSE(Interpret(input, output));
+    Interpreter interpreter(input, output, error);
+
+    ASSERT_FALSE(interpreter.Interpret(input, false));
 }
 
 TEST(SlicesTest, SliceConcept) {
@@ -41,7 +44,9 @@ TEST(SlicesTest, SliceConcept) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(SlicesTest, SimpleCopy) {
@@ -57,7 +62,9 @@ TEST(SlicesTest, SimpleCopy) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }
 TEST(SlicesTest, AssignmentNewInstance) {
@@ -73,6 +80,8 @@ TEST(SlicesTest, AssignmentNewInstance) {
     std::istringstream input(code);
     std::ostringstream output;
 
-    ASSERT_TRUE(Interpret(input, output));
+    Interpreter interpreter(input, output);
+
+    ASSERT_TRUE(interpreter.Interpret(input, false));
     ASSERT_EQ(output.str(), expected);
 }

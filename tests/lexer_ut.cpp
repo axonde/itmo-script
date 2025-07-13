@@ -1,4 +1,3 @@
-#include <sstream>
 #include <ranges>
 #include <utility>
 
@@ -8,11 +7,12 @@
 using namespace Lexer;
 
 std::vector<Token> MakeTokensVector(std::string&& str) {
-    Tokenizer tokenizer(std::move(str));
+    Tokenizer tokenizer;
+    tokenizer << str;
     std::vector<Token> computed;
     Token token;
     tokenizer >> token;
-    while (token.token != T_BAD && token.token != T_EOF) {
+    while (token.token != T_EOF) {
         computed.push_back(token);
         tokenizer >> token;
     }
@@ -21,11 +21,12 @@ std::vector<Token> MakeTokensVector(std::string&& str) {
 }
 
 std::vector<Tokens> MakeTokensTypeVector(std::string&& str) {
-    Tokenizer tokenizer(std::move(str));
+    Tokenizer tokenizer;
+    tokenizer << str;
     std::vector<Tokens> computed;
     Token token;
     tokenizer >> token;
-    while (token.token != T_BAD && token.token != T_EOF) {
+    while (token.token != T_EOF) {
         computed.push_back(token.token);
         tokenizer >> token;
     }
@@ -72,10 +73,9 @@ TEST(LexerTokenizerTest, GreaterOrEq) {
 TEST(LexerTokenizerTest, SimpleWrongSyntax) {
     std::string program = R"(###)";
 
-    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
-
-    std::vector<Tokens> expected = {T_BAD};
-    ASSERT_EQ(computed, expected);
+    EXPECT_THROW(
+        std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+    , Errors::LexerErrors::LexerError);
 }
 
 TEST(LexerTokenizerTest, ForCycle) {
@@ -86,7 +86,6 @@ TEST(LexerTokenizerTest, ForCycle) {
     )";
 
     std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
-
     std::vector<Tokens> expected = {
         T_EOL,
         T_FOR, T_VAR, T_IN, T_VAR, T_LEFT_BRACKET, T_NUMBER, T_COMMA, T_NUMBER, T_RIGHT_BRACKET, T_EOL,
@@ -98,7 +97,7 @@ TEST(LexerTokenizerTest, ForCycle) {
 
 TEST(LexerTokenizerTest, Functions) {
     std::string program = R"(
-        function calc(a, b)
+        function(a, b)
             return a + b
         end function
     )";
@@ -107,9 +106,21 @@ TEST(LexerTokenizerTest, Functions) {
 
     std::vector<Tokens> expected = {
         T_EOL,
-        T_FUNC, T_VAR, T_LEFT_BRACKET, T_VAR, T_COMMA, T_VAR, T_RIGHT_BRACKET, T_EOL,
+        T_FUNC, T_LEFT_BRACKET, T_VAR, T_COMMA, T_VAR, T_RIGHT_BRACKET, T_EOL,
         T_RETURN, T_VAR, T_PLUS, T_VAR, T_EOL,
         T_END_FUNC, T_EOL, T_EOF
+    };
+    ASSERT_EQ(computed, expected);
+}
+
+
+TEST(LexerTokenizerTest, EmptyFunction) {
+    std::string program = R"(function() end function)";
+
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+
+    std::vector<Tokens> expected = {
+        T_FUNC, T_LEFT_BRACKET, T_RIGHT_BRACKET, T_END_FUNC, T_EOF
     };
     ASSERT_EQ(computed, expected);
 }
@@ -117,7 +128,7 @@ TEST(LexerTokenizerTest, Functions) {
 TEST(LexerTokenizerTest, Empty) {
     std::string program = R"()";
 
-    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program));
+    std::vector<Tokens> computed = MakeTokensTypeVector(std::move(program)); 
 
     std::vector<Tokens> expected = {T_EOF};
     ASSERT_EQ(computed, expected);
@@ -219,3 +230,99 @@ end function)";
 
     ASSERT_EQ(positions, expected_positions);
 }
+
+TEST(LexerInterfaceTest, MultiLineInput) {
+    Lexer::Tokenizer tokenizer;
+
+    tokenizer << "a = 1\n";
+    tokenizer << "b = 2";
+
+    std::vector<Tokens> computed;
+    Token token;
+    tokenizer >> token;
+    while (token.token != T_EOF) {
+        computed.push_back(token.token);
+        tokenizer >> token;
+    }
+    computed.push_back(token.token);
+
+    std::vector<Tokens> expected = {
+        T_VAR, T_EQUAL, T_NUMBER, T_EOL,
+        T_VAR, T_EQUAL, T_NUMBER, T_EOF };
+    ASSERT_EQ(computed, expected);
+}
+
+TEST(LexerStressTest, WrongSyntaxStringLiteral) {
+    std::string program = R"(
+        a = "sdfkjfkjdf
+        b = 2
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerStringError);
+}
+
+TEST(LexerStressTest, WrongSyntaxNumLiteral) {
+    std::string program = R"(
+        a = 1123.
+        b = 2
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerNumberError);
+}
+
+TEST(LexerStressTest, WrongSyntaxUndefinedSymbols) {
+    std::string program = R"(!@!#)";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerUnrecognizable);
+}
+
+TEST(LexerStressTest, WrongSyntaxIfStatementForgotEndIf) {
+    std::string program = R"(
+        if i < 3 then
+            i = 3
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Closures::UncaughtClosure);
+}
+
+TEST(LexerStressTest, WrongSyntaxForStatementForgotEndFor) {
+    std::string program = R"(
+        for i in range(3)
+            continue
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Closures::UncaughtClosure);
+}
+
+TEST(LexerStressTest, AbnormalInput) {
+    std::string program = R"(
+        !@O#I1o] 	2-]9u j[9j4n ln;lkj;j]
+    )";
+
+    Lexer::Tokenizer tokenizer;
+
+    ASSERT_THROW(
+        tokenizer << program;
+    , Errors::LexerErrors::LexerUnrecognizable);
+}
+

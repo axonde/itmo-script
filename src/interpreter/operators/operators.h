@@ -1,11 +1,7 @@
 #pragma once
-#include <expected>
 #include <functional>
-#include <memory>
-#include <string>
-#include <variant>
-#include <vector>
-
+#include "lexer.h"
+#include "memory.h"
 #include "parser.h"
 
 namespace Operators {
@@ -13,7 +9,6 @@ namespace Operators {
 using HolderPack = Memory::HolderPack;
 using UnaryFunction = std::function<HolderPack(HolderPack&&)>;
 using BinaryFunction = std::function<HolderPack(HolderPack&&, HolderPack&&)>;
-using Expected = std::expected<HolderPack, Lexer::Token>;
 
 struct UnaryOpTableKey {
     Lexer::Tokens op;
@@ -46,10 +41,12 @@ void RegisterBinaryFuncOperators() noexcept;
 
 void RegisterBinaryOperators() noexcept;
 
-[[nodiscard]] Expected ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&) noexcept;
-[[nodiscard]] Expected ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&) noexcept;
-[[nodiscard]] Expected ExecBinaryOperation(Lexer::Tokens, Parser::NodePtr&, HolderPack&&, HolderPack&&) noexcept;
-[[nodiscard]] HolderPack ExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // can throw
+[[nodiscard]] HolderPack ExecUnaryOperation(Parser::UnaryOp*, HolderPack&&);
+[[nodiscard]] HolderPack ExecBinaryOperation(Parser::BinaryOp*, HolderPack&&, HolderPack&&);
+[[nodiscard]] HolderPack ExecBinaryOperation(const Lexer::Token&, HolderPack&&, HolderPack&&);
+[[maybe_unused]] HolderPack RawExecBinaryOperation(Lexer::Tokens, HolderPack&&, HolderPack&&);  // inner exec binary operations
+
+using Memory::MakeListHolder;
 
 } // end Operators
 

@@ -1,74 +1,112 @@
 #include "interpreter.h"
 
-namespace Interpreter {
-
-/// CONFIG
-std::unique_ptr<Memory::StackFrame> stack_frame;
-std::istream* in;
-std::ostream* out;
-
-void Init() {
-    BuiltIn::InitializeBuilInFunctions();
-    stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
-    Operators::RegisterUnaryOperators();
-    Operators::RegisterBinaryOperators();
-}
-
-/// ERRORS
-void SyntaxError(const Lexer::Token& token) {
-    using ErrorType = std::shared_ptr<Errors::Error>;
-    Errors::PrintError("Syntax error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
-}
-void RunTimeError(const Lexer::Token& token) {
-    using ErrorType = std::shared_ptr<Errors::Error>;
-    Errors::PrintError("RunTime error", std::get<ErrorType>(token.value).get(), token.column, token.lineno);
-}
-
-/// INTERPRET
-bool Interpret(std::istream& input, std::ostream& output) {
-    input.seekg(0, std::ios::end);
-    size_t size = input.tellg();
-    input.seekg(0);
-    std::string program(size, '\0');
-    input.read(&program[0], size);
-
-    return Interpret(program, input, output);
-}
-
-bool Interpret(std::string& program, std::istream& input, std::ostream& output) {
-    Interpreter::in = &input;
-    Interpreter::out = &output;
-    Init();  // caution! this initialization is steadfastly obligatory
-    Runner runner(std::move(program));
-
-    if (runner.GetRoot()->node == Parser::Nodes::N_BAD) {
-        SyntaxError(std::move(runner.GetRoot()->token));
-        return false;
-    }
-
-    if (auto expected = runner.Run(); !expected) {
-        RunTimeError(std::move(expected.error()));
-        return false;
-    }
-    return true;
-}
-
-} // end Interpreter
+#include "built_in.h"
+#include "operators.h"
 
 using Memory::MakeListHolder;
 using Memory::MakeFuncHolder;
 
-Runner::Expected Runner::Run() {
-    try {
-        return Visit(parser.root);
-    } catch (Closure& c) {
-        return std::unexpected(Lexer::Token(
-            Error(c.what()), std::any_cast<Lexer::Token&>(c.token)
-        ));
-    }
+std::istream* in;       // input stream of interpretator
+std::ostream* out;      // output stream of interpretator
+std::ostream* err;      // error stream of interpretator
+
+std::unique_ptr<Memory::StackFrame> Memory::stack_frame;
+
+// INTERPRETER
+Interpreter::Interpreter(std::istream& i, std::ostream& o, std::ostream& e) {
+    in = &i;
+    out = &o;
+    err = &e;
+    BuiltIn::InitializeBuilInFunctions();
+    Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(BUILT_IN_FUNCTIONS), "global");
+    Operators::RegisterUnaryOperators();
+    Operators::RegisterBinaryOperators();
 }
 
-Runner::Expected Runner::Visit(Runner::NodePtr& node) {
+bool Interpreter::Interpret(std::istream& input, bool is_repl) {
+    if (!is_repl) {
+        return InterpretFile(input);
+    }
+    return InterpretRepl(input);
+}
+
+bool Interpreter::InterpretFile(std::istream& input) {
+    std::vector<std::string> program;
+    std::string line;
+    while (std::getline(input, line)) {
+        program.push_back(line);
+        try { tokenizer << line + '\n'; }
+        catch (const Closures::UncaughtClosure& c) {
+            if (!input.eof()) { continue; }
+            Closures::PrintClosureError(c);
+            return false;
+        }
+        catch (const Closure& c) {
+            Closures::PrintClosureError(c);
+            return false;
+        } catch(const Error& e) {
+            Errors::PrintSyntaxError(e);
+            return false;
+        } catch (...) {
+            Errors::PrintPanic(InternalError());
+            return false;
+        }
+    }
+
+    try {
+        return RunSafely([&]() {
+            Parser parser(std::move(tokenizer));
+            parser.Parse();
+            Visit(parser.root);
+        }, program);
+    } catch (const Closures::Exit& e) {
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+bool Interpreter::InterpretRepl(std::istream& input) {
+    std::vector<std::string> session;
+    std::string line;
+    while (true) {
+        *out << Patterns::CMD;
+        size_t tab_q = tokenizer.GetClosuresSize();
+        for (size_t i = 0; i != tab_q; ++i) { *out << "... "; }
+        std::getline(input, line);
+        session.push_back(line);
+        try { tokenizer << line + '\n'; }
+        catch (const Closures::UncaughtClosure& c) { continue; }
+        catch (const Closure& c) {
+            Closures::PrintClosureError(c);
+            Errors::PrintProgramSnippet(session, c.lineno, c.column);
+            continue;
+        } catch(const Error& e) {
+            Errors::PrintSyntaxError(e);
+            Errors::PrintProgramSnippet(session, e.lineno, e.column);
+            continue;
+        } catch (...) {
+            Errors::PrintPanic(InternalError());
+            return false;
+        }
+        try {
+            RunSafely([&]() {
+                Parser parser(std::move(tokenizer));
+                parser.Parse();
+                Visit(parser.root);
+            }, session);
+        } catch (const Closures::Exit& c) {
+            return true;
+        } catch (...) {
+            return false;
+        }
+        session = {};
+    }
+    return true;
+}
+
+// VISITERS
+Interpreter::HolderPack Interpreter::Visit(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] visit dispatch\n";
     switch (node->node) {
         case Parser::Nodes::N_NUM_LITERAL:
             return VisitNumLiteral(node);
@@ -90,11 +128,9 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
             return VisitBinaryOp(node);
         case Parser::Nodes::N_SUBSCRIPT:
             return VisitSubscript(node);
-        
+
         case Parser::Nodes::N_IF:
             return VisitIf(node);
-        // case Parser::Nodes::N_IF:
-        //     return VisitIf(node);
         case Parser::Nodes::N_FOR:
             return VisitFor(node);
         case Parser::Nodes::N_WHILE:
@@ -113,98 +149,84 @@ Runner::Expected Runner::Visit(Runner::NodePtr& node) {
         case Parser::Nodes::N_COMPOUND:
             return VisitCompound(node);
         default:
-            return std::unexpected(Lexer::Token(
-                InternalError(), node->token
-            ));
+            throw MakeError<InternalError>(node);
     }
 }
 
 
 /// LITERALS
-Runner::Expected Runner::VisitNumLiteral(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitNumLiteral(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] num literal\n";
+
     Parser::NumLiteral* num_literal = static_cast<Parser::NumLiteral*>(node.get());
     return HolderPack(num_literal->value, TYPES::NUM_TYPE);
 }
 
-Runner::Expected Runner::VisitStringLiteral(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitStringLiteral(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] string literal\n";
+
     Parser::StringLiteral* str_literal = static_cast<Parser::StringLiteral*>(node.get());
     return HolderPack(str_literal->value, TYPES::STRING_TYPE);
 }
 
-Runner::Expected Runner::VisitBoolLiteral(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitBoolLiteral(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] bool literal\n";
+
     Parser::BoolLiteral* bool_literal = static_cast<Parser::BoolLiteral*>(node.get());
     return HolderPack(bool_literal->value, TYPES::BOOL_TYPE);
 }
 
-Runner::Expected Runner::VisitNilLiteral(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitNilLiteral(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] nil literal\n";
+
     return HolderPack(TYPES::NIL_TYPE);
 }
 
 /// LITERAL EXPR
-Runner::Expected Runner::VisitVar(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitVar(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] var\n";
+
     std::string_view id = static_cast<Parser::Var*>(node.get())->id;
     try {
-        return Interpreter::stack_frame->Lookup(id);
+        return Memory::stack_frame->Lookup(id);
     } catch (Errors::MemoryErrors::NotFound e) {
-        return std::unexpected(Lexer::Token(std::move(e), node->token));
+        throw MakeError<decltype(e)>(node);
+    } catch (...) {
+        throw MakeError<InternalError>(node);
     }
 }
-Runner::Expected Runner::VisitList(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitList(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] list\n";
+
     Parser::List* list = static_cast<Parser::List*>(node.get());
     std::vector<HolderPack> data;
     for (auto& child : list->data) {
-        auto visited = Visit(child);
-        if (visited) {
-            data.push_back(std::move(*visited));
-        } else {
-            return std::unexpected(visited.error());
-        }
+        data.push_back(Visit(child));
     }
     return { HolderPack(MakeListHolder(std::move(data)), TYPES::LIST_TYPE) };
 }
 
 /// OPERATIONS
-Runner::Expected Runner::VisitUnaryOp(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitUnaryOp(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] unary op\n";
+
     Parser::UnaryOp* ptr = static_cast<Parser::UnaryOp*>(node.get());
-    auto computed_operand = Visit(ptr->operand);
-    if (computed_operand) {
-        if (auto computed = Operators::ExecUnaryOperation(ptr, std::move(*computed_operand)); computed) {
-            return std::move(*computed);
-        } else {
-            return std::unexpected(std::move(computed.error()));
-        }
-    } else {
-        return std::unexpected(std::move(computed_operand.error()));
-    }
+    return Operators::ExecUnaryOperation(ptr, HolderPack(Visit(ptr->operand)));
 }
-Runner::Expected Runner::VisitBinaryOp(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitBinaryOp(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] binary op\n";
+
     Parser::BinaryOp* ptr = static_cast<Parser::BinaryOp*>(node.get());
-    auto computed_left = Visit(ptr->left);
-    auto computed_right = Visit(ptr->right);
-    if (computed_left && computed_right) {
-        auto computed = Operators::ExecBinaryOperation(ptr, std::move(*computed_left), std::move(*computed_right));
-        if (computed) {
-            return std::move(*computed);
-        } else {
-            return std::unexpected(std::move(computed.error()));
-        }
-    } else {
-        if (!computed_left) {
-            return std::unexpected(std::move(computed_left.error()));
-        }
-        return std::unexpected(std::move(computed_right.error()));
-    }
+    return Operators::ExecBinaryOperation(ptr, Visit(ptr->left), Visit(ptr->right));
 }
-Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitSubscript(Interpreter::NodePtr& node) {
+    // std::cout << "[interpreter log] subscript\n";
+
     Parser::Subscript* ptr = static_cast<Parser::Subscript*>(node.get());
 
-    Expected var_expr_exp = Visit(ptr->var_expr);
-    if (!var_expr_exp) { return std::unexpected(var_expr_exp.error()); }
-    HolderPack& var_expr = *var_expr_exp;
+    HolderPack var_expr = Visit(ptr->var_expr);
     if (var_expr->type != TYPES::STRING_TYPE && var_expr->type != TYPES::LIST_TYPE) {
-        return std::unexpected(Lexer::Token(
-            Errors::TypeErrors::TypeErrorStringOrList(), node->token
-        ));
+        throw MakeError<Errors::TypeErrors::TypeErrorStringOrList>(node);
     }
 
     if (!ptr->is_slice) {
@@ -215,35 +237,28 @@ Runner::Expected Runner::VisitSubscript(Runner::NodePtr& node) {
 }
 
 /// BLOCKS
-Runner::Expected Runner::VisitIf(Parser::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitIf(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] if block\n";
+
     Parser::If* ptr = static_cast<Parser::If*>(node.get());
-
     for (Parser::If::IfCase& occasion : ptr->cases) {
-        auto condition_expected = Visit(occasion.condition);
-        if (!condition_expected) { return std::unexpected(condition_expected.error()); }
-
-        HolderPack condition = *condition_expected;
+        HolderPack condition = Visit(occasion.condition);
         if (std::get<bool>(condition->holder)) {
-            if (auto expected = Visit(occasion.body); !expected) {
-                return std::unexpected(expected.error());
-            }
+            Visit(occasion.body);
             break;
         }
     }
     return HolderPack();
 }
-Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
-    auto ptr = static_cast<Parser::For*>(node.get());
-    auto iterator_expected = Visit(ptr->iterator);
-    if (!iterator_expected) { return std::unexpected(iterator_expected.error()); }
-    auto range_expected = Visit(ptr->range);
-    if (!range_expected) { return std::unexpected(range_expected.error()); }
+Interpreter::HolderPack Interpreter::VisitFor(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] for block\n";
 
-    HolderPack iterator = *iterator_expected;
-    HolderPack range = *range_expected;
+    auto ptr = static_cast<Parser::For*>(node.get());
+    auto iterator = Visit(ptr->iterator);
+    auto range = Visit(ptr->range);
 
     if (range->type != TYPES::STRING_TYPE && range->type != TYPES::LIST_TYPE) {
-        return std::unexpected(Lexer::Token(Errors::RunTime::NotEvaluatedSequence(), node->token));
+        throw MakeError<Errors::RunTime::NotEvaluatedSequence>(node);
     }
     size_t size;
     if (range->type == TYPES::STRING_TYPE) { size = std::get<std::string>(range->holder).size(); }
@@ -251,43 +266,36 @@ Runner::Expected Runner::VisitFor(Parser::NodePtr& node) {
 
     for (size_t i = 0; i < size; ++i) {
         if (range->type == TYPES::STRING_TYPE) {
-            iterator_expected = Operators::ExecBinaryOperation(
-                Lexer::Tokens::T_EQUAL, node, HolderPack(iterator),
+            iterator = Operators::RawExecBinaryOperation(
+                Lexer::Tokens::T_EQUAL,
+                HolderPack(iterator),
                 HolderPack(std::to_string(std::get<std::string>(range->holder)[i]), TYPES::STRING_TYPE)
             );
         } else {
-            iterator_expected = Operators::ExecBinaryOperation(
-                Lexer::Tokens::T_EQUAL, node, HolderPack(iterator),
+            iterator = Operators::RawExecBinaryOperation(
+                Lexer::Tokens::T_EQUAL,
+                HolderPack(iterator),
                 HolderPack(std::get<ListHolderPtr>(range->holder)->data[i])
             );
         }
-        if (!iterator_expected) { return std::unexpected(iterator_expected.error()); }
-        try {
-            if (auto visited = Visit(ptr->body); !visited) {
-                return std::unexpected(visited.error());
-            }
-        }
+        try { Visit(ptr->body); }
         catch (Closures::Break&) { break; }
         catch (Closures::Continue&) { continue; }
     }
     return HolderPack();
 }
-Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitWhile(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] while block\n";
+
     auto ptr = static_cast<Parser::While*>(node.get());
 
-    Runner::Expected condition_expected;
+    HolderPack condition_expected;
     while (true) {
-        condition_expected = Visit(ptr->condition);
-        if (!condition_expected) { return std::unexpected(condition_expected.error()); }
-        auto condition = *condition_expected;
+        auto condition = Visit(ptr->condition);
         if (std::get<bool>(condition->holder)) {
-            try {
-                if (auto visited = Visit(ptr->body); !visited) {
-                    return std::unexpected(visited.error());
-                }
-            }
+            try { Visit(ptr->body); }
             catch (Closures::Break&) { break; }
-            catch (Closures::Continue&) {}  // continue too.
+            catch (Closures::Continue&) { /*literally continue*/ }
             continue;
         }
         break;
@@ -296,133 +304,194 @@ Runner::Expected Runner::VisitWhile(Parser::NodePtr& node) {
 }
 
 /// CLOSURE STATEMENTS
-Runner::Expected Runner::VisitReturn(Parser::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitReturn(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] return statement\n";
+
     Parser::Return* ptr = static_cast<Parser::Return*>(node.get());
-    auto expr_expected = Visit(ptr->expr);
-    if (!expr_expected) { return std::unexpected(expr_expected.error()); }
-    throw Closures::Return(std::move(*expr_expected), node->token);
+    throw Closures::Return(Visit(ptr->expr), node->token.lineno, node->token.column);
 }
-Runner::Expected Runner::VisitBreak(Parser::NodePtr& node) {
-    throw Closures::Break(node->token);
+Interpreter::HolderPack Interpreter::VisitBreak(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] break statement\n";
+
+    throw Closures::Break(node->token.lineno, node->token.column);
 }
-Runner::Expected Runner::VisitContinue(Parser::NodePtr& node) {
-    throw Closures::Continue(node->token);
+Interpreter::HolderPack Interpreter::VisitContinue(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] continue statement\n";
+
+    throw Closures::Continue(node->token.lineno, node->token.column);
 }
 
 /// FUNCTIONS
-Runner::Expected Runner::VisitFunc(Parser::NodePtr& node) {
-    return HolderPack( MakeFuncHolder(node.get()), TYPES::FUNC_TYPE );
+Interpreter::HolderPack Interpreter::VisitFunc(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] func declaration\n";
+
+    return HolderPack(MakeFuncHolder(static_cast<void*>(node.get())), TYPES::FUNC_TYPE);
 }
-Runner::Expected Runner::VisitFuncCall(Parser::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitFuncCall(Parser::NodePtr& node) {
+//     std::cout << "[interpreter log] func call\n";
+
     auto ptr = static_cast<Parser::FuncCall*>(node.get());
-    auto func_expected = Visit(ptr->func);
-    if (!func_expected) { return std::unexpected(func_expected.error()); }
-    HolderPack& func = *func_expected;
+    HolderPack func = Visit(ptr->func);
     if (func->type != TYPES::FUNC_TYPE) {
-        return std::unexpected(Lexer::Token(Errors::TypeErrors::TypeErrorFunc(), node->token));
+        throw MakeError<Errors::TypeErrors::TypeErrorFunc>(node);
     }
 
     std::vector<HolderPack> params;
     for (auto& param : ptr->params) {
-        auto visited_expected = Visit(param);
-        if (!visited_expected) { return std::unexpected(visited_expected.error()); }
-        HolderPack& visited = *visited_expected;
-        if (visited->type == TYPES::NOT_SET_TYPE) { return std::unexpected(Lexer::Token(
-            Errors::MemoryErrors::NotFound(), std::move(param->token)
-        )); }
+        auto visited = Visit(param);
+        if (visited->type == TYPES::NOT_SET_TYPE) {
+            throw MakeError<Errors::MemoryErrors::NotFound>(param);
+        }
         params.push_back(visited);
     }
 
     FuncHolder& function_holder = *std::get<FuncHolderPtr>(func->holder);
-    if (std::holds_alternative<std::any>(function_holder.function)) {
+    if (std::holds_alternative<Memory::NodeHolder>(function_holder.function)) {
         return VisitUserFuncCall(ptr, function_holder, params);
     }
     return VisitBuiltInFuncCall(ptr, function_holder, params);
 }
-Runner::Expected Runner::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& function_holder, std::vector<HolderPack>& params) {
+Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, FuncHolder& function_holder, std::vector<HolderPack>& params) {
+    // std::cout << "[interpreter log] user func call\n";
+
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
-    Interpreter::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Interpreter::stack_frame), std::move(func_name));
 
-    Parser::Func* func_instance = static_cast<Parser::Func*>(std::any_cast<Parser::Node*>(
-        std::get<std::any>(function_holder.function)
-    ));
-    if (func_instance->args.size() != ptr->params.size()) { return std::unexpected(Lexer::Token(
-        Errors::RunTime::WrongArgumentCount(), ptr->token
-    )); }
+    Parser::Node* func_holder = static_cast<Parser::Node*>(std::get<Memory::NodeHolder>(function_holder.function).get());
+    Parser::Func* func_instance = static_cast<Parser::Func*>(func_holder);
+    if (func_instance->args.size() != ptr->params.size()) {
+        throw MakeError<Errors::RunTime::WrongArgumentCount>(ptr);
+    }
 
+    Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Memory::stack_frame), std::move(func_name));
     for (size_t i = 0; i != func_instance->args.size(); ++i) {
-        HolderPack hp = Interpreter::stack_frame->Lookup(func_instance->args[i].id);
-        hp->holder = std::move(params[i]->holder);
-        hp->type = std::move(params[i]->type);
+        HolderPack hp = Memory::stack_frame->Set(func_instance->args[i].id);
+        Operators::RawExecBinaryOperation(
+            Lexer::Tokens::T_EQUAL, std::move(hp), std::move(params[i])
+        );
     }
 
     HolderPack result = HolderPack(TYPES::NIL_TYPE);
     try {
-        if (auto visited = Visit(func_instance->body); !visited) {
-            return std::unexpected(visited.error());
-        }
+        Visit(func_instance->body);
     } catch (Closures::Return& r) {
-        result = std::move(std::any_cast<HolderPack&>(r.holder_pack));
+        result = std::any_cast<HolderPack&>(r.holder_pack).Clone();  // ISSUE: prevent forwarding links from inner variables
     }
-    
-    Interpreter::stack_frame = std::move(Interpreter::stack_frame->parent);
+
+    Memory::stack_frame = std::move(Memory::stack_frame->parent);
     return result;
 }
-Runner::Expected Runner::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
+Interpreter::HolderPack Interpreter::VisitBuiltInFuncCall(Parser::FuncCall* ptr, Memory::FuncHolder& function_holder, std::vector<HolderPack>& params) {
+    // std::cout << "[interpreter log] built in func call\n";
+
     auto& function = std::get<Memory::BuiltInFunction>(function_holder.function);
     try {
         return function(std::move(params));
     } catch (const Error& e) {
-        return std::unexpected(Lexer::Token(Error(e.what()), ptr->token));
+        throw RunTimeError(e.what(), ptr->token.lineno, ptr->token.column);
     }
 }
 
-Runner::Expected Runner::VisitCompound(Parser::NodePtr& node) {
+Interpreter::HolderPack Interpreter::VisitCompound(Parser::NodePtr& node) {
+    // std::cout << "[interpreter log] compound\n";
+
     Parser::Compound* cmpd = static_cast<Parser::Compound*>(node.get());
     for (auto& child : cmpd->data) {
-        if (auto visited = Visit(child); !visited) {
-            return std::unexpected(visited.error());
-        }
+        Visit(child);
     }
     return HolderPack();
 }
 
 
 /// HELPERS
-Runner::Expected Runner::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var) {
-    auto index_computed = GetIndex(ptr->start, var);
-    if (!index_computed) { return std::unexpected(index_computed.error()); }
-    if (var->type == TYPES::STRING_TYPE) {
-        return HolderPack(
-            std::string{std::get<std::string>(var->holder)[*index_computed]},
-            TYPES::STRING_TYPE
-        ); }
-    return std::get<ListHolderPtr>(var->holder)->data[*index_computed];
+
+template<typename Func>
+requires std::invocable<Func>
+bool Interpreter::RunSafely(Func&& func, std::vector<std::string>& program) {
+    auto stacktrace = [&]() {
+        *err << Memory::StackFrame::PrintStack(*Memory::stack_frame);
+    };
+
+    try {
+        func();
+    } catch (const Closures::Exit& c) {
+        throw;
+    } catch (const Closure& c) {
+        stacktrace();
+        Closures::PrintClosureError(c);
+        Errors::PrintProgramSnippet(program, c.lineno, c.column);
+        return false;
+    } catch (const Errors::LexerErrors::LexerError& e) {
+        stacktrace();
+        Errors::PrintSyntaxError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::ParserErrors::ParserError& e) {
+        stacktrace();
+        Errors::PrintSyntaxError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::OperatorErrors::OperatorError& e) {
+        stacktrace();
+        Errors::PrintOperatorError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::MemoryErrors::MemoryError& e) {
+        stacktrace();
+        Errors::PrintRunTimeError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::TypeErrors::TypeError& e) {
+        stacktrace();
+        Errors::PrintTypeError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::RunTime::RunTimeError& e) {
+        stacktrace();
+        Errors::PrintRunTimeError(e);
+        Errors::PrintProgramSnippet(program, e.lineno, e.column);
+        return false;
+    } catch (const Errors::InternalErrors::InternalError& e) {
+        stacktrace();
+        Errors::PrintPanic(e);
+        throw;
+    } catch (...) {
+        stacktrace();
+        Errors::PrintPanic(InternalError());
+        throw;
+    }
+
+    return true;
 }
 
-Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {
-    auto start_expected = (ptr->start) ? IntegerRequirement(ptr->start) : 0;
-    if (!start_expected) { return std::unexpected(start_expected.error()); }
-    auto step_expected = (ptr->step) ? IntegerRequirement(ptr->step) : 1;
-    if (!step_expected) { return std::unexpected(step_expected.error()); }
-    if (*step_expected == 0) { return std::unexpected(Lexer::Token(
-        Errors::RunTime::ZeroStep(), ptr->token
-    )); }
+Interpreter::HolderPack Interpreter::SubscriptIndexer(Parser::Subscript* ptr, HolderPack&& var) {
+    auto index = GetIndex(ptr->start, var);
+    if (var->type == TYPES::STRING_TYPE) {
+        return HolderPack(
+            std::string{std::get<std::string>(var->holder)[index]},
+            TYPES::STRING_TYPE
+        ); }
+    if (var.IsRef()) {
+        return std::ref(*std::get<ListHolderPtr>(var->holder)->data[index]);
+    }
+    return std::get<ListHolderPtr>(var->holder)->data[index];
+}
+
+Interpreter::HolderPack Interpreter::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& var) {
+    auto start = (ptr->start) ? IntegerRequirement(ptr->start) : 0;
+    auto step = (ptr->step) ? IntegerRequirement(ptr->step) : 1;
+    if (step == 0) {
+        throw MakeError<Errors::RunTime::ZeroStep>(ptr);
+    }
 
     int size;
     if (var->type == TYPES::STRING_TYPE) { size = std::get<std::string>(var->holder).size(); }
     else { size = std::get<ListHolderPtr>(var->holder)->data.size(); }
-    
-    auto end_expected = (ptr->end) ? IntegerRequirement(ptr->end) : size;
-    if (!end_expected) { return std::unexpected(end_expected.error()); }
 
-    int start = *start_expected;
-    int end = *end_expected;
-    int step = *step_expected;
+    auto end = (ptr->end) ? IntegerRequirement(ptr->end) : size;
 
     if (step < 0) {
-        std::swap(start, end); 
+        std::swap(start, end);
         if (!ptr->start) { --end; }
         if (!ptr->end) { --start; }
     }
@@ -445,28 +514,20 @@ Runner::Expected Runner::SubscriptSlicer(Parser::Subscript* ptr, HolderPack&& va
     }
 }
 
-std::expected<int, Lexer::Token> Runner::IntegerRequirement(NodePtr& node) {
-    auto index_expected = Visit(node);
-    if (!index_expected) { return std::unexpected(index_expected.error()); }
-    HolderPack& index = *index_expected;
+int64_t Interpreter::IntegerRequirement(NodePtr& node) {
+    HolderPack index = Visit(node);
     if (index->type != TYPES::NUM_TYPE) {
-        return std::unexpected(Lexer::Token(
-            Errors::TypeErrors::TypeErrorNum(), node->token
-        ));
+        throw MakeError<Errors::TypeErrors::TypeErrorNum>(node);
     }
     double raw_index = std::get<double>(index->holder);
-    if (raw_index != std::trunc(raw_index)) {
-        return std::unexpected(Lexer::Token(
-            Errors::TypeErrors::IndexNotInteger(), node->token
-        ));
+    if (!Utils::IsInteger(raw_index)) {
+        throw MakeError<Errors::TypeErrors::IndexNotInteger>(node);
     }
     return raw_index;
 }
 
-std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var) {
-    auto raw_index = IntegerRequirement(node);
-    if (!raw_index) { return std::unexpected(raw_index.error()); }
-    int index = *raw_index;
+int64_t Interpreter::GetIndex(NodePtr& node, HolderPack& var) {
+    int64_t index = IntegerRequirement(node);
 
     size_t var_size;
     if (var->type == TYPES::STRING_TYPE) {
@@ -476,7 +537,8 @@ std::expected<int, Lexer::Token> Runner::GetIndex(NodePtr& node, HolderPack& var
     if (index < 0) { index = var_size + index; }
 
     if (index < 0 || index >= var_size) {
-        return std::unexpected(Lexer::Token( OutOfRange(), node->token ));
+        throw MakeError<OutOfRange>(node);
     }
     return index;
 }
+

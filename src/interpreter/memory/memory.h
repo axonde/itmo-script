@@ -1,13 +1,12 @@
 #pragma once
-#include <any>
 #include <functional>
 #include <memory>
 #include <string_view>
 #include <sstream>
-#include <optional>
 #include <variant>
 #include <vector>
 
+#include "utils.h"
 #include "lexer.h"
 
 enum TYPES : uint16_t {
@@ -19,6 +18,7 @@ enum TYPES : uint16_t {
     FUNC_TYPE,
     NOT_SET_TYPE
 };
+extern std::unordered_map<TYPES, std::string> TYPE_TO_STR;
 
 namespace Memory {
 
@@ -30,7 +30,7 @@ struct FuncHolder;
 using ListHolderPtr = std::unique_ptr<ListHolder>;
 using FuncHolderPtr = std::unique_ptr<FuncHolder>;
 
-/// Holder -> HolderData -> RawHolderPack -> HolderPack
+// STRUCTURE: Holder -> HolderData -> RawHolderPack -> HolderPack
 
 /// HOLDER
 /// - std::monostate    > nil type / (not set type)
@@ -54,6 +54,7 @@ struct HolderData {
     HolderData(TYPES t) : type(t) {}
     HolderData(Holder&& h) : holder(std::move(h)) {}
     HolderData(Holder&& h, TYPES t) : holder(std::move(h)), type(t) {}
+
     Holder holder;
     TYPES type = TYPES::NOT_SET_TYPE;
 };
@@ -65,27 +66,48 @@ class HolderPack;
 namespace Operators {
 
 // need to forward declare to avoid compare between HolderPack
-[[nodiscard]] Memory::HolderPack ExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
+[[maybe_unused]] Memory::HolderPack RawExecBinaryOperation(Lexer::Tokens, Memory::HolderPack&&, Memory::HolderPack&&);
 
 } // end Operators
 
 namespace Memory {
 
-using RawHolderPack = std::shared_ptr<HolderData>;
 struct HolderPack {
+    using ptr = std::shared_ptr<HolderData>;
+
+    HolderPack(std::reference_wrapper<ptr> ref) : pack(ref) {}
     template<typename... Args>
     HolderPack(Args... args) {
-        pack = std::make_shared<RawHolderPack>(std::make_shared<HolderData>(std::forward<Args>(args)...));
+        pack = std::make_shared<HolderData>(std::forward<Args>(args)...);
     }
+
     bool operator<(const HolderPack&) const;
-    HolderData* operator->() { return (*pack).get(); }
-    std::shared_ptr<RawHolderPack> pack;
+    ptr& operator*();
+    HolderData* operator->();
+    bool IsRef() const;
+    HolderPack Clone();
+
+    std::variant<ptr, std::reference_wrapper<ptr>> pack;
+};
+
+// Escape the forward declaration for Parser::Node (NodeHolder) [PIMPL]
+struct NodeHolder {
+    NodeHolder(void* node);
+    ~NodeHolder();
+
+    NodeHolder(NodeHolder&&) noexcept;
+    NodeHolder& operator=(NodeHolder&&) noexcept;
+
+    void* get();
+private:
+    struct Impl;
+    std::unique_ptr<Impl> pimpl;
 };
 
 using BuiltInFunction = std::function<HolderPack(std::vector<HolderPack>&&)>;
 using Function = std::variant<
-    BuiltInFunction,            // built in function
-    std::any                    // user set function (Parser::Node*)
+    BuiltInFunction,    // built in function
+    NodeHolder          // user set function (std::unique_ptr<Parser::Node>)
 >;
 
 struct ListHolder {
@@ -110,10 +132,11 @@ class StackFrame {
 public:
     StackFrame() = default;
     StackFrame(StackFrame&&) = default;
-    StackFrame(std::unordered_map<std::string, HolderPack> e, std::string&& n) : environment(std::move(e)), name(std::move(n)) {}
+    StackFrame(std::unordered_map<std::string, HolderPack>&& e, std::string&& n) : environment(std::move(e)), name(std::move(n)) {}
     StackFrame(std::unique_ptr<StackFrame>&& ptr, std::string&& n) : parent(std::move(ptr)), name(std::move(n)) {}
 
     HolderPack Lookup(std::string_view);  // return a (not set type) if not found variable
+    HolderPack Set(std::string_view);  // set a var inn current table with (not set type)
 
     inline static std::string PrintStack(StackFrame& stack) {
         std::stringstream formatted;
@@ -135,4 +158,7 @@ private:
     HolderPack search(std::string_view);
 };
 
+extern std::unique_ptr<StackFrame> stack_frame;
+
 } // namespace Memory
+

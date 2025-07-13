@@ -16,4 +16,4 @@ fib = function(n)
 end function
 
 
-print(fib(10))
+println(fib(10))

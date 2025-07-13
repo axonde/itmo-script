@@ -1,15 +1,15 @@
 #include "built_in.h"
 
-std::unordered_map<TYPES, std::string> TYPE_TO_STR = {
-    {TYPES::NUM_TYPE, "number"},
-    {TYPES::STRING_TYPE, "string"},
-    {TYPES::NIL_TYPE, "nil"},
-    {TYPES::BOOL_TYPE, "bool"},
-    {TYPES::LIST_TYPE, "list"},
-    {TYPES::FUNC_TYPE, "func"},
-    {TYPES::NOT_SET_TYPE, "(not set type)"}
-};
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <functional>
+#include <random>
+#include <ranges>
+#include <vector>
 
+#include "utils.h"
+#include "operators.h"
 
 namespace BuiltIn {
 
@@ -125,7 +125,7 @@ HolderPack sqrt = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief  rnd(n)
-/// @brief  generate a random number from 0 to n - 1
+/// @brief  generate a random number [0, n]
 /// @return single number if one argument is addressed
 /// @return list of sqrt values otherwise
 HolderPack rnd = HolderPack(
@@ -198,7 +198,7 @@ HolderPack upper = HolderPack(
             if (params[0]->type != TYPES::STRING_TYPE) { throw Errors::TypeErrors::TypeErrorString(); }
             auto range = std::get<std::string>(params[0]->holder)
             | std::views::transform([](unsigned char s) { return std::toupper(s); });
-            
+
             return HolderPack(std::string(range.begin(), range.end()), TYPES::STRING_TYPE);
         })
     ),
@@ -214,7 +214,7 @@ HolderPack split = HolderPack(
             std::vector<std::string> splitted = Utils::Split(std::get<std::string>(params[0]->holder), &std::isblank);
             auto range = splitted | std::views::transform([](std::string s) {
                 return HolderPack(std::move(s), TYPES::STRING_TYPE); });
-            
+
             return HolderPack(MakeListHolder(std::vector(range.begin(), range.end())), TYPES::LIST_TYPE);
         })
     ),
@@ -317,14 +317,16 @@ HolderPack push = HolderPack(
     TYPES::FUNC_TYPE
 );
 /// @brief  pop(list)
-/// @brief  modified list by delete last elem
+/// @brief  modified list by deleted last elem
 /// @return deleted element if list is not empty, nil otherwise
 HolderPack pop = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
-            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
-            
+            if (params[0]->type != TYPES::LIST_TYPE) {
+                throw Errors::TypeErrors::TypeErrorList();
+            }
+
             auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
             if (list.size() == 0) { return {TYPES::NIL_TYPE}; }
             auto last = list.back(); list.pop_back();
@@ -333,8 +335,70 @@ HolderPack pop = HolderPack(
     )),
     TYPES::FUNC_TYPE
 );
-HolderPack insert;
-HolderPack remove;
+/// @brief   insert(list, index, x)
+/// @brief   modify the list by inserting x before index.
+/// @details index supports negative and super large values(but not floats).
+/// @return  nil
+HolderPack insert = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 3) { throw Errors::RunTime::ExpectedThreeArgs(); }
+            if (params[0]->type != TYPES::LIST_TYPE) {
+                throw Errors::TypeErrors::TypeErrorList(); }
+
+            if (params[1]->type != TYPES::NUM_TYPE && !Utils::IsInteger(
+                std::get<double>(params[1]->holder))
+            ) {
+                throw Errors::TypeErrors::IndexNotInteger(); }
+
+            if (params[2]->type == TYPES::NOT_SET_TYPE) {
+                throw Errors::MemoryErrors::NotFound(); }
+
+            auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
+            double index = std::get<double>(params[1]->holder);
+            if (index < 0) { index = list.size() + index; }
+            if (index < 0) { index = 0; }
+            index = std::min(list.size(), static_cast<size_t>(index));
+
+            list.insert(list.begin() + index, std::move(params[2]));
+            return std::move(params[0]);
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
+/// @brief   remove(list, index)
+/// @brief   modify the list by deleting element pointing at the index.
+/// @details index supports negative and super large values(but not floats).
+/// @return  removed element or nil (empty case or too big index)
+HolderPack remove = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 2) { throw Errors::RunTime::ExpectedTwoArgs(); }
+            if (params[0]->type != TYPES::LIST_TYPE) {
+                throw Errors::TypeErrors::TypeErrorList(); }
+
+            if (params[1]->type != TYPES::NUM_TYPE && !Utils::IsInteger(
+                std::get<double>(params[1]->holder))
+            ) {
+                throw Errors::TypeErrors::IndexNotInteger(); }
+
+            auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
+            double index = std::get<double>(params[1]->holder);
+            if (index < 0) { index = list.size() + index; }
+            if (index < 0) { index = 0; }
+            index = std::min(list.size(), static_cast<size_t>(index));
+
+            if (index >= list.size()) {
+                return HolderPack(TYPES::NIL_TYPE);
+            }
+
+            auto removed = std::move(list[index]);
+            list.erase(list.begin() + index);
+            return removed;
+        }
+    )),
+    TYPES::FUNC_TYPE
+);
 /// @brief  sort(list)
 /// @brief  sort the given list by comparators defined in operators
 /// @return the sorted given list (modify)
@@ -343,7 +407,7 @@ HolderPack sort = HolderPack(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
             if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
-            
+
             auto& list = std::get<ListHolderPtr>(params[0]->holder)->data;
             std::sort(list.begin(), list.end());
             return params[0];
@@ -351,9 +415,60 @@ HolderPack sort = HolderPack(
     )),
     TYPES::FUNC_TYPE
 );
+/// @fn      copy(list)
+/// @brief   deeply copy the list.
+/// return   list
+HolderPack copy = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            if (params.size() != 1) { throw Errors::RunTime::ExpectedOneArg(); }
+            if (params[0]->type != TYPES::LIST_TYPE) { throw Errors::TypeErrors::TypeErrorList(); }
+
+            // it is a rude hack for call the lambda recursively
+            auto deep_copy = [](std::vector<HolderPack>& packs) -> std::vector<HolderPack> {
+                auto deep_copy_impl = [](auto& self, std::vector<HolderPack>& packs) -> std::vector<HolderPack> {
+                    std::vector<HolderPack> copied;
+                    for (HolderPack& hp : packs) {
+                        if (hp->type == TYPES::NOT_SET_TYPE) {
+                            throw Errors::MemoryErrors::NotFound();
+                        }
+                        if (hp->type == TYPES::LIST_TYPE) {
+                            copied.push_back(
+                                HolderPack(MakeListHolder(self(
+                                    self,
+                                    std::get<ListHolderPtr>(hp->holder)->data)
+                                ), TYPES::LIST_TYPE)
+                            );
+                        } else {
+                            copied.push_back({});
+                            Operators::RawExecBinaryOperation(
+                                Lexer::Tokens::T_EQUAL,
+                                std::ref(*copied.back()), HolderPack(hp)
+                            );
+                            copied.back() = HolderPack(
+                                std::move(copied.back()->holder),
+                                copied.back()->type
+                            );
+                        }
+                    }
+                    return std::move(copied);
+                };
+
+                return deep_copy_impl(deep_copy_impl, packs);
+            };
+
+            return HolderPack(MakeListHolder(
+                deep_copy(std::get<ListHolderPtr>(params[0]->holder)->data)
+            ), TYPES::LIST_TYPE);
+        }
+    )), TYPES::FUNC_TYPE
+);
 
 // UNIVERSAL FUNCTIONS STRING / LIST
-HolderPack copy;
+
+/// @brief  len(list / string)
+/// @brief  get the lenght of passed objects
+/// @return number
 HolderPack len = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -375,36 +490,39 @@ HolderPack len = HolderPack(
 );
 
 // SYSTEM FUNCTIONS
+/// @brief  print(...)
+/// @brief  prints to *out the passed objects to the terminal (delim = ' ' between objects)
+/// @return nil
 HolderPack print = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             bool need_space = false;
             for (auto& holderpack : params) {
-                if (need_space) { *Interpreter::out << ' '; }
+                if (need_space) { *out << ' '; }
                 switch (holderpack->type) {
                     case TYPES::NUM_TYPE:
-                        *Interpreter::out << std::get<double>(holderpack->holder); break;
+                        *out << std::get<double>(holderpack->holder); break;
                     case TYPES::STRING_TYPE:
-                        *Interpreter::out << '"' << std::get<std::string>(holderpack->holder) << '"'; break;
+                        *out << '"' << std::get<std::string>(holderpack->holder) << '"'; break;
                     case TYPES::BOOL_TYPE:
-                        if (std::get<bool>(holderpack->holder)) { *Interpreter::out << "true"; }
-                        else { *Interpreter::out << "false"; }
+                        if (std::get<bool>(holderpack->holder)) { *out << "true"; }
+                        else { *out << "false"; }
                         break;
                     case TYPES::NIL_TYPE:
-                        *Interpreter::out << "nil"; break;
+                        *out << "nil"; break;
                     case TYPES::FUNC_TYPE:
-                        *Interpreter::out << "<function>"; break;
+                        *out << "<function>"; break;
                     case TYPES::LIST_TYPE:
-                    { *Interpreter::out << '['; bool not_first = false;
+                    { *out << '['; bool not_first = false;
                         for (auto hp : std::get<ListHolderPtr>(holderpack->holder)->data) {
-                            if (not_first) { *Interpreter::out << ", "; } not_first = true;
+                            if (not_first) { *out << ", "; } not_first = true;
                             std::get<BuiltInFunction>(
                                 std::get<FuncHolderPtr>(print->holder)->function
                             )({std::move(hp)});
-                        } *Interpreter::out << ']'; }
+                        } *out << ']'; }
                         break;
                     case TYPES::NOT_SET_TYPE:
-                        *Interpreter::out << "(not set type)"; break;
+                        *out << "(not set type)"; break;
                 } need_space = true;
             }
             return HolderPack(TYPES::NIL_TYPE);
@@ -412,6 +530,9 @@ HolderPack print = HolderPack(
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  print(...)
+/// @brief  prints to *out the passed objects to the terminal (delim = '\n' between objects)
+/// @return nil
 HolderPack println = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
@@ -419,34 +540,58 @@ HolderPack println = HolderPack(
                 std::get<BuiltInFunction>(
                     std::get<FuncHolderPtr>(print->holder)->function
                 )({std::move(holderpack)});
-                *Interpreter::out << std::endl;
+                *out << std::endl;
             }
             return HolderPack(TYPES::NIL_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  read()
+/// @brief  read text from *in;
+/// @return string
 HolderPack read = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
             if (params.size() > 0) { throw Errors::RunTime::ExpectedZeroArgs(); }
             std::string str;
-            std::getline(*Interpreter::in, str);
+            std::getline(*in, str);
             return HolderPack(std::move(str), TYPES::STRING_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
+/// @brief  stacktrace()
+/// @brief  print to *out the current stack trace in next format:
+///
+/// STACK TRACE (from top to bottom)
+/// ================================
+/// #n nest n
+/// ...
+/// #2 nest 2
+/// #1 nest 1
+/// #0 global
+///
+/// @return nil
 HolderPack stacktrace = HolderPack(
     MakeFuncHolder(BuiltInFunction(
         [](std::vector<HolderPack>&& params) -> HolderPack {
-            *Interpreter::out << Memory::StackFrame::PrintStack(*Interpreter::stack_frame);
+            *out << Memory::StackFrame::PrintStack(*Memory::stack_frame);
             return HolderPack(TYPES::NIL_TYPE);
         })
     ),
     TYPES::FUNC_TYPE
 );
-
+/// @fn    exit()
+/// @brief exit the program
+HolderPack exit = HolderPack(
+    MakeFuncHolder(BuiltInFunction(
+        [](std::vector<HolderPack>&& params) -> HolderPack {
+            throw Closures::Exit(1, 1);
+        })
+    ),
+    TYPES::FUNC_TYPE
+);
 }
 
 std::unordered_map<std::string, Memory::HolderPack> BUILT_IN_FUNCTIONS;
@@ -464,7 +609,6 @@ void BuiltIn::InitializeBuilInFunctions() {
         {"to_string", BuiltIn::to_string},
 
         // STRING AWARE FUNCTIONS
-        {"len", BuiltIn::len},
         {"lower", BuiltIn::lower},
         {"upper", BuiltIn::upper},
         {"split", BuiltIn::split},
@@ -473,7 +617,6 @@ void BuiltIn::InitializeBuilInFunctions() {
 
         // LIST AWARE FUNCTIONS
         {"range", BuiltIn::range},
-        {"len", BuiltIn::len},
         {"push", BuiltIn::push},
         {"pop", BuiltIn::pop},
         {"insert", BuiltIn::insert},
@@ -482,11 +625,13 @@ void BuiltIn::InitializeBuilInFunctions() {
 
         // UNIVERSAL FUNCTIONS
         {"copy", BuiltIn::copy},
+        {"len", BuiltIn::len},
 
         // SYSTEM FUNCTIONS
         {"print", BuiltIn::print},
         {"println", BuiltIn::println},
         {"read", BuiltIn::read},
-        {"stacktrace", BuiltIn::stacktrace}
+        {"stacktrace", BuiltIn::stacktrace},
+        {"exit", BuiltIn::exit}
     };
 }
