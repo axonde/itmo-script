@@ -308,7 +308,7 @@ Parser::NodePtr Parser::Statement() {
     }
 }
 
-// IfExpr: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
+// IfBlock: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
 Parser::NodePtr Parser::IfBlock() {
     // std::cout << "[parser log] if block\n";
 

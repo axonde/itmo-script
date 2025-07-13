@@ -106,12 +106,19 @@ end function
 ITMO-Script offers several command-line options:
 
 ```bash
-./itmo-script --help                   # Display help information
-./itmo-script --version                # Show version info
-./itmo-script --ast path/to/script.its # Generate and display AST
-./itmo-script --tokens file.its        # Display token stream
-./itmo-script --trace file.its         # Run with execution tracing
+./itmo-script --help   # Display help information
+./itmo-script --input  [input interpreter stream]
+              --output [output interpreter stream]
+              --error  [error interpreter stream]
+              --file   path/to/script.its
 ```
+
+`./itmo-srcipt` is default located as `./src/bin/itmoscript_interpreter`
+
+For extra-tools look at ..
+
+Some examples:
+
 
 ## 🏗️ Architecture Deep Dive
 
@@ -121,7 +128,7 @@ ITMO-Script implements a clean, layered architecture that separates concerns whi
 
 ```
 ┌───────────────────┐     ┌───────────────────┐     ┌───────────────────┐
-│    Source Code    │────►│  Lexical Analysis  │────►│  Syntax Analysis  │
+│    Source Code    │────►│  Lexical Analysis │────►│  Syntax Analysis  │
 └───────────────────┘     └───────────────────┘     └───────────────────┘
                                                              │
                                                              ▼
@@ -151,55 +158,29 @@ The tokenizer identifies various elements of the language:
 | Identifiers | `variable_name`, `calculate` | Names defined by the programmer |
 | Literals | `42`, `"text"`, `true` | Direct value representations |
 | Operators | `+`, `-`, `*`, `/`, `==` | Symbols for operations |
-| Delimiters | `{`, `}`, `;`, `,` | Symbols that structure the code |
+| Delimiters | `(`, `)`, `[`, `]`, `,` | Symbols that structure the code |
 
 #### Implementation Highlights
 
 The tokenizer employs a state machine approach, making it both efficient and flexible:
 
 ```cpp
-enum class TokenizerState {
-    START,
-    IDENTIFIER,
-    NUMBER,
-    STRING,
-    OPERATOR,
-    COMMENT,
-    // ...more states
-};
+enum Tokens : uint16_t {
+    // BASE
+    T_EOF,                          // END OF FILE
+    T_VAR,                          // `var`, `Var_Var`, `var__0`, `_var_`
+    T_NUMBER,                       // 12, -123, 1.2e-12
+    T_STRING,                       // "string"
+    T_NIL,                          // `nil`
 
-// A simplified excerpt of the tokenization process
-Token Tokenizer::nextToken() {
-    TokenizerState state = TokenizerState::START;
-    std::string lexeme;
-    
-    while (hasMoreChars()) {
-        char c = peekNextChar();
-        
-        switch (state) {
-            case TokenizerState::START:
-                if (isalpha(c) || c == '_') {
-                    state = TokenizerState::IDENTIFIER;
-                    lexeme += consumeNextChar();
-                }
-                else if (isdigit(c)) {
-                    state = TokenizerState::NUMBER;
-                    lexeme += consumeNextChar();
-                }
-                // ...more conditions
-                break;
-                
-            case TokenizerState::IDENTIFIER:
-                // Handle identifier construction
-                // ...
-                
-            // ...more states and transitions
-        }
-    }
-    
-    // Determine token type and return the token
-    // ...
-}
+    // STATEMENTS
+    T_THEN,                         // `then`
+    T_IN,                           // `in`
+    T_IF,                           // `if`
+    T_ELSE_IF,                      // `else if`
+    T_ELSE,                         // `else`
+    T_END_IF,                       // `end if`
+    ...
 ```
 
 The tokenizer maintains positional information (line and column numbers) for precise error reporting, critical for a developer-friendly language environment.
@@ -213,56 +194,43 @@ Once tokenized, the parser transforms the token stream into an Abstract Syntax T
 ITMO-Script is defined by a context-free grammar that precisely specifies its syntax. Here's a simplified excerpt:
 
 ```
-Program        → Statement*
-Statement      → ExpressionStmt | BlockStmt | IfStmt | WhileStmt | FunctionDecl | ReturnStmt
-ExpressionStmt → Expression ";"
-BlockStmt      → "{" Statement* "}"
-IfStmt         → "if" "(" Expression ")" Statement ("else" Statement)?
-WhileStmt      → "while" "(" Expression ")" Statement
-FunctionDecl   → "function" IDENTIFIER "(" Parameters? ")" BlockStmt
-Expression     → Assignment
-Assignment     → IDENTIFIER "=" Assignment | LogicOr
-LogicOr        → LogicAnd ("||" LogicAnd)*
-// ...and so on
-```
-
-#### Parser Implementation
-
-The parser uses recursive descent with predictive parsing techniques:
-
-```cpp
-// Simplified parser example
-std::unique_ptr<Stmt> Parser::parseStatement() {
-    if (match(TokenType::IF)) return parseIfStatement();
-    if (match(TokenType::WHILE)) return parseWhileStatement();
-    if (match(TokenType::FUNCTION)) return parseFunctionDeclaration();
-    if (match(TokenType::LEFT_BRACE)) return parseBlockStatement();
-    // ...more statement types
-    
-    return parseExpressionStatement();
-}
-
-std::unique_ptr<Stmt> Parser::parseIfStatement() {
-    consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
-    auto condition = parseExpression();
-    consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
-    
-    auto thenBranch = parseStatement();
-    std::unique_ptr<Stmt> elseBranch = nullptr;
-    
-    if (match(TokenType::ELSE)) {
-        elseBranch = parseStatement();
-    }
-    
-    return std::make_unique<IfStmt>(std::move(condition), 
-                                    std::move(thenBranch),
-                                    std::move(elseBranch));
-}
+Var: T_VAR ( ('[' (Expr)? 1(':' | ':' (Expr)? 2(':' | ':' (Expr)? )? )? ) ']'
+     | ('(' (expr (',' expr)* )? ')') )*
+ListExpr: '[' (T_EOL)* (Expr (T_EOL)* (, (T_EOL)* Expr (T_EOL)*)* )? (,)? (T_EOL)* ']'
+Factor: T_EOL* Number | String | Bool | Nil | VarExpr | ListExpr | FuncExpr
+        | ('not' | '+' | '-') Factor
+        | '(' expr ')'
+Term: Factor (('*' | '/' | '%' | '^' | 'and') Factor)*
+Expr: Term (('+' | '-' | 'or' | '==' | '!=' | '<' | '>' | '<=' | '>=') Term)*
+Assignment: VarExpr ('=', '+=', '-=', '*=', '/=', '%=', '^=') Expr
+BreakExpr: T_BREAK
+ContinueExpr: T_CONTINUE
+ReturnExpr: 'return' Expr
+Statement: ReturnExpr | BreakExpr | ContinueExpr | Assignment | Expr
+IfBlock: T_IF Expr T_THEN BLOCK (T_ELSE_IF Expr T_THEN BLOCK)* (T_ELSE BLOCK)? T_END_IF
+ForBlock: T_FOR Expr T_IN Expr BLOCK T_FOR_END
+WhileBlock: T_WHILE Expr BLOCK T_END_WHILE
+FuncExpr: T_FUNC '(' (T_VAR (',' T_VAR)*)? ')' BLOCK T_END_FUNC
+StatementList: IfBlock | WhileBlock | ForBlock | Statement
+Block: (StatementList)? (T_EOL | StatementList)*
 ```
 
 #### AST Visualization
 
 Understanding complex programs is easier with visualization. ITMO-Script includes a Python tool to generate graphical representations of the AST:
+
+You can run the Serializer program - it generates the AST from gave file in .json format
+```bash
+# Generate and AST Serialization (.json)
+./src/interpreter/parser/serializer /path/to/scipt.is
+```
+
+On top of that, visualize itself by the visualizer:
+```bash
+# Generate an AST visualization
+python ../src/interpreter/parser/serializer/visualizer.py /path/to/ast.json
+```
+
 
 ```bash
 # Generate an AST visualization
@@ -270,6 +238,10 @@ python tools/ast_visualizer.py examples/fibonacci.its --output fib_ast.png
 ```
 
 This produces an image showing the hierarchical structure of your program, useful for debugging and educational purposes.
+
+<img src="assets/ast_1.png" alt="ast visualization 1" width=800px>
+<img src="assets/ast_2.png" alt="ast visualization 2" width=800px>
+
 
 ### 3. The Heart of Execution: Holder Pack System
 
@@ -283,10 +255,8 @@ The Holder Pack system is one of the most innovative aspects of ITMO-Script, pro
 ├─────────────────┬───────────────────────┤
 │   Type Metadata │       Value Data      │
 ├─────────────────┼───────────────────────┤
-│ • Type ID       │ • Raw memory block    │
-│ • Operations    │ • Reference count     │
-│ • Type rules    │ • Garbage collection  │
-│ • Conversions   │   metadata            │
+│     Type ID     │ • Raw memory block    │
+│                 │ • Reference count     │
 └─────────────────┴───────────────────────┘
 ```
 
@@ -296,53 +266,6 @@ Each value in ITMO-Script is wrapped in a Holder Pack that contains both the val
 2. **Automatic memory management** - Reference counting and garbage collection happen transparently
 3. **Polymorphic operations** - The same operation (like `+`) can behave differently based on types
 4. **Value semantics with efficient implementation** - Values behave intuitively while optimizing memory usage
-
-#### Implementation Example
-
-```cpp
-class HolderPack {
-private:
-    TypeId type;
-    void* data;
-    std::atomic<int> refCount;
-    
-public:
-    // Create a new holder pack
-    template<typename T>
-    static HolderPack create(T value) {
-        HolderPack pack;
-        pack.type = TypeSystem::getTypeId<T>();
-        pack.data = TypeSystem::allocate<T>(value);
-        pack.refCount = 1;
-        return pack;
-    }
-    
-    // Type-safe value access
-    template<typename T>
-    T& as() {
-        if (type != TypeSystem::getTypeId<T>()) {
-            throw TypeError("Invalid type cast");
-        }
-        return *static_cast<T*>(data);
-    }
-    
-    // Reference management
-    HolderPack(const HolderPack& other) {
-        type = other.type;
-        data = other.data;
-        refCount = other.refCount;
-        refCount++;
-    }
-    
-    ~HolderPack() {
-        if (--refCount == 0) {
-            TypeSystem::deallocate(type, data);
-        }
-    }
-    
-    // ...more methods for operations, comparisons, etc.
-};
-```
 
 ### 4. Operator System: Flexibility by Design
 
@@ -354,38 +277,31 @@ Operators are registered with the type system, specifying behavior for different
 
 ```cpp
 // Registering the '+' operator for different type combinations
-void registerOperators() {
-    // Number + Number -> Number (addition)
-    OperatorRegistry::registerBinary(
-        Operator::PLUS,
-        TypeId::NUMBER, TypeId::NUMBER,
-        [](const HolderPack& left, const HolderPack& right) {
-            double result = left.as<double>() + right.as<double>();
-            return HolderPack::create(result);
+void registerUnaryOperators() {
+    // + NUM
+    UNARY_OP_TABLE[{Lexer::Tokens::T_PLUS, TYPES::NUM_TYPE}] = {
+        [](auto&& arg) -> HolderPack {
+            return {
+                std::get<double>(arg->holder),
+                TYPES::NUM_TYPE
+            };
         }
-    );
-    
-    // String + String -> String (concatenation)
-    OperatorRegistry::registerBinary(
-        Operator::PLUS,
-        TypeId::STRING, TypeId::STRING,
-        [](const HolderPack& left, const HolderPack& right) {
-            std::string result = left.as<std::string>() + right.as<std::string>();
-            return HolderPack::create(result);
+    };
+
+    // ...more operator registrations
+}
+
+
+void registerBinaryOperators() {
+    // (not set type) = NUM
+    BINARY_OP_TABLE[{Lexer::Tokens::T_EQUAL, TYPES::NOT_SET_TYPE, TYPES::NUM_TYPE}] = {
+        [](auto&& arg_left, auto&& arg_right) -> HolderPack {
+            if (!arg_left.IsRef()) { throw Errors::RunTime::AssignLiteral(); }
+            *arg_left = *HolderPack(std::get<double>(arg_right->holder), TYPES::NUM_TYPE);
+            return arg_left;
         }
-    );
-    
-    // String + Number -> String (convert number to string, then concatenate)
-    OperatorRegistry::registerBinary(
-        Operator::PLUS,
-        TypeId::STRING, TypeId::NUMBER,
-        [](const HolderPack& left, const HolderPack& right) {
-            std::string result = left.as<std::string>() + 
-                                std::to_string(right.as<double>());
-            return HolderPack::create(result);
-        }
-    );
-    
+    };
+
     // ...more operator registrations
 }
 ```
@@ -398,12 +314,10 @@ ITMO-Script supports a rich set of operators:
 
 | Category | Operators | Description |
 |----------|-----------|-------------|
-| Arithmetic | `+`, `-`, `*`, `/`, `%`, `**` | Basic math plus modulo and power |
+| Arithmetic | `+`, `-`, `*`, `/`, `%`, `^` | Basic math plus modulo and power |
 | Comparison | `==`, `!=`, `<`, `>`, `<=`, `>=` | Value comparison |
-| Logical | `&&`, `||`, `!` | Boolean logic |
-| Assignment | `=`, `+=`, `-=`, `*=`, `/=` | Variable assignment with shortcuts |
-| Increment/Decrement | `++`, `--` | Pre/post increment and decrement |
-| Bitwise | `&`, `|`, `^`, `~`, `<<`, `>>` | Operations on bit patterns |
+| Logical | `and`, `or`, `not` | Boolean logic |
+| Assignment | `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `^=` | Variable assignment with shortcuts |
 
 ## 🔍 Language Features
 
@@ -414,9 +328,9 @@ ITMO-Script offers a powerful set of features that make it both expressive and p
 Variables are dynamically typed but strongly checked:
 
 ```
-let x = 5;        // x is a number
-x = "hello";      // x is now a string
-x = x + 10;       // TypeError: Cannot add string and number
+x = 5            // x is a number
+x = "hello"      // x is now a string
+x = x + 10       // TypeError: Cannot add string and number
 ```
 
 ### First-class Functions
@@ -425,35 +339,11 @@ Functions are first-class citizens that can be passed as arguments, returned fro
 
 ```
 // Function as a value
-let add = function(a, b) {
+add = function(a, b)
     return a + b;
-};
+end function
 
-// Higher-order function
-function applyTwice(func, value) {
-    return func(func(value));
-}
-
-print(applyTwice(function(x) { return x * 2; }, 3));  // Outputs: 12
-```
-
-### Closures
-
-Functions capture their environment, creating closures:
-
-```
-function makeCounter() {
-    let count = 0;
-    return function() {
-        count = count + 1;
-        return count;
-    };
-}
-
-let counter = makeCounter();
-print(counter());  // 1
-print(counter());  // 2
-print(counter());  // 3
+print(function(x) return x * 2 end function(3));  // Outputs: 6
 ```
 
 ### Comprehensive Control Flow
@@ -462,32 +352,25 @@ ITMO-Script provides all the control flow constructs you'd expect:
 
 ```
 // If-else statements
-if (condition) {
+if condition then
     // code
-} else if (anotherCondition) {
+else if anotherCondition then
     // code
-} else {
+else
     // code
-}
+end if
 
 // While loops
-while (condition) {
+while condition
     // code
-    if (earlyExit) break;
-    if (skipIteration) continue;
-}
+    if earlyExit then break end if
+    if skipIteration then continue end if
+end while
 
 // For loops
-for (let i = 0; i < 10; i++) {
+for i in range(10)
     // code
-}
-
-// Try-catch for error handling
-try {
-    riskyOperation();
-} catch (error) {
-    handleError(error);
-}
+end for
 ```
 
 ### Rich Standard Library
@@ -496,55 +379,41 @@ The standard library provides essential functionality:
 
 ```
 // Math functions
-print(Math.sqrt(16));      // 4
-print(Math.sin(Math.PI));  // 0
+print(Math.sqrt(16))       // 4
+print(Math.abs(-2))        // 2
 
 // String operations
-let text = "Hello, world!";
-print(text.length());      // 13
-print(text.substring(0, 5)); // "Hello"
+text = "Hello, world!"
+print(len(text))           // 13
+print(text[0:5])           // "Hello"
 
 // Arrays
-let arr = [1, 2, 3, 4, 5];
-print(arr.length());       // 5
-arr.push(6);
-print(arr[5]);             // 6
-
-// Time and date
-let now = Time.now();
-print(Time.format(now, "YYYY-MM-DD")); // e.g., "2025-07-13"
+arr = [1, 2, 3, 4, 5]
+print(len(arr))            // 5
+push(arr, 6)
+print(arr[5])              // 6
 ```
+
+For deep information you can take a look at [TASK.md](TASK.md)
 
 ## 🧪 Testing and Quality Assurance
 
 ITMO-Script is built with a test-driven approach, ensuring reliability and correctness.
-
-### Comprehensive Test Suite
-
-The project includes extensive tests at multiple levels:
-
-1. **Unit Tests** - Testing individual components in isolation
-2. **Integration Tests** - Testing how components work together
-3. **End-to-End Tests** - Testing complete program execution
-4. **Stress Tests** - Testing performance under load
-5. **Edge Case Tests** - Testing unusual and boundary conditions
 
 ### Running Tests
 
 Execute the test suite:
 
 ```bash
-cd build
+cd build/tests/
 ctest -V                 # Run all tests with verbose output
-ctest -R TokenizerTests  # Run only tokenizer tests
-ctest -R ParserTests     # Run only parser tests
 ```
 
 ### Coverage and Quality Metrics
 
 ITMO-Script maintains rigorous quality standards:
 
-- **100% test coverage** for critical components
+- **90% test coverage** for critical components
 - **Static analysis** with tools like clang-tidy and cppcheck
 - **Memory leak detection** with Valgrind and sanitizers
 - **Performance benchmarking** to prevent regressions
@@ -564,65 +433,36 @@ Adding new features to ITMO-Script is straightforward due to its modular design:
 
 ITMO-Script includes several optimizations:
 
-1. **Expression caching** - Common subexpressions are evaluated only once
-2. **Object pooling** - Reusing memory for temporary objects
-3. **Just-in-time compilation** - Hot code paths can be compiled to native code
-4. **Lazy evaluation** - Expressions are only evaluated when needed
+- **Non-trivial types linking** - Complex types are always shared
+- **Lazy evaluation** - Expressions are only evaluated when needed
 
-### Embedding ITMO-Script
-
-You can embed ITMO-Script in your C++ applications:
-
-```cpp
-#include "itmo_script.h"
-
-int main() {
-    // Initialize the interpreter
-    itmo::Interpreter interpreter;
-    
-    // Define a C++ function to expose to scripts
-    interpreter.registerFunction("hostFunction", [](int x, int y) {
-        return x * y;
-    });
-    
-    // Run a script
-    try {
-        interpreter.runFile("my_script.its");
-    } catch (const itmo::RuntimeError& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
-    }
-    
-    return 0;
-}
-```
 
 ## 📝 Future Directions
 
 ITMO-Script is continuously evolving. Planned features include:
 
 - **Module system** for better code organization
+- **Closures** for better functional possibilities
 - **Async/await** for asynchronous programming
 - **Pattern matching** for more expressive conditionals
 - **Type annotations** for optional static typing
-- **Optimizing compiler** for improved performance
+- **Compiler** for generate and compile native code
 
 ## 🙏 Acknowledgements
 
 This project stands on the shoulders of giants:
 
 - Robert Nystrom's "Crafting Interpreters" for foundational concepts
+- [Let's build a simple interpreter](https://ruslanspivak.com/lsbasi-part1/) by Ruslan Spivak
 - The LLVM project for inspiration on modularity
-- The TypeScript team for type system insights
 - The ITMO University faculty for theoretical foundations
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please check the [Contributing Guide](CONTRIBUTING.md) for details on how to get involved.
+Contributions are welcome!
 
 ---
 
 <div align="center">
   <p>Designed and implemented with ❤️ by <a href="https://github.com/axonde">axonde</a></p>
-  <p><small>© 2025 All Rights Reserved</small></p>
 </div>
