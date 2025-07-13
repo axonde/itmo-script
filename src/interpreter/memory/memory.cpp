@@ -25,6 +25,11 @@ HolderData* HolderPack::operator->() {
 bool HolderPack::IsRef() const {
     return std::holds_alternative<std::reference_wrapper<ptr>>(pack);
 }
+HolderPack HolderPack::Clone() {
+    auto hp = *this;
+    hp.pack = ptr(*hp);
+    return hp;
+}
 
 struct NodeHolder::Impl {
     Impl(void* n) {

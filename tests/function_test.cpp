@@ -195,3 +195,45 @@ TEST(FunctionTestSuite, AnonimousFunctionCallOneLine) {
     ASSERT_EQ(output.str(), expected);
 }
 
+TEST(FunctionTestSuite, RecursiveCall) {
+    std::string code = R"(
+        f = function(count)
+            if count == 5 then
+                return "recursion works"
+            end if
+            return f(count + 1)
+        end function
+        print(f(0))
+    )";
+
+    std::string expected = "\"recursion works\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}
+
+TEST(FunctionTestSuite, RecursiveCallReturnLinkedValue) {
+    std::string code = R"(
+        f = function(count)
+            if count == 5 then
+                a = "recursion works"
+                return a
+            end if
+            return f(count + 1)
+        end function
+        print(f(0))
+    )";
+
+    std::string expected = "\"recursion works\"";
+
+    std::istringstream input(code);
+    std::ostringstream output;
+
+    Interpreter interpreter(input, output);
+    ASSERT_TRUE(interpreter.Interpret(input, false));
+    ASSERT_EQ(output.str(), expected);
+}

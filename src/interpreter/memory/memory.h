@@ -85,6 +85,7 @@ struct HolderPack {
     ptr& operator*();
     HolderData* operator->();
     bool IsRef() const;
+    HolderPack Clone();
 
     std::variant<ptr, std::reference_wrapper<ptr>> pack;
 };

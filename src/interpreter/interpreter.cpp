@@ -356,7 +356,6 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
 
     std::string func_name = "<anonimous function>";
     if (ptr->func->node == Parser::N_VAR) func_name = static_cast<Parser::Var*>(ptr->func.get())->id;
-    Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Memory::stack_frame), std::move(func_name));
 
     Parser::Node* func_holder = static_cast<Parser::Node*>(std::get<Memory::NodeHolder>(function_holder.function).get());
     Parser::Func* func_instance = static_cast<Parser::Func*>(func_holder);
@@ -364,17 +363,19 @@ Interpreter::HolderPack Interpreter::VisitUserFuncCall(Parser::FuncCall* ptr, Fu
         throw MakeError<Errors::RunTime::WrongArgumentCount>(ptr);
     }
 
+    Memory::stack_frame = std::make_unique<Memory::StackFrame>(std::move(Memory::stack_frame), std::move(func_name));
     for (size_t i = 0; i != func_instance->args.size(); ++i) {
         HolderPack hp = Memory::stack_frame->Lookup(func_instance->args[i].id);
-        hp->holder = std::move(params[i]->holder);
-        hp->type = std::move(params[i]->type);
+        Operators::RawExecBinaryOperation(
+            Lexer::Tokens::T_EQUAL, std::move(hp), std::move(params[i])
+        );
     }
 
     HolderPack result = HolderPack(TYPES::NIL_TYPE);
     try {
         Visit(func_instance->body);
     } catch (Closures::Return& r) {
-        result = std::move(std::any_cast<HolderPack&>(r.holder_pack));
+        result = std::any_cast<HolderPack&>(r.holder_pack).Clone();  // ISSUE: prevent forwarding links to inner variables
     }
 
     Memory::stack_frame = std::move(Memory::stack_frame->parent);
